@@ -1,0 +1,133 @@
+.public-page {
+  min-height: 100dvh;
+  padding: 20px;
+  background: var(--color-canvas);
+}
+.public-card {
+  width: min(100%, 680px);
+  margin: 0 auto;
+  padding: 20px;
+  border-radius: 22px;
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+.public-heading {
+  margin: 34px 0 18px;
+}
+.public-heading h1 {
+  margin: 10px 0 4px;
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+}
+.public-heading p {
+  margin: 0;
+  color: var(--color-muted);
+}
+.public-actions {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+}
+.public-actions button {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: white;
+  color: var(--color-text);
+  font-weight: 750;
+}
+.public-actions button.selected {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.public-actions button.danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+@media (min-width: 760px) {
+  .public-page {
+    padding: 42px;
+  }
+  .public-card {
+    padding: 30px 36px;
+  }
+  .public-actions {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.approval-card {
+  max-width: 720px;
+}
+.approval-heading {
+  margin: 30px 0 15px;
+}
+.approval-heading h1 {
+  margin: 10px 0 4px;
+  font-size: 1.8rem;
+  letter-spacing: -0.04em;
+}
+.approval-heading p {
+  margin: 0;
+  color: var(--color-muted);
+}
+.approval-total {
+  display: grid;
+  gap: 4px;
+  padding: 20px;
+  border-radius: 16px;
+  color: white;
+  background: linear-gradient(135deg, #5038d7, #2861e8);
+}
+.approval-total span,
+.approval-total small {
+  color: #dfe6ff;
+}
+.approval-total strong {
+  font-size: 2.35rem;
+  letter-spacing: -0.05em;
+}
+.approval-message,
+.approval-summary {
+  margin-top: 14px;
+  padding: 17px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: white;
+}
+.approval-message p,
+.approval-summary p,
+.approval-summary li {
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+.approval-message p {
+  margin-bottom: 0;
+}
+.approval-summary h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.approval-summary ul {
+  margin-bottom: 0;
+  padding-left: 20px;
+}
+.approval-document-actions {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+}
+.approval-contact {
+  margin-top: 24px;
+  text-align: center;
+}
+@media (min-width: 620px) {
+  .approval-document-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}

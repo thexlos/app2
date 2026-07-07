@@ -1,0 +1,13 @@
+node_modules/
+dist/
+tmp/
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+.env
+.env.local
+.env.*
+!.env.example
+.netlify/
+app2/
+publish-gitdata/

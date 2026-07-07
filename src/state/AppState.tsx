@@ -1,0 +1,2487 @@
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { businessProfiles } from "../data/mock/businessProfiles";
+import { initialWorkspaces } from "../data/mock/workspaces";
+import { createEstimateVersion } from "../lib/protectedRecords";
+import { validateInvoiceAgainstAcceptedScope } from "../lib/acceptedEstimateBilling";
+import type {
+  BusinessKit,
+  BusinessWorkspaceData,
+  CalendarEvent,
+  Customer,
+  DocumentTemplate,
+  DocumentStyleTemplate,
+  GlobalLibraryItem,
+  Estimate,
+  HelpRequest,
+  Invoice,
+  ItemServiceBankItem,
+  ProjectJob,
+  QRCodeRecord,
+  Template,
+  WorkshopItem,
+} from "../types/models";
+
+export type MainTab = "home" | "customers" | "money" | "create" | "help";
+export type Screen =
+  | MainTab
+  | "business-kits"
+  | "my-business-kit"
+  | "global-library"
+  | "integrations"
+  | "estimate-detail"
+  | "estimate-builder"
+  | "invoice-builder"
+  | "customer-detail"
+  | "add-customer"
+  | "add-lead"
+  | "lead-detail"
+  | "import-wizard"
+  | "sync-center"
+  | "export-center"
+  | "calendar"
+  | "template-library"
+  | "template-detail"
+  | "document-style-editor"
+  | "asset-detail"
+  | "setup"
+  | "file-vault"
+  | "workshop-library"
+  | "create-mode"
+  | "create-builder"
+  | "create-wizard"
+  | "help-request"
+  | "help-request-detail"
+  | "monthly-support"
+  | "help-guide"
+  | "official-document";
+export type KitSectionKey =
+  | "estimateTemplates"
+  | "invoiceTemplates"
+  | "progressChangeTemplates"
+  | "leadForms"
+  | "qrStarters"
+  | "flyerPostTemplates"
+  | "businessCardTemplate"
+  | "reviewBoosterTools"
+  | "customerTags"
+  | "messageTemplates"
+  | "setupChecklist"
+  | "suggestedServices"
+  | "suggestedTerms"
+  | "suggestedFolders";
+
+interface AppStateValue {
+  /** Global tenant context. All business-owned reads and writes use this id. */
+  activeBusinessProfileId: string;
+  currentBusinessId: string;
+  currentBusiness: (typeof businessProfiles)[number];
+  profiles: typeof businessProfiles;
+  workspace: BusinessWorkspaceData;
+  currentScreen: Screen;
+  selectedEstimateId?: string;
+  selectedInvoiceId?: string;
+  selectedCustomerId?: string;
+  selectedLeadId?: string;
+  selectedTemplateId?: string;
+  selectedAssetId?: string;
+  selectedCreateTask?: string;
+  selectedHelpService?: string;
+  selectedHelpRequestId?: string;
+  selectedGuideKey?: string;
+  notice?: string;
+  unsavedWorkLabel?: string;
+  guidedDraft?: {
+    builderId: string;
+    answers: Record<string, string | string[]>;
+    sessionId: string;
+  };
+  scheduleContext?: {
+    customerId?: string;
+    leadId?: string;
+    projectId?: string;
+    estimateId?: string;
+    invoiceId?: string;
+  };
+  setCurrentScreen: (screen: Screen) => void;
+  switchBusiness: (businessId: string) => void;
+  markUnsavedWork: (label: string, save?: () => void) => void;
+  clearUnsavedWork: () => void;
+  saveUnsavedWork: () => void;
+  openEstimate: (estimateId: string) => void;
+  openInvoice: (invoiceId: string) => void;
+  openEstimateBuilder: (customerId?: string, estimateId?: string) => void;
+  openInvoiceBuilder: (customerId?: string, sourceEstimateId?: string) => void;
+  openCustomer: (customerId: string) => void;
+  openLead: (leadId: string) => void;
+  convertLeadToCustomer: (leadId: string) => string | undefined;
+  openSchedule: (context?: {
+    customerId?: string;
+    leadId?: string;
+    projectId?: string;
+    estimateId?: string;
+    invoiceId?: string;
+  }) => void;
+  scheduleEvent: (
+    event: Omit<
+      CalendarEvent,
+      "id" | "businessProfileId" | "createdAt" | "updatedAt" | "archived"
+    >,
+  ) => string;
+  completeMockImport: (recordType: string, fileName: string) => void;
+  recordExport: (
+    exportType: string,
+    format: "CSV" | "Excel",
+    markExported: boolean,
+  ) => void;
+  updateSuggestion: (
+    suggestionId: string,
+    status: "Dismissed" | "Snoozed" | "Completed",
+  ) => void;
+  openActivity: (activityId: string) => void;
+  openTemplate: (templateId: string) => void;
+  openDocumentStyleEditor: (templateId?: string) => void;
+  openAsset: (assetId: string) => void;
+  toggleAssetPin: (assetId: string) => void;
+  completeGuidedWizard: (
+    builderId: string,
+    sourceTool: string,
+    answers: Record<string, string | string[]>,
+  ) => void;
+  clearGuidedDraft: () => void;
+  createCustomer: (
+    customer: Pick<
+      Customer,
+      | "name"
+      | "businessName"
+      | "primaryContactName"
+      | "phone"
+      | "alternatePhone"
+      | "email"
+      | "website"
+      | "billingAddress"
+      | "jobSiteAddress"
+      | "customerType"
+      | "preferredContactMethod"
+      | "status"
+      | "notes"
+      | "leadSource"
+      | "internalNotes"
+      | "taxable"
+      | "paymentTerms"
+    >,
+  ) => string;
+  createLead: (
+    lead: Pick<
+      import("../types/models").Lead,
+      | "name"
+      | "businessName"
+      | "phone"
+      | "email"
+      | "address"
+      | "interestedService"
+      | "source"
+      | "preferredContactMethod"
+      | "status"
+      | "message"
+      | "budget"
+      | "dateNeeded"
+      | "tags"
+      | "notes"
+      | "internalNotes"
+    >,
+  ) => string;
+  openCreateTask: (task: string) => void;
+  openGuidedBuilder: (task: string) => void;
+  openHelpRequest: (service?: string) => void;
+  openHelpRequestDetail: (requestId: string) => void;
+  openHelpGuide: (guideKey: string) => void;
+  createQrCode: (
+    record: Pick<QRCodeRecord, "name" | "type" | "url" | "label" | "status"> & {
+      createdFrom?: "Guided Wizard" | "Manual Builder";
+    },
+  ) => string;
+  saveWorkshopItem: (
+    item: Pick<
+      WorkshopItem,
+      | "itemType"
+      | "title"
+      | "description"
+      | "status"
+      | "createdFrom"
+      | "tags"
+      | "exportFormats"
+    >,
+  ) => string;
+  duplicateWorkshopItem: (itemId: string) => void;
+  archiveWorkshopItem: (itemId: string) => void;
+  saveWorkshopItemAsTemplate: (itemId: string) => void;
+  exportWorkshopItem: (itemId: string, format: string) => void;
+  recordWorkshopAction: (itemId: string, action: string) => void;
+  saveEstimateFromBuilder: (
+    estimate: Estimate,
+    customer: Pick<
+      Customer,
+      | "name"
+      | "businessName"
+      | "phone"
+      | "email"
+      | "address"
+      | "billingAddress"
+      | "jobSiteAddress"
+    >,
+    status: "Draft" | "Sent",
+  ) => string;
+  saveEstimateAsTemplate: (estimate: Estimate, templateName: string) => void;
+  saveInvoiceFromBuilder: (invoice: Invoice) => string;
+  saveDocumentTemplate: (template: DocumentTemplate) => void;
+  saveDocumentStyle: (style: DocumentStyleTemplate) => void;
+  saveItemBankItem: (item: ItemServiceBankItem) => void;
+  deleteItemBankItem: (itemId: string) => void;
+  updateBusinessKitCategories: (categories: string[]) => void;
+  saveGlobalLibraryItem: (item: GlobalLibraryItem) => void;
+  saveProject: (
+    project: Pick<
+      ProjectJob,
+      | "customerId"
+      | "name"
+      | "status"
+      | "leadId"
+      | "projectType"
+      | "jobLocation"
+      | "description"
+      | "startDate"
+      | "targetCompletionDate"
+      | "notes"
+      | "internalNotes"
+    >,
+  ) => string;
+  createInvoiceFromAcceptedEstimate: (
+    estimateId: string,
+    label: string,
+    amount: number,
+    sourceLineItemIds?: string[],
+  ) => boolean;
+  applyKit: (
+    kit: BusinessKit,
+    selectedSections: KitSectionKey[],
+    duplicatePolicy?:
+      "Keep Both" | "Replace Existing" | "Skip" | "Rename New Item",
+  ) => void;
+  createProtectedFollowUp: (
+    kind: "revision" | "change-order" | "duplicate",
+  ) => void;
+  submitHelpRequest: (
+    request: Omit<HelpRequest, "id" | "businessId" | "status">,
+  ) => string;
+  handleHelpRequestAction: (requestId: string, action: string) => void;
+  respondToEstimate: (
+    estimateId: string,
+    action: "approve" | "reject" | "request-changes",
+    note: string,
+  ) => boolean;
+  recordPayment: (invoiceId: string, amount: number, method: string) => void;
+  clearNotice: () => void;
+}
+
+const AppStateContext = createContext<AppStateValue | null>(null);
+
+function buildKitTemplates(
+  kit: BusinessKit,
+  selected: Set<KitSectionKey>,
+  existing: Template[],
+  businessId: string,
+  duplicatePolicy:
+    "Keep Both" | "Replace Existing" | "Skip" | "Rename New Item" = "Keep Both",
+): Template[] {
+  const groups: { key: KitSectionKey; values: string[]; type: string }[] = [
+    {
+      key: "estimateTemplates",
+      values: kit.estimateTemplates,
+      type: "Estimate",
+    },
+    { key: "invoiceTemplates", values: kit.invoiceTemplates, type: "Invoice" },
+    {
+      key: "progressChangeTemplates",
+      values: kit.progressChangeTemplates,
+      type: "Progress / Change Order",
+    },
+    {
+      key: "flyerPostTemplates",
+      values: kit.flyerPostTemplates,
+      type: "Flyer / Post",
+    },
+    {
+      key: "reviewBoosterTools",
+      values: kit.reviewBoosterTools,
+      type: "Review Booster",
+    },
+    { key: "customerTags", values: kit.customerTags, type: "Customer Tag" },
+    { key: "messageTemplates", values: kit.messageTemplates, type: "Message" },
+    {
+      key: "suggestedServices",
+      values: kit.suggestedServices,
+      type: "Service Item",
+    },
+    { key: "suggestedTerms", values: kit.suggestedTerms, type: "Terms" },
+    {
+      key: "businessCardTemplate",
+      values: kit.businessCardTemplate ? [kit.businessCardTemplate] : [],
+      type: "Business Card",
+    },
+  ];
+  const existingNames = new Set(
+    existing.map((item) => item.name.toLowerCase()),
+  );
+  return groups
+    .flatMap((group) => (selected.has(group.key) ? group.values : []))
+    .flatMap((originalName, index) => {
+      const duplicate = existingNames.has(originalName.toLowerCase());
+      if (duplicate && duplicatePolicy === "Skip") return [];
+      const name =
+        duplicate &&
+        (duplicatePolicy === "Keep Both" ||
+          duplicatePolicy === "Rename New Item")
+          ? `${originalName} Copy`
+          : originalName;
+      return [
+        {
+          id: `${businessId}-${kit.id}-template-${index}-${name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .slice(0, 24)}`,
+          businessId,
+          name,
+          type:
+            groups.find((group) => group.values.includes(name))?.type ??
+            "Template",
+          sourceKitId: kit.id,
+        },
+      ];
+    });
+}
+
+export function AppStateProvider({ children }: { children: ReactNode }) {
+  const [currentBusinessId, setCurrentBusinessId] = useState(
+    businessProfiles[0].id,
+  );
+  const [workspaces, setWorkspaces] = useState(initialWorkspaces);
+  const [currentScreen, setCurrentScreen] = useState<Screen>("home");
+  const [selectedEstimateId, setSelectedEstimateId] = useState<string>();
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>();
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>();
+  const [selectedLeadId, setSelectedLeadId] = useState<string>();
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>();
+  const [selectedAssetId, setSelectedAssetId] = useState<string>();
+  const [selectedCreateTask, setSelectedCreateTask] = useState<string>();
+  const [selectedHelpService, setSelectedHelpService] = useState<string>();
+  const [selectedHelpRequestId, setSelectedHelpRequestId] = useState<string>();
+  const [selectedGuideKey, setSelectedGuideKey] = useState<string>();
+  const [notice, setNotice] = useState<string>();
+  const [unsavedWorkLabel, setUnsavedWorkLabel] = useState<string>();
+  const [guidedDraft, setGuidedDraft] =
+    useState<AppStateValue["guidedDraft"]>();
+  const [scheduleContext, setScheduleContext] =
+    useState<AppStateValue["scheduleContext"]>();
+  const unsavedSaverRef = useRef<(() => void) | undefined>(undefined);
+
+  const currentBusiness = businessProfiles.find(
+    (profile) => profile.id === currentBusinessId,
+  )!;
+  const workspace = workspaces[currentBusinessId];
+
+  const updateWorkspace = (
+    updater: (value: BusinessWorkspaceData) => BusinessWorkspaceData,
+  ) => {
+    setWorkspaces((current) => ({
+      ...current,
+      [currentBusinessId]: updater(current[currentBusinessId]),
+    }));
+  };
+
+  const switchBusiness = (businessId: string) => {
+    setCurrentBusinessId(businessId);
+    setSelectedEstimateId(undefined);
+    setSelectedInvoiceId(undefined);
+    setSelectedCustomerId(undefined);
+    setSelectedLeadId(undefined);
+    setSelectedTemplateId(undefined);
+    setSelectedAssetId(undefined);
+    setGuidedDraft(undefined);
+    setCurrentScreen("home");
+    setNotice(
+      `Switched to ${businessProfiles.find((profile) => profile.id === businessId)?.name}. Its records are kept separate.`,
+    );
+  };
+
+  const openEstimate = (estimateId: string) => {
+    setSelectedEstimateId(estimateId);
+    setCurrentScreen("estimate-detail");
+  };
+
+  const openInvoice = (invoiceId: string) => {
+    setSelectedInvoiceId(invoiceId);
+    setCurrentScreen("money");
+  };
+
+  const openEstimateBuilder = (customerId?: string, estimateId?: string) => {
+    setSelectedEstimateId(estimateId);
+    setSelectedCustomerId(customerId);
+    setCurrentScreen("estimate-builder");
+  };
+
+  const openInvoiceBuilder = (
+    customerId?: string,
+    sourceEstimateId?: string,
+  ) => {
+    setSelectedCustomerId(customerId);
+    setSelectedEstimateId(sourceEstimateId);
+    setCurrentScreen("invoice-builder");
+  };
+
+  const openCustomer = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    setCurrentScreen("customer-detail");
+  };
+
+  const openLead = (leadId: string) => {
+    setSelectedLeadId(leadId);
+    setCurrentScreen("lead-detail");
+  };
+
+  const createCustomer: AppStateValue["createCustomer"] = (customer) => {
+    const duplicate = workspace.customers.find(
+      (item) =>
+        (customer.email &&
+          item.email.toLowerCase() === customer.email.toLowerCase()) ||
+        (customer.phone && item.phone === customer.phone),
+    );
+    if (duplicate) {
+      setNotice(
+        `Possible duplicate found: ${duplicate.name}. Open the existing customer or review before keeping both.`,
+      );
+      setSelectedCustomerId(duplicate.id);
+      return duplicate.id;
+    }
+    const id = `${currentBusinessId}-customer-${Date.now()}`;
+    const now = new Date().toISOString();
+    updateWorkspace((value) => ({
+      ...value,
+      customers: [
+        {
+          id,
+          businessId: currentBusinessId,
+          name: customer.name,
+          businessName: customer.businessName,
+          primaryContactName: customer.primaryContactName,
+          phone: customer.phone,
+          alternatePhone: customer.alternatePhone,
+          email: customer.email,
+          website: customer.website,
+          address: customer.billingAddress ?? "",
+          billingAddress: customer.billingAddress,
+          jobSiteAddress: customer.jobSiteAddress,
+          customerType: customer.customerType,
+          preferredContactMethod: customer.preferredContactMethod,
+          status: customer.status || "New",
+          tags: [],
+          lastActivity: "Just now",
+          notes: customer.notes ?? [],
+          internalNotes: customer.internalNotes ?? [],
+          leadSource: customer.leadSource,
+          taxable: customer.taxable,
+          paymentTerms: customer.paymentTerms,
+          projectIds: [],
+          appointmentIds: [],
+          fileIds: [],
+          syncMetadata: {
+            sourceSystem: "Manual",
+            externalLinks: [],
+            syncStatus: "Needs Sync",
+            pendingSyncTargets: [],
+            pendingExport: false,
+            dirtyFields: [],
+            possibleDuplicateIds: [],
+            syncHistory: ["Created in Start Here Helper"],
+          },
+          createdAt: now,
+          updatedAt: now,
+          archived: false,
+        },
+        ...value.customers,
+      ],
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: "Customer saved",
+          detail: customer.name,
+          occurredAt: "Just now",
+          tone: "success",
+          type: "customer.created",
+        },
+        ...value.activity,
+      ],
+    }));
+    setSelectedCustomerId(id);
+    setNotice("Customer saved.");
+    return id;
+  };
+
+  const createLead: AppStateValue["createLead"] = (lead) => {
+    const duplicate = workspace.leads.find(
+      (item) =>
+        (lead.email &&
+          item.email?.toLowerCase() === lead.email.toLowerCase()) ||
+        (lead.phone && item.phone === lead.phone),
+    );
+    if (duplicate) {
+      setNotice(
+        `Possible duplicate lead found: ${duplicate.name}. Review it before creating another.`,
+      );
+      return duplicate.id;
+    }
+    const id = `${currentBusinessId}-lead-${Date.now()}`;
+    const now = new Date().toISOString();
+    updateWorkspace((value) => ({
+      ...value,
+      leads: [
+        {
+          id,
+          businessId: currentBusinessId,
+          name: lead.name,
+          businessName: lead.businessName,
+          phone: lead.phone,
+          email: lead.email,
+          address: lead.address,
+          interestedService: lead.interestedService,
+          serviceNeeded: lead.interestedService ?? "",
+          source: lead.source,
+          preferredContactMethod: lead.preferredContactMethod,
+          status: lead.status,
+          message: lead.message,
+          budget: lead.budget,
+          dateNeeded: lead.dateNeeded,
+          tags: lead.tags ?? [],
+          notes: lead.notes ?? [],
+          internalNotes: lead.internalNotes ?? [],
+          appointmentIds: [],
+          estimateIds: [],
+          fileIds: [],
+          syncMetadata: {
+            sourceSystem: lead.source === "Lead Form" ? "Lead Form" : "Manual",
+            externalLinks: [],
+            syncStatus: "Not Synced",
+            pendingSyncTargets: [],
+            pendingExport: false,
+            dirtyFields: [],
+            possibleDuplicateIds: [],
+            syncHistory: ["Lead saved"],
+          },
+          createdAt: now,
+          updatedAt: now,
+          archived: false,
+        },
+        ...value.leads,
+      ],
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: "Lead added",
+          detail: lead.name,
+          occurredAt: "Just now",
+          tone: "info",
+          type: "lead.created",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice("Lead saved.");
+    return id;
+  };
+
+  const convertLeadToCustomer = (leadId: string) => {
+    const lead = workspace.leads.find((item) => item.id === leadId);
+    if (!lead) return undefined;
+    const customerId = createCustomer({
+      name: lead.name,
+      businessName: lead.businessName,
+      primaryContactName: lead.name,
+      phone: lead.phone ?? "",
+      alternatePhone: "",
+      email: lead.email ?? "",
+      website: "",
+      billingAddress: lead.address ?? "",
+      jobSiteAddress: lead.address ?? "",
+      customerType: lead.businessName ? "Business" : "Person",
+      preferredContactMethod:
+        (lead.preferredContactMethod as Customer["preferredContactMethod"]) ??
+        "No preference",
+      status: "New",
+      notes: [...(lead.notes ?? []), lead.message].filter(Boolean) as string[],
+    });
+    updateWorkspace((value) => ({
+      ...value,
+      leads: value.leads.map((item) =>
+        item.id === leadId
+          ? {
+              ...item,
+              status: "Converted to Customer",
+              convertedCustomerId: customerId,
+              updatedAt: new Date().toISOString(),
+            }
+          : item,
+      ),
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: "Lead converted to customer",
+          detail: lead.name,
+          occurredAt: "Just now",
+          tone: "success",
+          type: "lead.converted",
+          relatedRecordType: "customer",
+          relatedRecordId: customerId,
+          deepLinkRoute: "customer-detail",
+        },
+        ...value.activity,
+      ],
+    }));
+    setSelectedCustomerId(customerId);
+    setNotice("Lead converted to customer.");
+    return customerId;
+  };
+
+  const openSchedule: AppStateValue["openSchedule"] = (context = {}) => {
+    setScheduleContext(context);
+    setCurrentScreen("calendar");
+  };
+
+  const scheduleEvent: AppStateValue["scheduleEvent"] = (event) => {
+    const id = `${currentBusinessId}-event-${Date.now()}`;
+    const now = new Date().toISOString();
+    updateWorkspace((value) => ({
+      ...value,
+      calendarEvents: [
+        {
+          ...event,
+          id,
+          businessProfileId: currentBusinessId,
+          createdAt: now,
+          updatedAt: now,
+          archived: false,
+        },
+        ...value.calendarEvents,
+      ],
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: "Appointment scheduled",
+          detail: `${event.title} · ${event.startDate}`,
+          occurredAt: "Just now",
+          tone: "success",
+          type: "calendar.created",
+          relatedRecordType: "calendar_event",
+          relatedRecordId: id,
+          deepLinkRoute: "calendar",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice("Appointment scheduled.");
+    return id;
+  };
+
+  const completeMockImport: AppStateValue["completeMockImport"] = (
+    recordType,
+    fileName,
+  ) => {
+    const now = new Date().toISOString();
+    const importId = `${currentBusinessId}-import-${Date.now()}`;
+    updateWorkspace((value) => ({
+      ...value,
+      importHistory: [
+        {
+          id: importId,
+          businessProfileId: currentBusinessId,
+          recordType,
+          fileName,
+          status: "Imported",
+          importedCount: 3,
+          duplicateCount: 1,
+          createdAt: now,
+        },
+        ...value.importHistory,
+      ],
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: `${recordType} import reviewed`,
+          detail: `${fileName} · 3 ready, 1 possible duplicate`,
+          occurredAt: "Just now",
+          tone: "info",
+          type: "import.completed",
+          relatedRecordType: "import_history",
+          relatedRecordId: importId,
+          deepLinkRoute: "sync-center",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice(
+      "Import completed in mock mode. Possible duplicates remain in review.",
+    );
+  };
+
+  const recordExport: AppStateValue["recordExport"] = (
+    exportType,
+    format,
+    markExported,
+  ) => {
+    const exportId = `${currentBusinessId}-export-${Date.now()}`;
+    updateWorkspace((value) => ({
+      ...value,
+      exportHistory: [
+        {
+          id: exportId,
+          businessProfileId: currentBusinessId,
+          exportType,
+          format,
+          recordCount: exportType.includes("Item")
+            ? value.itemBank.length
+            : value.customers.length,
+          status: markExported ? "Exported" : "Needs Export",
+          createdAt: new Date().toISOString(),
+        },
+        ...value.exportHistory,
+      ],
+    }));
+    setNotice(
+      markExported
+        ? "Export prepared and records marked as exported."
+        : "Export prepared. Records still show Needs Export.",
+    );
+  };
+
+  const updateSuggestion: AppStateValue["updateSuggestion"] = (
+    suggestionId,
+    status,
+  ) => {
+    updateWorkspace((value) => ({
+      ...value,
+      suggestions: value.suggestions.map((item) =>
+        item.id === suggestionId
+          ? {
+              ...item,
+              status,
+              dismissedAt:
+                status === "Dismissed"
+                  ? new Date().toISOString()
+                  : item.dismissedAt,
+              snoozedUntil:
+                status === "Snoozed"
+                  ? new Date(Date.now() + 86400000).toISOString()
+                  : item.snoozedUntil,
+            }
+          : item,
+      ),
+    }));
+  };
+
+  const openActivity: AppStateValue["openActivity"] = (activityId) => {
+    const activity = workspace.activity.find((item) => item.id === activityId);
+    if (!activity) return;
+    if (activity.relatedRecordType === "estimate" && activity.relatedRecordId)
+      openEstimate(activity.relatedRecordId);
+    else if (
+      activity.relatedRecordType === "invoice" &&
+      activity.relatedRecordId
+    )
+      openInvoice(activity.relatedRecordId);
+    else if (
+      activity.relatedRecordType === "customer" &&
+      activity.relatedRecordId
+    )
+      openCustomer(activity.relatedRecordId);
+    else if (activity.deepLinkRoute === "workshop-library")
+      setCurrentScreen("workshop-library");
+    else if (activity.deepLinkRoute === "calendar")
+      setCurrentScreen("calendar");
+    else
+      setCurrentScreen(activity.deepLinkRoute === "money" ? "money" : "home");
+    setNotice(`Opened from Recent Activity: ${activity.label}`);
+  };
+
+  const openTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    setCurrentScreen("template-detail");
+  };
+  const openDocumentStyleEditor = (templateId?: string) => {
+    setSelectedTemplateId(templateId);
+    setCurrentScreen("document-style-editor");
+  };
+
+  const openAsset = (assetId: string) => {
+    setSelectedAssetId(assetId);
+    setCurrentScreen("asset-detail");
+  };
+
+  const toggleAssetPin = (assetId: string) => {
+    updateWorkspace((value) => ({
+      ...value,
+      businessAssets: value.businessAssets.map((item) =>
+        item.id === assetId
+          ? {
+              ...item,
+              pinned: !item.pinned,
+              updatedAt: new Date().toISOString(),
+            }
+          : item,
+      ),
+    }));
+    setNotice("My Business Kit pins updated.");
+  };
+
+  const completeGuidedWizard: AppStateValue["completeGuidedWizard"] = (
+    builderId,
+    sourceTool,
+    answers,
+  ) => {
+    const sessionId = `${currentBusinessId}-wizard-${Date.now()}`;
+    const now = new Date().toISOString();
+    updateWorkspace((value) => ({
+      ...value,
+      guidedWizardSessions: [
+        {
+          id: sessionId,
+          businessProfileId: currentBusinessId,
+          builderId,
+          sourceTool,
+          startedAt: now,
+          updatedAt: now,
+          completedAt: now,
+          status: "Converted to Builder Draft",
+          answers,
+          createdFrom: "Walk Me Through It",
+        },
+        ...value.guidedWizardSessions,
+      ],
+    }));
+    setGuidedDraft({ builderId, answers, sessionId });
+    setCurrentScreen(
+      builderId === "estimate-builder"
+        ? "estimate-builder"
+        : builderId === "invoice-builder"
+          ? "invoice-builder"
+          : "create-builder",
+    );
+  };
+
+  const openCreateTask = (task: string) => {
+    setSelectedCreateTask(task);
+    setCurrentScreen("create-mode");
+  };
+
+  const openGuidedBuilder = (task: string) => {
+    setSelectedCreateTask(task);
+    setCurrentScreen("create-wizard");
+  };
+
+  const openHelpRequest = (service?: string) => {
+    setSelectedHelpService(service);
+    setCurrentScreen("help-request");
+  };
+
+  const openHelpRequestDetail = (requestId: string) => {
+    setSelectedHelpRequestId(requestId);
+    setCurrentScreen("help-request-detail");
+  };
+
+  const openHelpGuide = (guideKey: string) => {
+    setSelectedGuideKey(guideKey);
+    setCurrentScreen("help-guide");
+  };
+
+  const createQrCode: AppStateValue["createQrCode"] = (record) => {
+    const createdId = `qr-${Date.now()}`;
+    const workshopId = `creation-${Date.now()}`;
+    updateWorkspace((value) => ({
+      ...value,
+      qrCodes: [
+        {
+          ...record,
+          id: createdId,
+          businessId: currentBusinessId,
+          scans: 0,
+        },
+        ...value.qrCodes,
+      ],
+      workshopItems: [
+        {
+          id: workshopId,
+          businessProfileId: currentBusinessId,
+          itemType: "qr_code",
+          title: record.name || "Untitled QR Draft",
+          description: record.label || record.url || "QR code draft",
+          status: record.status === "Draft" ? "Draft" : "Ready",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastUsedAt: "Just now",
+          createdFrom: record.createdFrom ?? "Manual Builder",
+          fileAssetIds: [],
+          qrCodeIds: [createdId],
+          socialPostIds: [],
+          tags: [record.type],
+          exportFormats: ["PNG", "PDF Sign"],
+          isTemplate: false,
+          archived: false,
+          activityHistory: [
+            {
+              id: `activity-${Date.now()}`,
+              label: record.status === "Draft" ? "Saved draft" : "Created item",
+              occurredAt: "Just now",
+            },
+          ],
+        },
+        ...value.workshopItems,
+      ],
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label:
+            record.status === "Draft"
+              ? "QR code draft saved"
+              : "QR code created",
+          detail: `${record.name} was saved to ${currentBusiness.name}.`,
+          occurredAt: "Just now",
+          tone: record.status === "Draft" ? "info" : "success",
+          type: record.status === "Draft" ? "qr.draft" : "qr.created",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice(
+      record.status === "Draft"
+        ? "Draft saved to My Creations."
+        : "Saved to My Creations.",
+    );
+    return workshopId;
+  };
+
+  const saveWorkshopItem: AppStateValue["saveWorkshopItem"] = (item) => {
+    const id = `creation-${Date.now()}`;
+    const now = new Date().toISOString();
+    updateWorkspace((value) => ({
+      ...value,
+      workshopItems: [
+        {
+          ...item,
+          id,
+          businessProfileId: currentBusinessId,
+          createdAt: now,
+          updatedAt: now,
+          lastUsedAt: "Just now",
+          fileAssetIds: [],
+          qrCodeIds: [],
+          socialPostIds: [],
+          isTemplate: false,
+          archived: false,
+          activityHistory: [
+            {
+              id: `activity-${Date.now()}`,
+              label: item.status === "Draft" ? "Saved draft" : "Created item",
+              occurredAt: "Just now",
+            },
+          ],
+        },
+        ...value.workshopItems,
+      ],
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label:
+            item.status === "Draft"
+              ? "Workshop draft saved"
+              : "Workshop item created",
+          detail: `${item.title} was saved to My Creations.`,
+          occurredAt: "Just now",
+          tone: item.status === "Draft" ? "info" : "success",
+          type: "workshop.saved",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice("Saved to My Creations.");
+    return id;
+  };
+
+  const duplicateWorkshopItem: AppStateValue["duplicateWorkshopItem"] = (
+    itemId,
+  ) => {
+    updateWorkspace((value) => {
+      const source = value.workshopItems.find((item) => item.id === itemId);
+      if (!source) return value;
+      const now = new Date().toISOString();
+      return {
+        ...value,
+        workshopItems: [
+          {
+            ...source,
+            id: `creation-${Date.now()}`,
+            title: `${source.title} Copy`,
+            status: "Draft",
+            createdAt: now,
+            updatedAt: now,
+            lastUsedAt: "Just now",
+            createdFrom: "Duplicate",
+            archived: false,
+            activityHistory: [
+              {
+                id: `activity-${Date.now()}`,
+                label: "Duplicated item",
+                occurredAt: "Just now",
+              },
+            ],
+          },
+          ...value.workshopItems,
+        ],
+      };
+    });
+    setNotice("A new draft copy was added to My Creations.");
+  };
+
+  const archiveWorkshopItem: AppStateValue["archiveWorkshopItem"] = (
+    itemId,
+  ) => {
+    updateWorkspace((value) => ({
+      ...value,
+      workshopItems: value.workshopItems.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              archived: true,
+              status: "Archived",
+              updatedAt: new Date().toISOString(),
+              activityHistory: [
+                {
+                  id: `activity-${Date.now()}`,
+                  label: "Archived item",
+                  occurredAt: "Just now",
+                },
+                ...item.activityHistory,
+              ],
+            }
+          : item,
+      ),
+    }));
+    setNotice("Creation archived.");
+  };
+
+  const saveWorkshopItemAsTemplate: AppStateValue["saveWorkshopItemAsTemplate"] =
+    (itemId) => {
+      updateWorkspace((value) => {
+        const item = value.workshopItems.find(
+          (candidate) => candidate.id === itemId,
+        );
+        if (!item) return value;
+        const templateName = `${item.title} Template`;
+        return {
+          ...value,
+          workshopItems: value.workshopItems.map((candidate) =>
+            candidate.id === itemId
+              ? {
+                  ...candidate,
+                  isTemplate: true,
+                  updatedAt: new Date().toISOString(),
+                  activityHistory: [
+                    {
+                      id: `activity-${Date.now()}`,
+                      label: "Saved as template",
+                      occurredAt: "Just now",
+                    },
+                    ...candidate.activityHistory,
+                  ],
+                }
+              : candidate,
+          ),
+          templates: [
+            {
+              id: `template-${Date.now()}`,
+              businessId: currentBusinessId,
+              name: templateName,
+              type: item.itemType.replaceAll("_", " "),
+            },
+            ...value.templates,
+          ],
+        };
+      });
+      setNotice("Saved as a template for this business.");
+    };
+
+  const exportWorkshopItem: AppStateValue["exportWorkshopItem"] = (
+    itemId,
+    format,
+  ) => {
+    const fileId = `file-${Date.now()}`;
+    updateWorkspace((value) => {
+      const item = value.workshopItems.find(
+        (candidate) => candidate.id === itemId,
+      );
+      if (!item) return value;
+      const extension = /pdf/i.test(format)
+        ? "pdf"
+        : /jpg/i.test(format)
+          ? "jpg"
+          : "png";
+      const fileName = `${item.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")}.${extension}`;
+      return {
+        ...value,
+        files: [
+          {
+            id: fileId,
+            businessId: currentBusinessId,
+            name: fileName,
+            type:
+              extension === "pdf"
+                ? "application/pdf"
+                : `image/${extension === "jpg" ? "jpeg" : extension}`,
+            workshopItemId: itemId,
+            visibility: "Internal",
+          },
+          ...value.files,
+        ],
+        workshopItems: value.workshopItems.map((candidate) =>
+          candidate.id === itemId
+            ? {
+                ...candidate,
+                status: "Downloaded",
+                updatedAt: new Date().toISOString(),
+                fileAssetIds: [fileId, ...candidate.fileAssetIds],
+                activityHistory: [
+                  {
+                    id: `activity-${Date.now()}`,
+                    label: `Downloaded export: ${format}`,
+                    occurredAt: "Just now",
+                  },
+                  ...candidate.activityHistory,
+                ],
+              }
+            : candidate,
+        ),
+      };
+    });
+    setNotice("Export saved to File Vault and linked to this creation.");
+  };
+
+  const recordWorkshopAction: AppStateValue["recordWorkshopAction"] = (
+    itemId,
+    action,
+  ) => {
+    updateWorkspace((value) => ({
+      ...value,
+      workshopItems: value.workshopItems.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              status: /Post/i.test(action)
+                ? "Posted"
+                : /Send/i.test(action)
+                  ? "Sent"
+                  : item.status,
+              updatedAt: new Date().toISOString(),
+              lastUsedAt: "Just now",
+              activityHistory: [
+                {
+                  id: `activity-${Date.now()}`,
+                  label: action,
+                  occurredAt: "Just now",
+                },
+                ...item.activityHistory,
+              ],
+            }
+          : item,
+      ),
+    }));
+    setNotice(`${action} recorded in My Creations.`);
+  };
+
+  const saveEstimateFromBuilder: AppStateValue["saveEstimateFromBuilder"] = (
+    estimate,
+    customer,
+    status,
+  ) => {
+    const existingCustomer = workspace.customers.find(
+      (item) =>
+        item.id === estimate.customerId ||
+        (customer.email && item.email === customer.email),
+    );
+    const customerId =
+      existingCustomer?.id ?? `${currentBusinessId}-customer-${Date.now()}`;
+    const nextCustomer: Customer | undefined =
+      existingCustomer || !customer.name.trim()
+        ? undefined
+        : {
+            id: customerId,
+            businessId: currentBusinessId,
+            name: customer.name,
+            businessName: customer.businessName,
+            phone: customer.phone,
+            email: customer.email,
+            address: customer.address,
+            billingAddress: customer.billingAddress,
+            jobSiteAddress: customer.jobSiteAddress,
+            status: "Active customer",
+            tags: [],
+            lastActivity: "Just now",
+            notes: [],
+          };
+    const now = new Date().toISOString();
+    const priorSavedEstimate = workspace.estimates.find(
+      (item) => item.id === estimate.id,
+    );
+    const baseEstimate: Estimate = {
+      ...estimate,
+      versions: priorSavedEstimate?.versions ?? estimate.versions,
+      businessId: currentBusinessId,
+      businessProfileId: currentBusinessId,
+      customerId,
+      status,
+      updatedAt: now,
+      approvalToken:
+        estimate.approvalToken || `${currentBusinessId}-${Date.now()}`,
+    };
+    const version = createEstimateVersion(
+      baseEstimate,
+      status,
+      status === "Sent"
+        ? "Sent for customer approval"
+        : "Draft saved from Estimate Builder",
+    );
+    const savedEstimate: Estimate = {
+      ...baseEstimate,
+      currentVersionId: version.id,
+      versions: [version, ...baseEstimate.versions],
+    };
+    updateWorkspace((value) => ({
+      ...value,
+      customers: nextCustomer
+        ? [...value.customers, nextCustomer]
+        : value.customers,
+      estimates: value.estimates.some((item) => item.id === savedEstimate.id)
+        ? value.estimates.map((item) =>
+            item.id === savedEstimate.id ? savedEstimate : item,
+          )
+        : [savedEstimate, ...value.estimates],
+      documentNumberSettings: priorSavedEstimate
+        ? value.documentNumberSettings
+        : {
+            ...value.documentNumberSettings,
+            nextEstimateNumber:
+              value.documentNumberSettings.nextEstimateNumber + 1,
+          },
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label:
+            status === "Sent"
+              ? `Estimate ${savedEstimate.number} sent for approval`
+              : `Estimate ${savedEstimate.number} draft saved`,
+          detail: `${savedEstimate.projectName} · $${savedEstimate.total.toLocaleString()}`,
+          occurredAt: "Just now",
+          tone: status === "Sent" ? "success" : "info",
+          type: status === "Sent" ? "estimate.sent" : "estimate.draft",
+        },
+        ...value.activity,
+      ],
+    }));
+    setSelectedEstimateId(savedEstimate.id);
+    setNotice(
+      status === "Sent"
+        ? "Estimate sent for approval in mock mode. The protected version was saved."
+        : "Estimate draft saved.",
+    );
+    return savedEstimate.id;
+  };
+
+  const saveEstimateAsTemplate: AppStateValue["saveEstimateAsTemplate"] = (
+    estimate,
+    templateName,
+  ) => {
+    updateWorkspace((value) => ({
+      ...value,
+      templates: [
+        {
+          id: `template-${Date.now()}`,
+          businessId: currentBusinessId,
+          name: templateName,
+          type: "Estimate",
+        },
+        ...value.templates,
+      ],
+    }));
+    setNotice(`${templateName} saved to this business’s Templates.`);
+  };
+
+  const saveInvoiceFromBuilder: AppStateValue["saveInvoiceFromBuilder"] = (
+    invoice,
+  ) => {
+    const existing = workspace.invoices.some((item) => item.id === invoice.id);
+    const saved = {
+      ...invoice,
+      businessId: currentBusinessId,
+      balanceDue: Math.max(0, invoice.total - invoice.amountPaid),
+    };
+    updateWorkspace((value) => ({
+      ...value,
+      invoices: existing
+        ? value.invoices.map((item) => (item.id === saved.id ? saved : item))
+        : [saved, ...value.invoices],
+      documentNumberSettings: existing
+        ? value.documentNumberSettings
+        : {
+            ...value.documentNumberSettings,
+            nextInvoiceNumber:
+              value.documentNumberSettings.nextInvoiceNumber + 1,
+          },
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: `Invoice ${saved.number} ${saved.status === "Sent" ? "sent" : "saved"}`,
+          detail: `${saved.title ?? "Invoice"} · $${saved.total.toLocaleString()}`,
+          occurredAt: "Just now",
+          tone: saved.status === "Sent" ? "success" : "info",
+          type: "invoice.saved",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice(
+      saved.status === "Sent"
+        ? "Invoice sent in mock mode."
+        : "Invoice draft saved.",
+    );
+    return saved.id;
+  };
+
+  const saveDocumentTemplate: AppStateValue["saveDocumentTemplate"] = (
+    template,
+  ) => {
+    updateWorkspace((value) => ({
+      ...value,
+      documentTemplates: value.documentTemplates.some(
+        (item) => item.templateId === template.templateId,
+      )
+        ? value.documentTemplates.map((item) =>
+            item.templateId === template.templateId
+              ? {
+                  ...template,
+                  businessProfileId: currentBusinessId,
+                  updatedAt: new Date().toISOString(),
+                }
+              : item,
+          )
+        : [
+            {
+              ...template,
+              businessProfileId: currentBusinessId,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            ...value.documentTemplates,
+          ],
+    }));
+    setNotice(`${template.templateName} saved to My Business Kit.`);
+  };
+
+  const saveDocumentStyle: AppStateValue["saveDocumentStyle"] = (style) => {
+    updateWorkspace((value) => ({
+      ...value,
+      documentStyles: value.documentStyles.some((item) => item.id === style.id)
+        ? value.documentStyles.map((item) =>
+            item.id === style.id
+              ? {
+                  ...style,
+                  businessProfileId: currentBusinessId,
+                  updatedAt: new Date().toISOString(),
+                }
+              : item,
+          )
+        : [
+            {
+              ...style,
+              businessProfileId: currentBusinessId,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            ...value.documentStyles,
+          ],
+    }));
+    setNotice(
+      `${style.templateName} saved to this business’s document styles.`,
+    );
+  };
+
+  const saveItemBankItem: AppStateValue["saveItemBankItem"] = (item) => {
+    updateWorkspace((value) => ({
+      ...value,
+      itemBank: value.itemBank.some((entry) => entry.id === item.id)
+        ? value.itemBank.map((entry) =>
+            entry.id === item.id
+              ? { ...item, businessProfileId: currentBusinessId }
+              : entry,
+          )
+        : [
+            { ...item, businessProfileId: currentBusinessId },
+            ...value.itemBank,
+          ],
+    }));
+    setNotice(`${item.name} saved to this business’s Item & Service Bank.`);
+  };
+
+  const deleteItemBankItem = (itemId: string) => {
+    updateWorkspace((value) => ({
+      ...value,
+      itemBank: value.itemBank.filter((item) => item.id !== itemId),
+      businessHomeKit: {
+        ...value.businessHomeKit,
+        itemBankIds: value.businessHomeKit.itemBankIds.filter(
+          (id) => id !== itemId,
+        ),
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+    setNotice(
+      "Item removed from this business’s Item & Service Bank. Existing documents keep their saved snapshots.",
+    );
+  };
+
+  const updateBusinessKitCategories = (categories: string[]) => {
+    updateWorkspace((value) => ({
+      ...value,
+      businessHomeKit: {
+        ...value.businessHomeKit,
+        categories,
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+    setNotice("Business Kit categories updated.");
+  };
+
+  const saveGlobalLibraryItem = (item: GlobalLibraryItem) => {
+    const now = new Date().toISOString();
+    updateWorkspace((value) => {
+      const duplicateName = [
+        ...value.itemBank.map((entry) => entry.name),
+        ...value.templates.map((entry) => entry.name),
+        ...value.businessAssets.map((entry) => entry.title),
+      ].some((name) => name.toLowerCase() === item.title.toLowerCase());
+      const title = duplicateName ? `${item.title} Copy` : item.title;
+      const itemTypes = [
+        "item",
+        "service",
+        "product",
+        "material",
+        "labor",
+        "fee",
+        "discount",
+        "deposit",
+      ];
+      if (itemTypes.includes(item.libraryType))
+        return {
+          ...value,
+          itemBank: [
+            {
+              id: `${currentBusinessId}-global-${item.id}-${Date.now()}`,
+              businessProfileId: currentBusinessId,
+              name: title,
+              description: item.description,
+              customerDescription:
+                item.customerVisibleDescription ?? item.description,
+              category: item.category,
+              unit: item.defaultUnit ?? "each",
+              defaultQuantity: item.defaultQuantity ?? 1,
+              defaultRate: item.defaultRate ?? 0,
+              taxable: item.taxableDefault ?? false,
+              lastUsed: "Not used yet",
+              source: "Starter Kit",
+            },
+            ...value.itemBank,
+          ],
+        };
+      if (item.libraryType === "message_template")
+        return {
+          ...value,
+          messageTemplates: [
+            {
+              id: `${currentBusinessId}-${item.id}-${Date.now()}`,
+              businessProfileId: currentBusinessId,
+              name: title,
+              type: "Global starter",
+              message: item.description,
+            },
+            ...value.messageTemplates,
+          ],
+        };
+      if (item.libraryType === "qr_starter")
+        return {
+          ...value,
+          qrCodes: [
+            {
+              id: `${currentBusinessId}-${item.id}-${Date.now()}`,
+              businessId: currentBusinessId,
+              name: title,
+              type: "Starter",
+              url: "",
+              scans: 0,
+              status: "Draft",
+            },
+            ...value.qrCodes,
+          ],
+        };
+      if (item.libraryType === "lead_form")
+        return {
+          ...value,
+          leadForms: [
+            {
+              id: `${currentBusinessId}-${item.id}-${Date.now()}`,
+              businessId: currentBusinessId,
+              name: title,
+              publicPath: `/forms/${currentBusinessId}/${item.id}`,
+              submissions: 0,
+            },
+            ...value.leadForms,
+          ],
+        };
+      if (item.libraryType === "category")
+        return {
+          ...value,
+          businessHomeKit: {
+            ...value.businessHomeKit,
+            categories: value.businessHomeKit.categories.includes(title)
+              ? value.businessHomeKit.categories
+              : [...value.businessHomeKit.categories, title],
+            updatedAt: now,
+          },
+        };
+      if (
+        ["term", "footer", "payment_instruction", "approval_preset"].includes(
+          item.libraryType,
+        )
+      )
+        return {
+          ...value,
+          businessAssets: [
+            {
+              id: `${currentBusinessId}-${item.id}-${Date.now()}`,
+              businessProfileId: currentBusinessId,
+              assetType: item.libraryType,
+              title,
+              description: item.description,
+              fileIds: [],
+              tags: item.industryTags,
+              status: "Ready",
+              pinned: false,
+              createdAt: now,
+              updatedAt: now,
+              archived: false,
+            },
+            ...value.businessAssets,
+          ],
+        };
+      return {
+        ...value,
+        templates: [
+          {
+            id: `${currentBusinessId}-${item.id}-${Date.now()}`,
+            businessId: currentBusinessId,
+            name: title,
+            type: item.libraryType.replaceAll("_", " "),
+          },
+          ...value.templates,
+        ],
+      };
+    });
+    setNotice(
+      `${item.title} saved to ${currentBusiness.name}. Existing items were not overwritten.`,
+    );
+  };
+
+  const saveProject: AppStateValue["saveProject"] = (project) => {
+    const id = `${currentBusinessId}-project-${Date.now()}`;
+    const now = new Date().toISOString();
+    updateWorkspace((value) => ({
+      ...value,
+      projects: [
+        {
+          ...project,
+          id,
+          businessId: currentBusinessId,
+          fileIds: [],
+          estimateIds: [],
+          invoiceIds: [],
+          changeOrderIds: [],
+          progressInvoiceIds: [],
+          lastActivity: "Just now",
+          archived: false,
+          createdAt: now,
+          updatedAt: now,
+        },
+        ...value.projects,
+      ],
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: "Project created",
+          detail: project.name,
+          occurredAt: "Just now",
+          tone: "success",
+          type: "project.created",
+          relatedRecordType: "project",
+          relatedRecordId: id,
+          deepLinkRoute: "customers",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice("Project saved.");
+    return id;
+  };
+
+  const createInvoiceFromAcceptedEstimate: AppStateValue["createInvoiceFromAcceptedEstimate"] =
+    (estimateId, label, amount, sourceLineItemIds = []) => {
+      const estimate = workspace.estimates.find(
+        (item) => item.id === estimateId,
+      );
+      if (!estimate) return false;
+      const validation = validateInvoiceAgainstAcceptedScope({
+        estimate,
+        changeOrders: workspace.changeOrders,
+        invoices: workspace.invoices,
+        proposedAmount: amount,
+        sourceLineItemIds,
+      });
+      if (!validation.valid) {
+        setNotice(validation.message);
+        return false;
+      }
+      const number = `#INV-${workspace.invoices.length + 1}`;
+      updateWorkspace((value) => ({
+        ...value,
+        invoices: [
+          {
+            id: `${currentBusinessId}-invoice-${Date.now()}`,
+            businessId: currentBusinessId,
+            estimateId,
+            sourceLineItemIds,
+            number,
+            customerId: estimate.customerId,
+            status: "Draft",
+            total: amount,
+            amountPaid: 0,
+            dueDate: new Date(Date.now() + 14 * 86400000)
+              .toISOString()
+              .slice(0, 10),
+            payments: [],
+          },
+          ...value.invoices,
+        ],
+        activity: [
+          {
+            id: `${Date.now()}`,
+            businessId: currentBusinessId,
+            label: `${label} created from accepted estimate`,
+            detail: `${number} · $${amount.toLocaleString()} within approved scope`,
+            occurredAt: "Just now",
+            tone: "info",
+            type: "invoice.created",
+          },
+          ...value.activity,
+        ],
+      }));
+      setNotice(
+        `${label} created as ${number}. The accepted estimate remains locked.`,
+      );
+      return true;
+    };
+
+  const applyKit: AppStateValue["applyKit"] = (
+    kit,
+    selectedSections,
+    duplicatePolicy = "Keep Both",
+  ) => {
+    if (
+      workspace.templates.some(
+        (item) => item.sourceKitId === kit.id && item.type === "Kit marker",
+      )
+    ) {
+      setNotice(`${kit.name} is already applied to this business.`);
+      return;
+    }
+    const selected = new Set(selectedSections);
+    updateWorkspace((value) => ({
+      ...value,
+      templates: [
+        ...(duplicatePolicy === "Replace Existing"
+          ? value.templates.filter(
+              (item) =>
+                ![
+                  ...kit.estimateTemplates,
+                  ...kit.invoiceTemplates,
+                  ...kit.progressChangeTemplates,
+                ].some(
+                  (name) => name.toLowerCase() === item.name.toLowerCase(),
+                ),
+            )
+          : value.templates),
+        ...buildKitTemplates(
+          kit,
+          selected,
+          value.templates,
+          currentBusinessId,
+          duplicatePolicy,
+        ),
+        {
+          id: `${currentBusinessId}-${kit.id}-marker`,
+          businessId: currentBusinessId,
+          name: `${kit.name} applied`,
+          type: "Kit marker",
+          sourceKitId: kit.id,
+        },
+      ],
+      itemBank: selected.has("suggestedServices")
+        ? [
+            ...(duplicatePolicy === "Replace Existing"
+              ? value.itemBank.filter(
+                  (item) =>
+                    !kit.suggestedServices.some(
+                      (name) => name.toLowerCase() === item.name.toLowerCase(),
+                    ),
+                )
+              : value.itemBank),
+            ...kit.suggestedServices
+              .filter(
+                (name) =>
+                  duplicatePolicy !== "Skip" ||
+                  !value.itemBank.some(
+                    (item) => item.name.toLowerCase() === name.toLowerCase(),
+                  ),
+              )
+              .map((originalName, index) => {
+                const duplicate = value.itemBank.some(
+                  (item) =>
+                    item.name.toLowerCase() === originalName.toLowerCase(),
+                );
+                const name =
+                  duplicate &&
+                  (duplicatePolicy === "Keep Both" ||
+                    duplicatePolicy === "Rename New Item")
+                    ? `${originalName} Copy`
+                    : originalName;
+                return {
+                  id: `${currentBusinessId}-${kit.id}-bank-${index}`,
+                  businessProfileId: currentBusinessId,
+                  name,
+                  description: `${name} starter from ${kit.name}.`,
+                  customerDescription: name,
+                  category: "Services",
+                  unit: "each",
+                  defaultQuantity: 1,
+                  defaultRate: 0,
+                  taxable: false,
+                  lastUsed: "Not used yet",
+                  source: "Starter Kit" as const,
+                };
+              }),
+          ]
+        : value.itemBank,
+      businessAssets: selected.has("suggestedTerms")
+        ? [
+            ...value.businessAssets,
+            ...kit.suggestedTerms
+              .filter(
+                (title) =>
+                  !value.businessAssets.some(
+                    (asset) =>
+                      asset.title.toLowerCase() === title.toLowerCase(),
+                  ),
+              )
+              .map((title, index) => ({
+                id: `${currentBusinessId}-${kit.id}-term-${index}`,
+                businessProfileId: currentBusinessId,
+                assetType: "terms",
+                title,
+                description: title,
+                fileIds: [],
+                tags: ["starter kit", "terms"],
+                status: "Ready",
+                pinned: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                archived: false,
+              })),
+          ]
+        : value.businessAssets,
+      businessHomeKit: {
+        ...value.businessHomeKit,
+        itemBankIds: selected.has("suggestedServices")
+          ? [
+              ...value.businessHomeKit.itemBankIds,
+              ...kit.suggestedServices
+                .filter(
+                  (name) =>
+                    !value.itemBank.some(
+                      (item) => item.name.toLowerCase() === name.toLowerCase(),
+                    ),
+                )
+                .map(
+                  (_, index) => `${currentBusinessId}-${kit.id}-bank-${index}`,
+                ),
+            ]
+          : value.businessHomeKit.itemBankIds,
+        categories:
+          selected.has("suggestedServices") &&
+          !value.businessHomeKit.categories.includes("Services")
+            ? [...value.businessHomeKit.categories, "Services"]
+            : value.businessHomeKit.categories,
+        updatedAt: new Date().toISOString(),
+      },
+      leadForms: selected.has("leadForms")
+        ? [
+            ...value.leadForms,
+            ...kit.leadForms
+              .filter(
+                (name) => !value.leadForms.some((item) => item.name === name),
+              )
+              .map((name, index) => ({
+                id: `${currentBusinessId}-${kit.id}-form-${index}`,
+                businessId: currentBusinessId,
+                name,
+                publicPath: `/forms/${currentBusinessId}/${kit.id}/${index}`,
+                submissions: 0,
+              })),
+          ]
+        : value.leadForms,
+      qrCodes: selected.has("qrStarters")
+        ? [
+            ...value.qrCodes,
+            ...kit.qrStarters
+              .filter(
+                (name) => !value.qrCodes.some((item) => item.name === name),
+              )
+              .map((name, index) => ({
+                id: `${currentBusinessId}-${kit.id}-qr-${index}`,
+                businessId: currentBusinessId,
+                name,
+                type: "Starter",
+                url: "",
+                scans: 0,
+              })),
+          ]
+        : value.qrCodes,
+      files: selected.has("suggestedFolders")
+        ? [
+            ...value.files,
+            ...kit.suggestedFolders
+              .filter((name) => !value.files.some((item) => item.name === name))
+              .map((name, index) => ({
+                id: `${currentBusinessId}-${kit.id}-folder-${index}`,
+                businessId: currentBusinessId,
+                name,
+                type: "folder",
+                visibility: "Internal" as const,
+              })),
+          ]
+        : value.files,
+      setupTasks: selected.has("setupChecklist")
+        ? [
+            ...value.setupTasks,
+            ...kit.setupChecklist
+              .filter(
+                (label) =>
+                  !value.setupTasks.some((item) => item.label === label),
+              )
+              .map((label, index) => ({
+                id: `${currentBusinessId}-${kit.id}-setup-${index}`,
+                businessId: currentBusinessId,
+                label,
+                complete: false,
+              })),
+          ]
+        : value.setupTasks,
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: `${kit.name} applied`,
+          detail:
+            "Starter items were added. Existing records were not changed.",
+          occurredAt: "Just now",
+          tone: "success",
+          type: "kit.applied",
+        },
+        ...value.activity,
+      ],
+    }));
+    const selectedItemCount = selectedSections.reduce(
+      (sum, key) =>
+        sum +
+        (Array.isArray(kit[key])
+          ? (kit[key] as string[]).length
+          : kit[key]
+            ? 1
+            : 0),
+      0,
+    );
+    setNotice(
+      `${kit.name} added ${selectedItemCount} selected starter items. Existing names were skipped; no records were overwritten.`,
+    );
+  };
+
+  const createProtectedFollowUp = (
+    kind: "revision" | "change-order" | "duplicate",
+  ) => {
+    const estimate = workspace.estimates.find(
+      (item) => item.id === selectedEstimateId,
+    );
+    if (!estimate) return;
+    const labels = {
+      revision: "Revision created for reapproval",
+      "change-order": "Change order created",
+      duplicate: "New estimate copy created",
+    };
+    updateWorkspace((value) => {
+      if (kind === "change-order") {
+        return {
+          ...value,
+          changeOrders: [
+            ...value.changeOrders,
+            {
+              id: `${Date.now()}`,
+              businessId: currentBusinessId,
+              number: `#CO-${estimate.number.replace("#", "")}-${value.changeOrders.length + 1}`,
+              estimateId: estimate.id,
+              reason: "New tracked change",
+              amount: 0,
+              status: "Draft",
+            },
+          ],
+          activity: [
+            {
+              id: `${Date.now()}`,
+              businessId: currentBusinessId,
+              label: labels[kind],
+              detail: `${estimate.number} remains locked`,
+              occurredAt: "Just now",
+              tone: "info",
+              type: "change-order.created",
+            },
+            ...value.activity,
+          ],
+        };
+      }
+      const copy: Estimate = {
+        ...estimate,
+        id: `${estimate.id}-${kind}-${Date.now()}`,
+        number: `#${1043 + value.estimates.length}`,
+        status: "Draft",
+        approvalToken: `${currentBusinessId}-${Date.now()}`,
+        versions: [createEstimateVersion(estimate, "Draft", labels[kind])],
+      };
+      return {
+        ...value,
+        estimates: [...value.estimates, copy],
+        activity: [
+          {
+            id: `${Date.now()}`,
+            businessId: currentBusinessId,
+            label: labels[kind],
+            detail: `Protected ${estimate.number} was not changed`,
+            occurredAt: "Just now",
+            tone: "info",
+            type: `estimate.${kind}`,
+          },
+          ...value.activity,
+        ],
+      };
+    });
+    setNotice(`${labels[kind]}. The accepted version stays locked.`);
+  };
+
+  const submitHelpRequest: AppStateValue["submitHelpRequest"] = (request) => {
+    const requestId = `help-${Date.now()}`;
+    const uploadedFiles = request.fileNames.map((name, index) => ({
+      id: `${requestId}-file-${index + 1}`,
+      businessId: currentBusinessId,
+      name,
+      type: name.toLowerCase().endsWith(".pdf")
+        ? "application/pdf"
+        : "application/octet-stream",
+      visibility: "Internal" as const,
+    }));
+    const now = new Date().toISOString();
+    updateWorkspace((value) => ({
+      ...value,
+      helpRequests: [
+        {
+          ...request,
+          id: requestId,
+          businessId: currentBusinessId,
+          status: "Request Received",
+          uploadedFileIds: uploadedFiles.map((file) => file.id),
+          quoteStatus: request.quoteStatus ?? "Waiting Review",
+          timeline: request.timeline ?? [
+            {
+              id: `${requestId}-timeline-1`,
+              helpRequestId: requestId,
+              type: "submitted",
+              title: "Request submitted",
+              message: `${request.fileNames.length} file${request.fileNames.length === 1 ? "" : "s"} attached`,
+              createdAt: now,
+              createdBy: "User",
+            },
+          ],
+          messages: request.messages ?? [
+            {
+              id: `${requestId}-message-1`,
+              senderType: "System",
+              message:
+                "Start Here will review this request before any larger work begins.",
+              createdAt: now,
+            },
+          ],
+          updatedAt: now,
+        },
+        ...value.helpRequests,
+      ],
+      files: [...uploadedFiles, ...value.files],
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: "Help request submitted",
+          detail: "Start Here will review it before any larger work or charge.",
+          occurredAt: "Just now",
+          tone: "info",
+          type: "help.submitted",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice(
+      "Request received. Start Here will review it before any larger work begins.",
+    );
+    setSelectedHelpRequestId(requestId);
+    return requestId;
+  };
+
+  const handleHelpRequestAction = (requestId: string, action: string) => {
+    const now = new Date().toISOString();
+    updateWorkspace((value) => {
+      const request = value.helpRequests.find((item) => item.id === requestId);
+      if (!request) return value;
+      const createsFile = /Upload|Save to File Vault|Download Final/i.test(
+        action,
+      );
+      const fileId = `${requestId}-action-file-${Date.now()}`;
+      const createsAsset = action === "Save to My Business Kit";
+      const createsWorkshop = action === "Use in Create";
+      const nextStatus =
+        action === "Approve Quote"
+          ? "In Progress"
+          : action === "Decline Quote"
+            ? "Canceled"
+            : action === "Approve"
+              ? "Completed"
+              : action === "Request Revision"
+                ? "Revision Requested"
+                : request.status;
+      const assetId = `${requestId}-asset-${Date.now()}`;
+      const workshopId = `${requestId}-creation-${Date.now()}`;
+      return {
+        ...value,
+        files: createsFile
+          ? [
+              {
+                id: fileId,
+                businessId: currentBusinessId,
+                name: /Upload/i.test(action)
+                  ? "additional-help-file.mock"
+                  : `${request.type.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-final.mock`,
+                type: "application/octet-stream",
+                visibility: "Internal",
+              },
+              ...value.files,
+            ]
+          : value.files,
+        businessAssets: createsAsset
+          ? [
+              {
+                id: assetId,
+                businessProfileId: currentBusinessId,
+                assetType: request.serviceKey?.includes("logo")
+                  ? "logo"
+                  : request.serviceKey?.includes("template")
+                    ? "document_style"
+                    : request.serviceKey?.includes("qr")
+                      ? "qr_code"
+                      : "file",
+                title: `${request.type} final asset`,
+                description: `Created from Help Request ${request.id}`,
+                fileIds: request.finalFileIds ?? request.uploadedFileIds ?? [],
+                tags: ["help request"],
+                status: "Ready",
+                pinned: false,
+                createdAt: now,
+                updatedAt: now,
+                archived: false,
+              },
+              ...value.businessAssets,
+            ]
+          : value.businessAssets,
+        workshopItems: createsWorkshop
+          ? [
+              {
+                id: workshopId,
+                businessProfileId: currentBusinessId,
+                itemType: request.serviceKey?.includes("qr")
+                  ? "qr_code"
+                  : request.serviceKey?.includes("business_card")
+                    ? "business_card"
+                    : request.serviceKey?.includes("flyer")
+                      ? "flyer"
+                      : "custom_template",
+                title: `${request.type} result`,
+                description: `Created from Help Request ${request.id}`,
+                status: "Ready",
+                createdAt: now,
+                updatedAt: now,
+                createdFrom: "Help Request",
+                fileAssetIds:
+                  request.finalFileIds ?? request.uploadedFileIds ?? [],
+                qrCodeIds: [],
+                socialPostIds: [],
+                tags: ["Help Request"],
+                exportFormats: [],
+                isTemplate: false,
+                archived: false,
+                activityHistory: [
+                  {
+                    id: `${workshopId}-activity`,
+                    label: "Saved from Help Request",
+                    occurredAt: "Just now",
+                  },
+                ],
+              },
+              ...value.workshopItems,
+            ]
+          : value.workshopItems,
+        helpRequests: value.helpRequests.map((item) =>
+          item.id === requestId
+            ? {
+                ...item,
+                status: nextStatus,
+                fileNames: createsFile
+                  ? [
+                      ...item.fileNames,
+                      /Upload/i.test(action)
+                        ? "additional-help-file.mock"
+                        : "final-work.mock",
+                    ]
+                  : item.fileNames,
+                uploadedFileIds: createsFile
+                  ? [...(item.uploadedFileIds ?? []), fileId]
+                  : item.uploadedFileIds,
+                resultingBusinessAssetIds: createsAsset
+                  ? [...(item.resultingBusinessAssetIds ?? []), assetId]
+                  : item.resultingBusinessAssetIds,
+                resultingWorkshopItemIds: createsWorkshop
+                  ? [...(item.resultingWorkshopItemIds ?? []), workshopId]
+                  : item.resultingWorkshopItemIds,
+                quoteStatus:
+                  action === "Approve Quote"
+                    ? "Approved"
+                    : action === "Decline Quote"
+                      ? "Rejected"
+                      : item.quoteStatus,
+                timeline: [
+                  {
+                    id: `${requestId}-timeline-${Date.now()}`,
+                    helpRequestId: requestId,
+                    type: action.toLowerCase().replaceAll(" ", "_"),
+                    title: action,
+                    createdAt: now,
+                    createdBy: "User",
+                    fileIds: createsFile ? [fileId] : undefined,
+                  },
+                  ...(item.timeline ?? []),
+                ],
+                messages: /Question|Note|Reply|Info/i.test(action)
+                  ? [
+                      {
+                        id: `${requestId}-message-${Date.now()}`,
+                        senderType: "User",
+                        message: `${action} added from the request detail page.`,
+                        createdAt: now,
+                      },
+                      ...(item.messages ?? []),
+                    ]
+                  : item.messages,
+                updatedAt: now,
+              }
+            : item,
+        ),
+      };
+    });
+    setNotice(`${action} recorded for this help project.`);
+  };
+
+  const respondToEstimate: AppStateValue["respondToEstimate"] = (
+    estimateId,
+    action,
+    note,
+  ) => {
+    const responseEstimate = workspace.estimates.find(
+      (item) => item.id === estimateId,
+    );
+    const noteRequired =
+      action === "reject"
+        ? (responseEstimate?.approvalSettings?.requireRejectNote ?? true)
+        : action === "request-changes"
+          ? (responseEstimate?.approvalSettings?.requireChangeRequestNote ??
+            true)
+          : false;
+    if (noteRequired && !note.trim()) return false;
+    const status =
+      action === "approve"
+        ? "Accepted"
+        : action === "reject"
+          ? "Rejected"
+          : "Changes Requested";
+    updateWorkspace((value) => ({
+      ...value,
+      estimates: value.estimates.map((estimate) =>
+        estimate.id === estimateId
+          ? {
+              ...estimate,
+              status,
+              versions: [
+                createEstimateVersion(
+                  estimate,
+                  status,
+                  `Customer ${status.toLowerCase()}`,
+                  note.trim() || undefined,
+                ),
+                ...estimate.versions,
+              ],
+            }
+          : estimate,
+      ),
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: `Estimate ${status.toLowerCase()}`,
+          detail: note || "Customer approved the protected version",
+          occurredAt: "Just now",
+          tone:
+            action === "approve"
+              ? "success"
+              : action === "reject"
+                ? "danger"
+                : "warning",
+          type: `estimate.${action}`,
+        },
+        ...value.activity,
+      ],
+    }));
+    return true;
+  };
+
+  const recordPayment: AppStateValue["recordPayment"] = (
+    invoiceId,
+    amount,
+    method,
+  ) => {
+    if (!(amount > 0)) return;
+    updateWorkspace((value) => ({
+      ...value,
+      invoices: value.invoices.map((invoice) => {
+        if (invoice.id !== invoiceId || invoice.status === "Paid")
+          return invoice;
+        const amountPaid = Math.min(invoice.total, invoice.amountPaid + amount);
+        return {
+          ...invoice,
+          amountPaid,
+          status: amountPaid >= invoice.total ? "Paid" : "Partially Paid",
+          payments: [
+            ...invoice.payments,
+            {
+              id: `payment-${Date.now()}`,
+              date: new Date().toISOString().slice(0, 10),
+              amount,
+              method,
+              notes: "Mock payment record",
+            },
+          ],
+        };
+      }),
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: "Payment recorded",
+          detail: `${method} payment saved in mock history`,
+          occurredAt: "Just now",
+          tone: "success",
+          type: "payment.recorded",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice(
+      "Payment recorded in this mock workspace. No payment provider was charged.",
+    );
+  };
+
+  const value = useMemo<AppStateValue>(
+    () => ({
+      activeBusinessProfileId: currentBusinessId,
+      currentBusinessId,
+      currentBusiness,
+      profiles: businessProfiles,
+      workspace,
+      currentScreen,
+      selectedEstimateId,
+      selectedInvoiceId,
+      selectedCustomerId,
+      selectedLeadId,
+      selectedTemplateId,
+      selectedAssetId,
+      selectedCreateTask,
+      selectedHelpService,
+      selectedHelpRequestId,
+      selectedGuideKey,
+      notice,
+      unsavedWorkLabel,
+      guidedDraft,
+      scheduleContext,
+      setCurrentScreen,
+      switchBusiness,
+      markUnsavedWork: (label: string, save?: () => void) => {
+        setUnsavedWorkLabel(label);
+        unsavedSaverRef.current = save;
+      },
+      clearUnsavedWork: () => {
+        setUnsavedWorkLabel(undefined);
+        unsavedSaverRef.current = undefined;
+      },
+      saveUnsavedWork: () => {
+        unsavedSaverRef.current?.();
+        setUnsavedWorkLabel(undefined);
+        unsavedSaverRef.current = undefined;
+      },
+      openEstimate,
+      openInvoice,
+      openEstimateBuilder,
+      openInvoiceBuilder,
+      openCustomer,
+      openLead,
+      convertLeadToCustomer,
+      openSchedule,
+      scheduleEvent,
+      completeMockImport,
+      recordExport,
+      updateSuggestion,
+      openActivity,
+      openTemplate,
+      openDocumentStyleEditor,
+      openAsset,
+      toggleAssetPin,
+      completeGuidedWizard,
+      clearGuidedDraft: () => setGuidedDraft(undefined),
+      createCustomer,
+      createLead,
+      openCreateTask,
+      openGuidedBuilder,
+      openHelpRequest,
+      openHelpRequestDetail,
+      openHelpGuide,
+      createQrCode,
+      saveWorkshopItem,
+      duplicateWorkshopItem,
+      archiveWorkshopItem,
+      saveWorkshopItemAsTemplate,
+      exportWorkshopItem,
+      recordWorkshopAction,
+      saveEstimateFromBuilder,
+      saveEstimateAsTemplate,
+      saveInvoiceFromBuilder,
+      saveDocumentTemplate,
+      saveDocumentStyle,
+      saveItemBankItem,
+      deleteItemBankItem,
+      updateBusinessKitCategories,
+      saveGlobalLibraryItem,
+      saveProject,
+      createInvoiceFromAcceptedEstimate,
+      applyKit,
+      createProtectedFollowUp,
+      submitHelpRequest,
+      handleHelpRequestAction,
+      respondToEstimate,
+      recordPayment,
+      clearNotice: () => setNotice(undefined),
+    }),
+    [
+      currentBusinessId,
+      currentBusiness,
+      workspace,
+      currentScreen,
+      selectedEstimateId,
+      selectedInvoiceId,
+      selectedCustomerId,
+      selectedLeadId,
+      selectedTemplateId,
+      selectedAssetId,
+      selectedCreateTask,
+      selectedHelpService,
+      selectedHelpRequestId,
+      selectedGuideKey,
+      notice,
+      unsavedWorkLabel,
+      guidedDraft,
+      scheduleContext,
+    ],
+  );
+
+  return (
+    <AppStateContext.Provider value={value}>
+      {children}
+    </AppStateContext.Provider>
+  );
+}
+
+export function useAppState() {
+  const state = useContext(AppStateContext);
+  if (!state)
+    throw new Error("useAppState must be used inside AppStateProvider");
+  return state;
+}

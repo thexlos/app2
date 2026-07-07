@@ -1,0 +1,24 @@
+.integration-list {
+  display: grid;
+  gap: 12px;
+}
+.integration-list article {
+  box-shadow: none;
+}
+.integration-list .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+@media (min-width: 760px) {
+  .integration-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.integration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.integration-actions .btn {
+  flex: 1;
+}

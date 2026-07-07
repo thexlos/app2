@@ -1,0 +1,135 @@
+.create-feature {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: white;
+  background: var(--color-primary);
+  text-align: left;
+}
+.create-feature .icon-box {
+  color: white;
+  background: rgba(255, 255, 255, 0.18);
+}
+.create-feature strong,
+.create-feature small {
+  display: block;
+}
+.create-feature small {
+  margin-top: 4px;
+  color: #e5ebff;
+  line-height: 1.35;
+}
+.utility-links {
+  border-top: 1px solid var(--color-border);
+}
+.utility-links button {
+  width: 100%;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-primary);
+  background: transparent;
+  font-weight: 750;
+}
+.workshop-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.workshop-card {
+  width: 100%;
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 15px;
+  color: var(--color-text);
+  background: white;
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+.workshop-card strong,
+.workshop-card small {
+  display: block;
+}
+.workshop-card small {
+  margin-top: 5px;
+  color: var(--color-muted);
+  line-height: 1.35;
+}
+.workshop-card > svg {
+  color: var(--color-muted);
+}
+.creation-hub-card {
+  padding: 16px;
+  border: 1px solid #bfcdf0;
+  border-radius: 17px;
+  background: linear-gradient(145deg, #f2f5ff, #ffffff);
+  box-shadow: var(--shadow-sm);
+}
+.creation-hub-card h2 {
+  margin: 0;
+  font-size: 1.04rem;
+}
+.creation-hub-card p {
+  margin: 4px 0 0;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+.creation-hub-actions {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+.creation-hub-actions button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--color-primary);
+  border-radius: 10px;
+  color: var(--color-primary);
+  background: white;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+.creation-hub-actions button:first-child {
+  color: white;
+  background: var(--color-primary);
+}
+.utility-links button span span strong,
+.utility-links button span span small {
+  display: block;
+  text-align: left;
+}
+.utility-links button span span small {
+  margin-top: 2px;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+@media (min-width: 600px) {
+  .creation-hub-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 680px) {
+  .workshop-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .workshop-card {
+    min-height: 108px;
+  }
+}

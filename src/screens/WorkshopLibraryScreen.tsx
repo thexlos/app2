@@ -1,0 +1,402 @@
+import {
+  Archive,
+  Copy,
+  Download,
+  Edit3,
+  ExternalLink,
+  FileImage,
+  FolderOpen,
+  Plus,
+  QrCode,
+  Search,
+  Send,
+  Sparkles,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { DetailHeader } from "../components/common/ScreenHeader";
+import { StatusBadge } from "../components/common/StatusBadge";
+import { useAppState } from "../state/AppState";
+import type { WorkshopItem, WorkshopItemType } from "../types/models";
+
+const filters = [
+  "All",
+  "Flyers",
+  "QR Codes",
+  "Posts",
+  "Business Cards",
+  "Promotions",
+  "Lead Forms",
+  "Review Tools",
+  "Menus / Price Sheets",
+  "Print Items",
+  "Event Promos",
+  "Templates",
+  "Drafts",
+  "Archived",
+] as const;
+const filterTypes: Partial<
+  Record<(typeof filters)[number], WorkshopItemType[]>
+> = {
+  Flyers: ["flyer"],
+  "QR Codes": ["qr_code"],
+  Posts: ["social_post"],
+  "Business Cards": ["business_card"],
+  Promotions: ["promotion"],
+  "Lead Forms": ["lead_form"],
+  "Review Tools": ["review_booster"],
+  "Menus / Price Sheets": ["menu_price_sheet"],
+  "Print Items": ["yard_sign", "door_hanger", "vistaprint_print_setup"],
+  "Event Promos": ["event_promo"],
+  Templates: ["estimate_template", "invoice_template", "custom_template"],
+};
+
+const itemTask: Partial<Record<WorkshopItemType, string>> = {
+  flyer: "Make a Flyer",
+  qr_code: "Create QR Code",
+  social_post: "Create Post",
+  business_card: "Business Cards",
+  promotion: "Send Promotion",
+  lead_form: "Lead Forms",
+  review_booster: "Review Booster",
+  menu_price_sheet: "Menu / Price Sheet",
+  yard_sign: "Yard Sign",
+  door_hanger: "Door Hanger",
+  event_promo: "Event Promo",
+  canva_help_item: "Canva Help",
+  vistaprint_print_setup: "VistaPrint / Print Setup Help",
+};
+
+function actionsFor(item: WorkshopItem) {
+  if (item.archived) return ["Duplicate", "Use Again"];
+  if (item.itemType === "qr_code")
+    return [
+      "Open",
+      "Test Link",
+      "Download PNG",
+      "Download PDF Sign",
+      "Add to Flyer",
+      "Add to Business Card",
+      "Send to Customers",
+      "Archive",
+    ];
+  if (item.itemType === "flyer")
+    return [
+      "Open",
+      "Edit",
+      "Duplicate",
+      "Check Design",
+      "Download",
+      "Send to Customers",
+      "Post to Social",
+      "Save as Template",
+      "Request Help",
+      "Archive",
+    ];
+  if (item.itemType === "business_card")
+    return [
+      "Open",
+      "Edit",
+      "Duplicate",
+      "Check Print",
+      "Download PDF Print",
+      "Save as Template",
+      "Request VistaPrint Setup Help",
+      "Archive",
+    ];
+  return item.status === "Draft"
+    ? ["Continue Editing", "Duplicate", "Archive"]
+    : [
+        "Open",
+        "Edit",
+        "Duplicate",
+        "Use Again",
+        "Download",
+        "Save as Template",
+        "Request Help",
+        "Archive",
+      ];
+}
+
+function ItemIcon({ type }: { type: WorkshopItemType }) {
+  if (type === "qr_code") return <QrCode size={28} />;
+  if (type === "flyer" || type === "business_card")
+    return <FileImage size={28} />;
+  return <Sparkles size={28} />;
+}
+
+export function WorkshopLibraryScreen() {
+  const {
+    workspace,
+    setCurrentScreen,
+    openCreateTask,
+    openHelpRequest,
+    duplicateWorkshopItem,
+    archiveWorkshopItem,
+    saveWorkshopItemAsTemplate,
+    exportWorkshopItem,
+    recordWorkshopAction,
+  } = useAppState();
+  const [filter, setFilter] = useState<(typeof filters)[number]>("All");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("Recently updated");
+  const [message, setMessage] = useState("");
+
+  const items = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    const filtered = workspace.workshopItems.filter((item) => {
+      if (filter === "Archived" ? !item.archived : item.archived) return false;
+      if (filter === "Drafts" && item.status !== "Draft") return false;
+      if (filterTypes[filter] && !filterTypes[filter]!.includes(item.itemType))
+        return false;
+      if (!normalized) return true;
+      return [
+        item.title,
+        item.description,
+        item.itemType,
+        item.status,
+        ...item.tags,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalized);
+    });
+    return [...filtered].sort((a, b) =>
+      sort === "A to Z"
+        ? a.title.localeCompare(b.title)
+        : sort === "Type"
+          ? a.itemType.localeCompare(b.itemType)
+          : sort === "Status"
+            ? a.status.localeCompare(b.status)
+            : sort === "Recently created"
+              ? b.createdAt.localeCompare(a.createdAt)
+              : b.updatedAt.localeCompare(a.updatedAt),
+    );
+  }, [workspace.workshopItems, filter, query, sort]);
+
+  const openItem = (item: WorkshopItem) => {
+    const task = itemTask[item.itemType];
+    if (!task) {
+      setMessage(
+        "This template opens from the Money Templates area in the next step.",
+      );
+      return;
+    }
+    openCreateTask(task);
+    setCurrentScreen("create-builder");
+  };
+
+  const runAction = (item: WorkshopItem, action: string) => {
+    if (["Open", "Edit", "Continue Editing"].includes(action)) {
+      openItem(item);
+      return;
+    }
+    if (["Duplicate", "Use Again"].includes(action)) {
+      duplicateWorkshopItem(item.id);
+      return;
+    }
+    if (action === "Archive") {
+      archiveWorkshopItem(item.id);
+      return;
+    }
+    if (action === "Save as Template") {
+      saveWorkshopItemAsTemplate(item.id);
+      return;
+    }
+    if (/Request/.test(action)) {
+      openHelpRequest(item.title);
+      return;
+    }
+    if (action === "Add to Flyer") {
+      openCreateTask("Make a Flyer");
+      return;
+    }
+    if (action === "Add to Business Card") {
+      openCreateTask("Business Cards");
+      return;
+    }
+    if (/Download/.test(action)) {
+      exportWorkshopItem(item.id, action);
+      return;
+    }
+    recordWorkshopAction(item.id, action);
+    setMessage(
+      `${action} is prepared as the next mock workflow for “${item.title}.”`,
+    );
+  };
+
+  return (
+    <section className="screen screen--detail">
+      <DetailHeader title="My Creations" backTo="create" />
+      <div className="section">
+        <h1 className="page-title">My Creations</h1>
+        <p className="page-subtitle">
+          Find, reuse, edit, send, post, or download anything you made.
+        </p>
+      </div>
+      <div className="library-toolbar section">
+        <div className="search-wrap">
+          <Search size={20} />
+          <input
+            className="input"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search creations"
+            aria-label="Search creations"
+          />
+        </div>
+        <select
+          className="select"
+          value={sort}
+          onChange={(event) => setSort(event.target.value)}
+          aria-label="Sort creations"
+        >
+          <option>Recently updated</option>
+          <option>Recently created</option>
+          <option>Last used</option>
+          <option>Type</option>
+          <option>Status</option>
+          <option>A to Z</option>
+        </select>
+      </div>
+      <div className="library-filters" aria-label="Creation filters">
+        {filters.map((value) => (
+          <button
+            key={value}
+            className={
+              filter === value
+                ? "filter-chip filter-chip--active"
+                : "filter-chip"
+            }
+            onClick={() => setFilter(value)}
+          >
+            {value}
+          </button>
+        ))}
+      </div>
+      {message && (
+        <div className="alert alert--info section">
+          <ExternalLink size={19} />
+          <strong>{message}</strong>
+        </div>
+      )}
+      {items.length === 0 ? (
+        <div className="library-empty section">
+          <FolderOpen size={42} />
+          <h2>No creations yet</h2>
+          <p>
+            Anything you make in the Workshop will be saved here so you can
+            reuse it later.
+          </p>
+          <div className="modal-actions">
+            <button
+              className="btn btn--primary"
+              onClick={() => setCurrentScreen("create")}
+            >
+              Create Something
+            </button>
+            <button
+              className="btn btn--outline"
+              onClick={() => setCurrentScreen("business-kits")}
+            >
+              Apply Business Kit
+            </button>
+            <button
+              className="btn"
+              onClick={() => setCurrentScreen("file-vault")}
+            >
+              Upload File
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="creation-card-grid section">
+          {items.map((item) => {
+            const actions = actionsFor(item);
+            return (
+              <article className="creation-card" key={item.id}>
+                <div className="creation-card__preview">
+                  <ItemIcon type={item.itemType} />
+                  <StatusBadge
+                    tone={
+                      item.status === "Ready" || item.status === "Approved"
+                        ? "success"
+                        : item.status === "Needs Review"
+                          ? "warning"
+                          : item.status === "Archived"
+                            ? "neutral"
+                            : "info"
+                    }
+                  >
+                    {item.status}
+                  </StatusBadge>
+                </div>
+                <div className="creation-card__body">
+                  <h2>{item.title}</h2>
+                  <p>
+                    {item.itemType.replaceAll("_", " ")} · {item.description}
+                  </p>
+                  <div className="creation-meta">
+                    <span>
+                      Created {new Date(item.createdAt).toLocaleDateString()}
+                    </span>
+                    <span>Last used {item.lastUsedAt ?? "Not yet"}</span>
+                  </div>
+                  <div className="creation-tags">
+                    {item.tags.slice(0, 3).map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
+                  </div>
+                  <div className="creation-quick-actions">
+                    {actions.slice(0, 3).map((action) => (
+                      <button
+                        key={action}
+                        onClick={() => runAction(item, action)}
+                      >
+                        {action === "Duplicate" ? (
+                          <Copy size={16} />
+                        ) : action.includes("Download") ? (
+                          <Download size={16} />
+                        ) : action.includes("Send") ? (
+                          <Send size={16} />
+                        ) : action === "Archive" ? (
+                          <Archive size={16} />
+                        ) : action === "Edit" ||
+                          action === "Continue Editing" ? (
+                          <Edit3 size={16} />
+                        ) : (
+                          <ExternalLink size={16} />
+                        )}
+                        {action}
+                      </button>
+                    ))}
+                  </div>
+                  {actions.length > 3 && (
+                    <details className="creation-more">
+                      <summary>More actions</summary>
+                      <div>
+                        {actions.slice(3).map((action) => (
+                          <button
+                            key={action}
+                            onClick={() => runAction(item, action)}
+                          >
+                            {action}
+                          </button>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+      <button
+        className="library-create-fab"
+        onClick={() => setCurrentScreen("create")}
+      >
+        <Plus size={20} /> Create New
+      </button>
+    </section>
+  );
+}

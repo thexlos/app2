@@ -88,4 +88,3 @@ Mock data resets when the page reloads. Production persistence and authenticatio
 ## Next recommended build step
 
 Add the real backend foundation before any provider integration: authentication, business membership/roles, PostgreSQL persistence, immutable version snapshots, signed public approval links, file storage with scanning, and audit logging. Once those boundaries are tested, connect one provider at a time—QuickBooks read-only import first is the safest candidate.
-

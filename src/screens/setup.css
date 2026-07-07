@@ -1,0 +1,24 @@
+.setup-progress {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e4e9f3;
+}
+.setup-progress div {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+}
+.setup-check {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-muted);
+  background: var(--color-neutral-soft);
+}
+.setup-check--done {
+  color: white;
+  background: var(--color-success);
+}
