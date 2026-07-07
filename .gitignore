@@ -9,5 +9,10 @@ vite.config.d.ts
 .env.*
 !.env.example
 .netlify/
+.vercel/
 app2/
 publish-gitdata/
+
+.vercel
+.env*
+
