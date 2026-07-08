@@ -4,7 +4,8 @@ import { DetailHeader } from "../components/common/ScreenHeader";
 import { useAppState } from "../state/AppState";
 
 export function SetupScreen() {
-  const { currentBusiness, workspace, setCurrentScreen } = useAppState();
+  const { currentBusiness, workspace, setCurrentScreen, toggleSetupTask } =
+    useAppState();
   return (
     <section className="screen screen--detail">
       <DetailHeader title="Business setup" backTo="home" />
@@ -22,7 +23,11 @@ export function SetupScreen() {
       </div>
       <div className="setup-list section">
         {workspace.setupTasks.map((task) => (
-          <button key={task.id} className="list-row">
+          <button
+            key={task.id}
+            className="list-row"
+            onClick={() => toggleSetupTask(task.id)}
+          >
             <span
               className={
                 task.complete ? "setup-check setup-check--done" : "setup-check"

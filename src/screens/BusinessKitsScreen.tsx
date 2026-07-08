@@ -37,7 +37,7 @@ const sectionCount = (kit: BusinessKit, key: KitSectionKey) =>
   Array.isArray(kit[key]) ? (kit[key] as string[]).length : kit[key] ? 1 : 0;
 
 export function BusinessKitsScreen() {
-  const { currentBusiness, workspace, applyKit, setCurrentScreen } =
+  const { currentBusiness, workspace, applyKit, setCurrentScreen, openHelpRequest } =
     useAppState();
   const [preview, setPreview] = useState<BusinessKit>();
   const [confirm, setConfirm] = useState<BusinessKit>();
@@ -181,7 +181,7 @@ export function BusinessKitsScreen() {
       <button
         className="card panel between section"
         style={{ width: "100%", textAlign: "left" }}
-        onClick={() => setCurrentScreen("help")}
+        onClick={() => openHelpRequest("custom_business_kit")}
       >
         <span>
           <strong>Need a custom kit?</strong>

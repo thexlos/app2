@@ -224,24 +224,29 @@ function CustomerApprovalPreview({
             Review Full Document
           </Button>
           {estimate.approvalSettings?.allowPdfDownload && (
-            <Button variant="outline" wide icon={<Download size={18} />}>
+            <Button
+              variant="outline"
+              wide
+              icon={<Download size={18} />}
+              onClick={onDocument}
+            >
               Download PDF
             </Button>
           )}
         </div>
         <div className="public-actions">
-          <button>
+          <button disabled title="Preview only — available on the customer link">
             <Check />
             Approve
           </button>
           {estimate.approvalSettings?.allowRequestChanges && (
-            <button>
+            <button disabled title="Preview only — available on the customer link">
               <FileCheck2 />
               Request Changes
             </button>
           )}
           {estimate.approvalSettings?.allowReject && (
-            <button>
+            <button disabled title="Preview only — available on the customer link">
               <X />
               Reject
             </button>
@@ -782,6 +787,7 @@ export function EstimateBuilderScreen() {
     workspace,
     selectedEstimateId,
     selectedCustomerId,
+    selectedLeadId,
     setCurrentScreen,
     saveEstimateFromBuilder,
     saveEstimateAsTemplate,
@@ -816,6 +822,9 @@ export function EstimateBuilderScreen() {
           : undefined) ??
         selectedEstimate?.customerId),
   );
+  const selectedLead = workspace.leads.find(
+    (item) => item.id === selectedLeadId,
+  );
   const initialEstimate = useMemo(
     () =>
       selectedEstimate
@@ -833,8 +842,10 @@ export function EstimateBuilderScreen() {
                   ]
                 : seed.estimate.sections,
             }
-          : seed.estimate,
-    [selectedEstimate, seed.estimate, guidedDraft],
+          : selectedLead
+            ? { ...seed.estimate, leadId: selectedLead.id }
+            : seed.estimate,
+    [selectedEstimate, seed.estimate, guidedDraft, selectedLead],
   );
   const initialCustomer = useMemo<CustomerForm>(
     () =>
@@ -851,8 +862,19 @@ export function EstimateBuilderScreen() {
               selectedCustomer.jobSiteAddress ?? selectedCustomer.address,
             internalNote: selectedCustomer.notes[0] ?? "",
           }
-        : seed.customer,
-    [selectedCustomer, seed.customer],
+        : selectedLead
+          ? {
+              customerId: "",
+              name: selectedLead.name,
+              businessName: selectedLead.businessName ?? "",
+              phone: selectedLead.phone ?? "",
+              email: selectedLead.email ?? "",
+              billingAddress: selectedLead.address ?? "",
+              jobSiteAddress: selectedLead.address ?? "",
+              internalNote: `Started from lead · ${selectedLead.serviceNeeded}`,
+            }
+          : seed.customer,
+    [selectedCustomer, selectedLead, seed.customer],
   );
   const [estimate, setEstimate] = useState<Estimate>(initialEstimate);
   const [customer, setCustomer] = useState<CustomerForm>(initialCustomer);
@@ -2501,7 +2523,31 @@ export function EstimateBuilderScreen() {
                   >
                     Save Footer as Default
                   </Button>
-                  <Button variant="neutral">Use Saved Footer</Button>
+                  <Button
+                    variant="neutral"
+                    onClick={() =>
+                      setEstimateField("deliverySettings", {
+                        ...(estimate.deliverySettings ?? {
+                          emailMessage: "",
+                          clientSummary: "",
+                          reviewButtonLabel: "Review and Approve",
+                          downloadButtonLabel: "Download PDF",
+                          allowPdfDownload: true,
+                          allowReject: true,
+                          allowChanges: true,
+                          requireApprovalCheckbox: true,
+                          documentTitle: "ESTIMATE",
+                          documentFooter: "",
+                          terms: "",
+                        }),
+                        documentFooter: String(
+                          documentTemplate.footerSettings.footerText ?? "",
+                        ),
+                      })
+                    }
+                  >
+                    Use Saved Footer
+                  </Button>
                 </div>
               </section>
               <details className="approval-settings" open>

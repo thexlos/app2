@@ -866,6 +866,7 @@ export function AssetDetailScreen() {
     selectedAssetId,
     currentBusiness,
     toggleAssetPin,
+    archiveBusinessAsset,
     openCreateTask,
     openHelpRequest,
     setCurrentScreen,
@@ -1038,7 +1039,7 @@ export function AssetDetailScreen() {
         <Button
           variant="ghost"
           icon={<Archive size={17} />}
-          onClick={() => setCurrentScreen("my-business-kit")}
+          onClick={() => archiveBusinessAsset(asset.id)}
         >
           Archive
         </Button>

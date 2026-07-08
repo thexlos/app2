@@ -436,7 +436,14 @@ export interface FileAsset {
   name: string;
   type: string;
   projectId?: Id;
+  customerId?: Id;
+  leadId?: Id;
+  helpRequestId?: Id;
   workshopItemId?: Id;
+  url?: string;
+  pinned?: boolean;
+  archived?: boolean;
+  createdAt?: string;
   visibility: "Internal" | "Customer";
 }
 

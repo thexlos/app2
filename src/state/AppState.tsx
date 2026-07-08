@@ -10,6 +10,7 @@ import { businessProfiles } from "../data/mock/businessProfiles";
 import { initialWorkspaces } from "../data/mock/workspaces";
 import { createEstimateVersion } from "../lib/protectedRecords";
 import { validateInvoiceAgainstAcceptedScope } from "../lib/acceptedEstimateBilling";
+import { resolveActivityTarget } from "../lib/flowRouting";
 import type {
   BusinessKit,
   BusinessWorkspaceData,
@@ -91,6 +92,8 @@ interface AppStateValue {
   selectedLeadId?: string;
   selectedTemplateId?: string;
   selectedAssetId?: string;
+  selectedWorkshopItemId?: string;
+  selectedFileId?: string;
   selectedCreateTask?: string;
   selectedHelpService?: string;
   selectedHelpRequestId?: string;
@@ -116,7 +119,11 @@ interface AppStateValue {
   saveUnsavedWork: () => void;
   openEstimate: (estimateId: string) => void;
   openInvoice: (invoiceId: string) => void;
-  openEstimateBuilder: (customerId?: string, estimateId?: string) => void;
+  openEstimateBuilder: (
+    customerId?: string,
+    estimateId?: string,
+    leadId?: string,
+  ) => void;
   openInvoiceBuilder: (customerId?: string, sourceEstimateId?: string) => void;
   openCustomer: (customerId: string) => void;
   openLead: (leadId: string) => void;
@@ -148,7 +155,28 @@ interface AppStateValue {
   openTemplate: (templateId: string) => void;
   openDocumentStyleEditor: (templateId?: string) => void;
   openAsset: (assetId: string) => void;
+  openWorkshopItem: (itemId: string) => void;
+  openFile: (fileId: string) => void;
   toggleAssetPin: (assetId: string) => void;
+  archiveBusinessAsset: (assetId: string) => void;
+  showNotice: (message: string) => void;
+  addCustomerNote: (customerId: string, note: string) => void;
+  addLeadNote: (leadId: string, note: string) => void;
+  archiveLead: (leadId: string) => void;
+  addFileMetadata: (file: {
+    name: string;
+    type?: string;
+    customerId?: string;
+    leadId?: string;
+    projectId?: string;
+    helpRequestId?: string;
+    workshopItemId?: string;
+    url?: string;
+  }) => string;
+  archiveFile: (fileId: string) => void;
+  pinFileToBusinessKit: (fileId: string) => void;
+  recordIntegrationAction: (provider: string, action: string) => void;
+  toggleSetupTask: (taskId: string) => void;
   completeGuidedWizard: (
     builderId: string,
     sourceTool: string,
@@ -280,7 +308,11 @@ interface AppStateValue {
   submitHelpRequest: (
     request: Omit<HelpRequest, "id" | "businessId" | "status">,
   ) => string;
-  handleHelpRequestAction: (requestId: string, action: string) => void;
+  handleHelpRequestAction: (
+    requestId: string,
+    action: string,
+    detail?: string,
+  ) => void;
   respondToEstimate: (
     estimateId: string,
     action: "approve" | "reject" | "request-changes",
@@ -379,6 +411,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [selectedLeadId, setSelectedLeadId] = useState<string>();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>();
   const [selectedAssetId, setSelectedAssetId] = useState<string>();
+  const [selectedWorkshopItemId, setSelectedWorkshopItemId] =
+    useState<string>();
+  const [selectedFileId, setSelectedFileId] = useState<string>();
   const [selectedCreateTask, setSelectedCreateTask] = useState<string>();
   const [selectedHelpService, setSelectedHelpService] = useState<string>();
   const [selectedHelpRequestId, setSelectedHelpRequestId] = useState<string>();
@@ -413,6 +448,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setSelectedLeadId(undefined);
     setSelectedTemplateId(undefined);
     setSelectedAssetId(undefined);
+    setSelectedWorkshopItemId(undefined);
+    setSelectedFileId(undefined);
+    setSelectedCreateTask(undefined);
+    setSelectedHelpService(undefined);
+    setSelectedHelpRequestId(undefined);
+    setSelectedGuideKey(undefined);
+    setScheduleContext(undefined);
     setGuidedDraft(undefined);
     setCurrentScreen("home");
     setNotice(
@@ -430,9 +472,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setCurrentScreen("money");
   };
 
-  const openEstimateBuilder = (customerId?: string, estimateId?: string) => {
+  const openEstimateBuilder = (
+    customerId?: string,
+    estimateId?: string,
+    leadId?: string,
+  ) => {
     setSelectedEstimateId(estimateId);
     setSelectedCustomerId(customerId);
+    setSelectedLeadId(leadId);
     setCurrentScreen("estimate-builder");
   };
 
@@ -525,6 +572,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           occurredAt: "Just now",
           tone: "success",
           type: "customer.created",
+          relatedRecordType: "customer",
+          relatedRecordId: id,
+          deepLinkRoute: "customer-detail",
         },
         ...value.activity,
       ],
@@ -599,6 +649,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           occurredAt: "Just now",
           tone: "info",
           type: "lead.created",
+          relatedRecordType: "lead",
+          relatedRecordId: id,
+          deepLinkRoute: "lead-detail",
         },
         ...value.activity,
       ],
@@ -765,6 +818,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         },
         ...value.exportHistory,
       ],
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: `${exportType} export prepared`,
+          detail: `${format} · ${markExported ? "marked exported" : "kept as needs export"}`,
+          occurredAt: "Just now",
+          tone: "info",
+          type: "export.prepared",
+          relatedRecordType: "export_history",
+          relatedRecordId: exportId,
+          deepLinkRoute: "sync-center",
+        },
+        ...value.activity,
+      ],
     }));
     setNotice(
       markExported
@@ -801,25 +869,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const openActivity: AppStateValue["openActivity"] = (activityId) => {
     const activity = workspace.activity.find((item) => item.id === activityId);
     if (!activity) return;
-    if (activity.relatedRecordType === "estimate" && activity.relatedRecordId)
-      openEstimate(activity.relatedRecordId);
-    else if (
-      activity.relatedRecordType === "invoice" &&
-      activity.relatedRecordId
-    )
-      openInvoice(activity.relatedRecordId);
-    else if (
-      activity.relatedRecordType === "customer" &&
-      activity.relatedRecordId
-    )
-      openCustomer(activity.relatedRecordId);
-    else if (activity.deepLinkRoute === "workshop-library")
-      setCurrentScreen("workshop-library");
-    else if (activity.deepLinkRoute === "calendar")
-      setCurrentScreen("calendar");
-    else
-      setCurrentScreen(activity.deepLinkRoute === "money" ? "money" : "home");
-    setNotice(`Opened from Recent Activity: ${activity.label}`);
+    const target = resolveActivityTarget(activity);
+    const recordId = activity.relatedRecordId;
+    if (target === "estimate-detail" && recordId) openEstimate(recordId);
+    else if (target === "money" && activity.relatedRecordType === "invoice" && recordId)
+      openInvoice(recordId);
+    else if (target === "customer-detail" && recordId) openCustomer(recordId);
+    else if (target === "lead-detail" && recordId) openLead(recordId);
+    else if (target === "help-request-detail" && recordId)
+      openHelpRequestDetail(recordId);
+    else if (target === "workshop-library" && recordId)
+      openWorkshopItem(recordId);
+    else if (target === "file-vault" && recordId) openFile(recordId);
+    else if (target === "calendar") openSchedule();
+    else setCurrentScreen(target);
+    setNotice(
+      recordId
+        ? `Opened the related ${activity.relatedRecordType?.replaceAll("_", " ") ?? "record"} from Recent Activity.`
+        : `Opened the closest section for “${activity.label}.” The exact record is not linked yet.`,
+    );
   };
 
   const openTemplate = (templateId: string) => {
@@ -836,6 +904,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setCurrentScreen("asset-detail");
   };
 
+  const openWorkshopItem = (itemId: string) => {
+    setSelectedWorkshopItemId(itemId);
+    setCurrentScreen("workshop-library");
+  };
+
+  const openFile = (fileId: string) => {
+    setSelectedFileId(fileId);
+    setCurrentScreen("file-vault");
+  };
+
   const toggleAssetPin = (assetId: string) => {
     updateWorkspace((value) => ({
       ...value,
@@ -850,6 +928,249 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       ),
     }));
     setNotice("My Business Kit pins updated.");
+  };
+
+  const archiveBusinessAsset = (assetId: string) => {
+    updateWorkspace((value) => ({
+      ...value,
+      businessAssets: value.businessAssets.map((asset) =>
+        asset.id === assetId
+          ? {
+              ...asset,
+              archived: true,
+              pinned: false,
+              updatedAt: new Date().toISOString(),
+            }
+          : asset,
+      ),
+    }));
+    setSelectedAssetId(undefined);
+    setCurrentScreen("my-business-kit");
+    setNotice("Business asset archived.");
+  };
+
+  const addCustomerNote = (customerId: string, note: string) => {
+    if (!note.trim()) return;
+    updateWorkspace((value) => ({
+      ...value,
+      customers: value.customers.map((customer) =>
+        customer.id === customerId
+          ? {
+              ...customer,
+              notes: [note.trim(), ...customer.notes],
+              updatedAt: new Date().toISOString(),
+              lastActivity: "Just now",
+            }
+          : customer,
+      ),
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: "Customer note added",
+          detail: note.trim(),
+          occurredAt: "Just now",
+          tone: "info",
+          type: "customer.note",
+          relatedRecordType: "customer",
+          relatedRecordId: customerId,
+          deepLinkRoute: "customer-detail",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice("Customer note saved.");
+  };
+
+  const addLeadNote = (leadId: string, note: string) => {
+    if (!note.trim()) return;
+    updateWorkspace((value) => ({
+      ...value,
+      leads: value.leads.map((lead) =>
+        lead.id === leadId
+          ? {
+              ...lead,
+              notes: [note.trim(), ...(lead.notes ?? [])],
+              updatedAt: new Date().toISOString(),
+            }
+          : lead,
+      ),
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: "Lead note added",
+          detail: note.trim(),
+          occurredAt: "Just now",
+          tone: "info",
+          type: "lead.note",
+          relatedRecordType: "lead",
+          relatedRecordId: leadId,
+          deepLinkRoute: "lead-detail",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice("Lead note saved.");
+  };
+
+  const archiveLead = (leadId: string) => {
+    updateWorkspace((value) => ({
+      ...value,
+      leads: value.leads.map((lead) =>
+        lead.id === leadId
+          ? {
+              ...lead,
+              status: "Archived",
+              archived: true,
+              updatedAt: new Date().toISOString(),
+            }
+          : lead,
+      ),
+    }));
+    setNotice("Lead archived for this business.");
+    setCurrentScreen("customers");
+  };
+
+  const addFileMetadata: AppStateValue["addFileMetadata"] = (file) => {
+    const id = `${currentBusinessId}-file-${Date.now()}`;
+    const now = new Date().toISOString();
+    updateWorkspace((value) => ({
+      ...value,
+      files: [
+        {
+          id,
+          businessId: currentBusinessId,
+          name: file.name.trim() || "untitled-file.mock",
+          type: file.type ?? "application/octet-stream",
+          customerId: file.customerId,
+          leadId: file.leadId,
+          projectId: file.projectId,
+          helpRequestId: file.helpRequestId,
+          workshopItemId: file.workshopItemId,
+          url: file.url,
+          pinned: false,
+          archived: false,
+          createdAt: now,
+          visibility: "Internal",
+        },
+        ...value.files,
+      ],
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: "File metadata saved",
+          detail: `${file.name} · prototype metadata only`,
+          occurredAt: "Just now",
+          tone: "info",
+          type: "file.created",
+          relatedRecordType: "file",
+          relatedRecordId: id,
+          deepLinkRoute: "file-vault",
+        },
+        ...value.activity,
+      ],
+    }));
+    setSelectedFileId(id);
+    setNotice(
+      "File metadata saved in prototype mode. Live file storage is not connected.",
+    );
+    return id;
+  };
+
+  const archiveFile = (fileId: string) => {
+    updateWorkspace((value) => ({
+      ...value,
+      files: value.files.map((file) =>
+        file.id === fileId ? { ...file, archived: true } : file,
+      ),
+    }));
+    setSelectedFileId(undefined);
+    setNotice("File archived in this prototype workspace.");
+  };
+
+  const pinFileToBusinessKit = (fileId: string) => {
+    updateWorkspace((value) => {
+      const file = value.files.find((item) => item.id === fileId);
+      if (!file) return value;
+      const existing = value.businessAssets.find((asset) =>
+        asset.fileIds.includes(fileId),
+      );
+      return {
+        ...value,
+        files: value.files.map((item) =>
+          item.id === fileId ? { ...item, pinned: true } : item,
+        ),
+        businessAssets: existing
+          ? value.businessAssets.map((asset) =>
+              asset.id === existing.id ? { ...asset, pinned: true } : asset,
+            )
+          : [
+              {
+                id: `${currentBusinessId}-asset-${Date.now()}`,
+                businessProfileId: currentBusinessId,
+                assetType: "file",
+                title: file.name,
+                description: "Pinned from File Vault",
+                fileIds: [fileId],
+                tags: ["File Vault"],
+                status: "Ready",
+                pinned: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                archived: false,
+              },
+              ...value.businessAssets,
+            ],
+      };
+    });
+    setNotice("File pinned to My Business Kit.");
+  };
+
+  const recordIntegrationAction = (provider: string, action: string) => {
+    updateWorkspace((value) => ({
+      ...value,
+      integrations: value.integrations.map((integration) =>
+        integration.provider === provider
+          ? {
+              ...integration,
+              status:
+                integration.status === "Mock Connected"
+                  ? integration.status
+                  : "Needs Review",
+              detail: `${action} requires an approved ${provider} connection. No live account was changed.`,
+            }
+          : integration,
+      ),
+      activity: [
+        {
+          id: `${Date.now()}`,
+          businessId: currentBusinessId,
+          label: `${provider} connection reviewed`,
+          detail: `${action} prepared; credentials are still required`,
+          occurredAt: "Just now",
+          tone: "warning",
+          type: "integration.reviewed",
+          relatedRecordType: "sync_record",
+          deepLinkRoute: "sync-center",
+        },
+        ...value.activity,
+      ],
+    }));
+    setNotice(
+      `${provider}: ${action} needs a real account connection. Nothing was synced or sent.`,
+    );
+  };
+
+  const toggleSetupTask = (taskId: string) => {
+    updateWorkspace((value) => ({
+      ...value,
+      setupTasks: value.setupTasks.map((task) =>
+        task.id === taskId ? { ...task, complete: !task.complete } : task,
+      ),
+    }));
+    setNotice("Business setup checklist updated for this profile.");
   };
 
   const completeGuidedWizard: AppStateValue["completeGuidedWizard"] = (
@@ -889,6 +1210,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const openCreateTask = (task: string) => {
     setSelectedCreateTask(task);
+    setGuidedDraft(undefined);
+    setSelectedWorkshopItemId(undefined);
     setCurrentScreen("create-mode");
   };
 
@@ -967,6 +1290,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           occurredAt: "Just now",
           tone: record.status === "Draft" ? "info" : "success",
           type: record.status === "Draft" ? "qr.draft" : "qr.created",
+          relatedRecordType: "workshop_item",
+          relatedRecordId: workshopId,
+          deepLinkRoute: "workshop-library",
         },
         ...value.activity,
       ],
@@ -1019,6 +1345,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           occurredAt: "Just now",
           tone: item.status === "Draft" ? "info" : "success",
           type: "workshop.saved",
+          relatedRecordType: "workshop_item",
+          relatedRecordId: id,
+          deepLinkRoute: "workshop-library",
         },
         ...value.activity,
       ],
@@ -1198,11 +1527,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         item.id === itemId
           ? {
               ...item,
-              status: /Post/i.test(action)
-                ? "Posted"
-                : /Send/i.test(action)
-                  ? "Sent"
-                  : item.status,
+              status: item.status,
               updatedAt: new Date().toISOString(),
               lastUsedAt: "Just now",
               activityHistory: [
@@ -1217,7 +1542,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           : item,
       ),
     }));
-    setNotice(`${action} recorded in My Creations.`);
+    setNotice(
+      /Post|Send|Email|Social/i.test(action)
+        ? `${action} prepared in mock mode. Connect the required account before anything is sent or posted.`
+        : `${action} recorded in My Creations.`,
+    );
   };
 
   const saveEstimateFromBuilder: AppStateValue["saveEstimateFromBuilder"] = (
@@ -1306,6 +1635,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           occurredAt: "Just now",
           tone: status === "Sent" ? "success" : "info",
           type: status === "Sent" ? "estimate.sent" : "estimate.draft",
+          relatedRecordType: "estimate",
+          relatedRecordId: savedEstimate.id,
+          deepLinkRoute: "estimate-detail",
         },
         ...value.activity,
       ],
@@ -1368,6 +1700,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           occurredAt: "Just now",
           tone: saved.status === "Sent" ? "success" : "info",
           type: "invoice.saved",
+          relatedRecordType: "invoice",
+          relatedRecordId: saved.id,
+          deepLinkRoute: "money",
         },
         ...value.activity,
       ],
@@ -2034,6 +2369,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       type: name.toLowerCase().endsWith(".pdf")
         ? "application/pdf"
         : "application/octet-stream",
+      helpRequestId: requestId,
       visibility: "Internal" as const,
     }));
     const now = new Date().toISOString();
@@ -2081,6 +2417,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           occurredAt: "Just now",
           tone: "info",
           type: "help.submitted",
+          relatedRecordType: "help_request",
+          relatedRecordId: requestId,
+          deepLinkRoute: "help-request-detail",
         },
         ...value.activity,
       ],
@@ -2092,7 +2431,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return requestId;
   };
 
-  const handleHelpRequestAction = (requestId: string, action: string) => {
+  const handleHelpRequestAction = (
+    requestId: string,
+    action: string,
+    detail?: string,
+  ) => {
     const now = new Date().toISOString();
     updateWorkspace((value) => {
       const request = value.helpRequests.find((item) => item.id === requestId);
@@ -2123,9 +2466,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
                 id: fileId,
                 businessId: currentBusinessId,
                 name: /Upload/i.test(action)
-                  ? "additional-help-file.mock"
+                  ? detail?.trim() || "additional-help-file.mock"
                   : `${request.type.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-final.mock`,
                 type: "application/octet-stream",
+                helpRequestId: requestId,
                 visibility: "Internal",
               },
               ...value.files,
@@ -2202,7 +2546,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
                   ? [
                       ...item.fileNames,
                       /Upload/i.test(action)
-                        ? "additional-help-file.mock"
+                        ? detail?.trim() || "additional-help-file.mock"
                         : "final-work.mock",
                     ]
                   : item.fileNames,
@@ -2221,12 +2565,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
                     : action === "Decline Quote"
                       ? "Rejected"
                       : item.quoteStatus,
+                paymentStatus:
+                  action === "Mark Payment Sent"
+                    ? "Payment Marked Sent"
+                    : item.paymentStatus,
                 timeline: [
                   {
                     id: `${requestId}-timeline-${Date.now()}`,
                     helpRequestId: requestId,
                     type: action.toLowerCase().replaceAll(" ", "_"),
                     title: action,
+                    message: detail?.trim() || undefined,
                     createdAt: now,
                     createdBy: "User",
                     fileIds: createsFile ? [fileId] : undefined,
@@ -2238,7 +2587,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
                       {
                         id: `${requestId}-message-${Date.now()}`,
                         senderType: "User",
-                        message: `${action} added from the request detail page.`,
+                        message:
+                          detail?.trim() ||
+                          `${action} added from the request detail page.`,
                         createdAt: now,
                       },
                       ...(item.messages ?? []),
@@ -2352,6 +2703,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           occurredAt: "Just now",
           tone: "success",
           type: "payment.recorded",
+          relatedRecordType: "invoice",
+          relatedRecordId: invoiceId,
+          deepLinkRoute: "money",
         },
         ...value.activity,
       ],
@@ -2375,6 +2729,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       selectedLeadId,
       selectedTemplateId,
       selectedAssetId,
+      selectedWorkshopItemId,
+      selectedFileId,
       selectedCreateTask,
       selectedHelpService,
       selectedHelpRequestId,
@@ -2414,7 +2770,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       openTemplate,
       openDocumentStyleEditor,
       openAsset,
+      openWorkshopItem,
+      openFile,
       toggleAssetPin,
+      archiveBusinessAsset,
+      showNotice: setNotice,
+      addCustomerNote,
+      addLeadNote,
+      archiveLead,
+      addFileMetadata,
+      archiveFile,
+      pinFileToBusinessKit,
+      recordIntegrationAction,
+      toggleSetupTask,
       completeGuidedWizard,
       clearGuidedDraft: () => setGuidedDraft(undefined),
       createCustomer,
@@ -2461,6 +2829,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       selectedLeadId,
       selectedTemplateId,
       selectedAssetId,
+      selectedWorkshopItemId,
+      selectedFileId,
       selectedCreateTask,
       selectedHelpService,
       selectedHelpRequestId,

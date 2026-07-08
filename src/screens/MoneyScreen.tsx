@@ -40,6 +40,7 @@ export function MoneyScreen() {
     openInvoiceBuilder,
     setCurrentScreen,
     recordPayment,
+    showNotice,
   } = useAppState();
   const [view, setView] = useState<MoneyView>("Estimates");
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>();
@@ -120,13 +121,29 @@ export function MoneyScreen() {
         <Button
           variant="primary"
           icon={<Plus size={18} />}
-          onClick={() =>
-            view === "Estimates"
-              ? openEstimateBuilder()
-              : view === "Invoices"
-                ? openInvoiceBuilder()
-                : undefined
-          }
+          onClick={() => {
+            if (view === "Estimates") return openEstimateBuilder();
+            if (view === "Invoices") return openInvoiceBuilder();
+            if (view === "Templates") return setCurrentScreen("template-library");
+            if (view === "Progress" || view === "Changes") {
+              const accepted = workspace.estimates.find(
+                (estimate) => estimate.status === "Accepted",
+              );
+              if (accepted) {
+                openEstimate(accepted.id);
+                showNotice(
+                  `${view === "Progress" ? "Progress billing" : "Change orders"} start from an accepted estimate so approved scope stays protected.`,
+                );
+              } else
+                showNotice(
+                  `Accept an estimate before creating ${view.toLowerCase()}.`,
+                );
+              return;
+            }
+            showNotice(
+              "Open an invoice to record a mock payment. No payment provider will be charged.",
+            );
+          }}
         >
           Create
         </Button>
@@ -401,9 +418,40 @@ export function MoneyScreen() {
           <div className="modal-actions">
             {selectedInvoice.status === "Paid" ? (
               <>
-                <Button variant="primary">Create Adjustment</Button>
-                <Button variant="outline">Duplicate as New</Button>
-                <Button variant="ghost">View Paid Version</Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setSelectedInvoiceId(undefined);
+                    openInvoiceBuilder(selectedInvoice.customerId);
+                    showNotice(
+                      "Started a separate adjustment draft. The paid invoice remains unchanged.",
+                    );
+                  }}
+                >
+                  Create Adjustment
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedInvoiceId(undefined);
+                    openInvoiceBuilder(selectedInvoice.customerId);
+                    showNotice(
+                      "Started a new invoice draft. The paid version remains protected.",
+                    );
+                  }}
+                >
+                  Duplicate as New
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() =>
+                    showNotice(
+                      "You are viewing the paid version and its mock payment history.",
+                    )
+                  }
+                >
+                  View Paid Version
+                </Button>
               </>
             ) : (
               <Button
@@ -420,7 +468,16 @@ export function MoneyScreen() {
                 Record Payment
               </Button>
             )}
-            <Button variant="neutral">Download PDF</Button>
+            <Button
+              variant="neutral"
+              onClick={() =>
+                showNotice(
+                  "Invoice PDF preparation is a prototype placeholder. No file was downloaded.",
+                )
+              }
+            >
+              Download PDF
+            </Button>
             <Button
               variant="ghost"
               onClick={() => setSelectedInvoiceId(undefined)}
@@ -443,6 +500,7 @@ export function EstimateDetailScreen() {
     createInvoiceFromAcceptedEstimate,
     setCurrentScreen,
     openEstimateBuilder,
+    showNotice,
   } = useAppState();
   const [showLockModal, setShowLockModal] = useState(false);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
@@ -510,7 +568,11 @@ export function EstimateDetailScreen() {
             For {customer?.name} · Internal controls and protected history
           </p>
         </div>
-        <Button variant="ghost" aria-label="More estimate actions">
+        <Button
+          variant="ghost"
+          aria-label="More estimate actions"
+          onClick={() => setShowMore(!showMore)}
+        >
           <MoreHorizontal />
         </Button>
       </div>
@@ -633,7 +695,16 @@ export function EstimateDetailScreen() {
           >
             Create Progress / Partial Invoice
           </Button>
-          <Button variant="neutral" wide>
+          <Button
+            variant="neutral"
+            wide
+            onClick={() => {
+              setCurrentScreen("integrations");
+              showNotice(
+                "QuickBooks connection required. The accepted estimate was not sent.",
+              );
+            }}
+          >
             Send to QuickBooks
           </Button>
           <Button
@@ -664,7 +735,15 @@ export function EstimateDetailScreen() {
             Duplicate as New
           </Button>
           {estimate.status === "Rejected" && (
-            <Button variant="ghost" wide>
+            <Button
+              variant="ghost"
+              wide
+              onClick={() =>
+                showNotice(
+                  "Archive is planned for the record-management phase. This rejected estimate remains in protected history.",
+                )
+              }
+            >
               Archive
             </Button>
           )}
@@ -1078,11 +1157,18 @@ export function EstimateDetailScreen() {
               })}
             </h2>
             <p>{estimate.deliverySettings?.emailMessage}</p>
-            <Button variant="primary" wide>
+            <Button variant="primary" wide onClick={openCustomerView}>
               {estimate.deliverySettings?.reviewButtonLabel ??
                 "Review and Approve"}
             </Button>
-            <Button variant="outline" wide>
+            <Button
+              variant="outline"
+              wide
+              onClick={() => {
+                setShowEmailPreview(false);
+                setCurrentScreen("official-document");
+              }}
+            >
               {estimate.deliverySettings?.downloadButtonLabel ?? "Download PDF"}
             </Button>
             <p className="muted small">

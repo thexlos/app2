@@ -34,6 +34,7 @@ export function MyBusinessKitScreen() {
     saveItemBankItem,
     deleteItemBankItem,
     updateBusinessKitCategories,
+    showNotice,
   } = useAppState();
   const [query, setQuery] = useState("");
   const [selectedAsset, setSelectedAsset] = useState<BusinessAsset>();
@@ -278,9 +279,27 @@ export function MyBusinessKitScreen() {
                   <Copy size={16} />
                   Copy
                 </button>
+                <button
+                  onClick={() => {
+                    window.open(asset.url, "_blank", "noopener,noreferrer");
+                    setMessage("Opened the saved link in a new tab.");
+                  }}
+                >
+                  <ExternalLink size={16} />
+                  Test
+                </button>
                 <button onClick={() => openCreateTask("Create QR Code")}>
                   <QrCode size={16} />
                   Create QR
+                </button>
+                <button
+                  onClick={() =>
+                    setMessage(
+                      "Link editing is planned for Phase 2. Copy or test the current saved link now.",
+                    )
+                  }
+                >
+                  Edit
                 </button>
               </article>
             ))}
@@ -571,7 +590,16 @@ export function MyBusinessKitScreen() {
                 Copy Link
               </Button>
             )}
-            <Button variant="neutral">Download</Button>
+            <Button
+              variant="neutral"
+              onClick={() =>
+                showNotice(
+                  "Download prepared in prototype mode. Live file storage is required for real file bytes.",
+                )
+              }
+            >
+              Download
+            </Button>
             <Button variant="ghost" onClick={() => setSelectedAsset(undefined)}>
               Close
             </Button>

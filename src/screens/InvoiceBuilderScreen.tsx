@@ -54,6 +54,7 @@ export function InvoiceBuilderScreen() {
     openDocumentStyleEditor,
     openGuidedBuilder,
     guidedDraft,
+    showNotice,
   } = useAppState();
   const sourceEstimate = selectedEstimateId
     ? workspace.estimates.find(
@@ -1149,11 +1150,42 @@ export function InvoiceBuilderScreen() {
                   <Button variant="primary" onClick={() => save("Sent")}>
                     Send Invoice
                   </Button>
-                  <Button variant="outline" icon={<Download size={17} />}>
+                  <Button
+                    variant="outline"
+                    icon={<Download size={17} />}
+                    onClick={() =>
+                      setMessage(
+                        "Invoice PDF preview prepared. Live file export is still a prototype placeholder.",
+                      )
+                    }
+                  >
                     Download PDF
                   </Button>
-                  <Button variant="neutral">Copy Invoice Link</Button>
-                  <Button variant="neutral">Record Payment</Button>
+                  <Button
+                    variant="neutral"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(
+                        `${window.location.origin}/#/invoice/${number}`,
+                      );
+                      setMessage(
+                        "Mock invoice link copied. No email or text was sent.",
+                      );
+                    }}
+                  >
+                    Copy Invoice Link
+                  </Button>
+                  <Button
+                    variant="neutral"
+                    onClick={() => {
+                      save("Draft");
+                      setCurrentScreen("money");
+                      showNotice(
+                        "Invoice draft saved. Open it in Money to record a mock payment; no provider will be charged.",
+                      );
+                    }}
+                  >
+                    Record Payment
+                  </Button>
                   <Button
                     variant="neutral"
                     onClick={() => setShowTemplate(true)}
@@ -1652,7 +1684,17 @@ export function InvoiceBuilderScreen() {
                 {footer}
               </footer>
             )}
-            <Button variant="primary" wide>
+            <Button
+              variant="primary"
+              wide
+              onClick={() =>
+                preview === "customer"
+                  ? setPreview("document")
+                  : showNotice(
+                      "Invoice PDF preparation is a prototype placeholder. No file was downloaded.",
+                    )
+              }
+            >
               {preview === "customer" ? "View Full Invoice" : "Download PDF"}
             </Button>
           </div>

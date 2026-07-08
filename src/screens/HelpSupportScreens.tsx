@@ -53,6 +53,7 @@ export function HelpRequestDetailScreen() {
     handleHelpRequestAction,
   } = useAppState();
   const [message, setMessage] = useState("");
+  const [noteDraft, setNoteDraft] = useState("");
   const request = workspace.helpRequests.find(
     (item) => item.id === selectedHelpRequestId,
   );
@@ -151,7 +152,16 @@ export function HelpRequestDetailScreen() {
               <div className="help-file-row" key={file}>
                 <FileText size={18} />
                 <span>{file}</span>
-                <Button variant="ghost">Open</Button>
+                <Button
+                  variant="ghost"
+                  onClick={() =>
+                    setMessage(
+                      `${file} is stored as prototype metadata. Live file storage is required to open its bytes.`,
+                    )
+                  }
+                >
+                  Open
+                </Button>
               </div>
             ))
           ) : (
@@ -160,17 +170,21 @@ export function HelpRequestDetailScreen() {
               <p>No files uploaded yet.</p>
             </div>
           )}
-          <Button
-            variant="outline"
-            icon={<Upload size={17} />}
-            onClick={() =>
-              setMessage(
-                "Upload is ready. New files will be saved to this request and File Vault.",
-              )
-            }
-          >
-            Upload More Files
-          </Button>
+          <label className="btn btn--outline">
+            <Upload size={17} /> Upload More Files
+            <input
+              hidden
+              type="file"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                handleHelpRequestAction(request.id, "Upload More Files", file.name);
+                setMessage(
+                  `${file.name} metadata was added to this request and File Vault.`,
+                );
+              }}
+            />
+          </label>
         </section>
       </div>
       {request.quoteStatus === "Quote Sent" && (
@@ -182,7 +196,17 @@ export function HelpRequestDetailScreen() {
             </strong>
             <p>The included work and turnaround are saved with this request.</p>
           </div>
-          <Button variant="primary">View Quote</Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              handleHelpRequestAction(request.id, "View Quote");
+              setMessage(
+                `Quote ${request.quoteAmount ? `$${request.quoteAmount}` : "details"} opened for review. No payment was made.`,
+              );
+            }}
+          >
+            View Quote
+          </Button>
         </section>
       )}
       <section className="section">
@@ -247,11 +271,24 @@ export function HelpRequestDetailScreen() {
               </div>
             </div>
           )) ?? <p className="muted">Messages will appear here.</p>}
+          <textarea
+            className="textarea section"
+            value={noteDraft}
+            onChange={(event) => setNoteDraft(event.target.value)}
+            placeholder="Add a note or question"
+          />
           <Button
             variant="outline"
-            onClick={() =>
-              setMessage("Message composer opened for this request.")
-            }
+            disabled={!noteDraft.trim()}
+            onClick={() => {
+              handleHelpRequestAction(
+                request.id,
+                "Add Note or Question",
+                noteDraft,
+              );
+              setMessage("Note added to the request timeline and messages.");
+              setNoteDraft("");
+            }}
           >
             Add Note or Question
           </Button>

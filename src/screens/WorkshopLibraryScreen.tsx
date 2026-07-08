@@ -12,7 +12,7 @@ import {
   Send,
   Sparkles,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DetailHeader } from "../components/common/ScreenHeader";
 import { StatusBadge } from "../components/common/StatusBadge";
 import { useAppState } from "../state/AppState";
@@ -135,11 +135,22 @@ export function WorkshopLibraryScreen() {
     saveWorkshopItemAsTemplate,
     exportWorkshopItem,
     recordWorkshopAction,
+    selectedWorkshopItemId,
   } = useAppState();
   const [filter, setFilter] = useState<(typeof filters)[number]>("All");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("Recently updated");
   const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (!selectedWorkshopItemId) return;
+    const selected = workspace.workshopItems.find(
+      (item) => item.id === selectedWorkshopItemId,
+    );
+    if (selected) {
+      setFilter("All");
+      setMessage(`Opened “${selected.title}” from its related activity.`);
+    }
+  }, [selectedWorkshopItemId, workspace.workshopItems]);
 
   const items = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -216,6 +227,11 @@ export function WorkshopLibraryScreen() {
     }
     if (/Download/.test(action)) {
       exportWorkshopItem(item.id, action);
+      return;
+    }
+    if (action === "Post to Social") {
+      recordWorkshopAction(item.id, action);
+      setCurrentScreen("integrations");
       return;
     }
     recordWorkshopAction(item.id, action);
@@ -313,7 +329,10 @@ export function WorkshopLibraryScreen() {
           {items.map((item) => {
             const actions = actionsFor(item);
             return (
-              <article className="creation-card" key={item.id}>
+              <article
+                className={`creation-card${selectedWorkshopItemId === item.id ? " creation-card--selected" : ""}`}
+                key={item.id}
+              >
                 <div className="creation-card__preview">
                   <ItemIcon type={item.itemType} />
                   <StatusBadge

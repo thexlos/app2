@@ -219,6 +219,20 @@ export function QRCodeBuilderScreen() {
       exportWorkshopItem(savedItemId, label);
       return;
     }
+    if (label === "Add to Flyer") return openCreateTask("Make a Flyer");
+    if (label === "Add to Business Card")
+      return openCreateTask("Business Cards");
+    if (label === "Add to Lead Form") return openCreateTask("Lead Forms");
+    if (label === "Add to Estimate/Invoice") {
+      if (savedItemId) recordWorkshopAction(savedItemId, label);
+      setCurrentScreen("money");
+      return;
+    }
+    if (label === "Send to Customers") {
+      if (savedItemId) recordWorkshopAction(savedItemId, label);
+      setCurrentScreen("customers");
+      return;
+    }
     if (savedItemId) recordWorkshopAction(savedItemId, label);
     setActionMessage(`${label} is ready as the next mock workflow step.`);
   };

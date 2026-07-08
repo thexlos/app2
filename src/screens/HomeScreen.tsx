@@ -41,6 +41,12 @@ export function HomeScreen() {
     openHelpRequest,
     updateSuggestion,
     openActivity,
+    openCustomer,
+    openLead,
+    openHelpRequestDetail,
+    openWorkshopItem,
+    openFile,
+    openSchedule,
   } = useAppState();
   const attentionEstimate = workspace.estimates.find(
     (item) => item.status === "Changes Requested",
@@ -224,6 +230,41 @@ export function HomeScreen() {
                         suggestion.relatedRecordId
                       )
                         openInvoice(suggestion.relatedRecordId);
+                      else if (
+                        suggestion.relatedRecordType === "customer" &&
+                        suggestion.relatedRecordId
+                      )
+                        openCustomer(suggestion.relatedRecordId);
+                      else if (
+                        suggestion.relatedRecordType === "lead" &&
+                        suggestion.relatedRecordId
+                      )
+                        openLead(suggestion.relatedRecordId);
+                      else if (
+                        suggestion.relatedRecordType === "help_request" &&
+                        suggestion.relatedRecordId
+                      )
+                        openHelpRequestDetail(suggestion.relatedRecordId);
+                      else if (
+                        suggestion.relatedRecordType === "workshop_item" &&
+                        suggestion.relatedRecordId
+                      )
+                        openWorkshopItem(suggestion.relatedRecordId);
+                      else if (
+                        suggestion.relatedRecordType === "file" &&
+                        suggestion.relatedRecordId
+                      )
+                        openFile(suggestion.relatedRecordId);
+                      else if (
+                        suggestion.relatedRecordType === "calendar_event"
+                      )
+                        openSchedule();
+                      else if (
+                        suggestion.relatedRecordType?.includes("sync") ||
+                        suggestion.relatedRecordType?.includes("import") ||
+                        suggestion.relatedRecordType?.includes("export")
+                      )
+                        setCurrentScreen("sync-center");
                       else
                         setCurrentScreen(
                           suggestion.relatedRecordType === "business_profile"

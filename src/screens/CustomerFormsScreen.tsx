@@ -429,7 +429,11 @@ export function AddLeadScreen() {
             This lead can be followed up, scheduled, estimated, or converted
             without retyping their information.
           </p>
-          <Button variant="primary" wide onClick={() => openEstimateBuilder()}>
+          <Button
+            variant="primary"
+            wide
+            onClick={() => openEstimateBuilder(undefined, undefined, savedId)}
+          >
             Create Estimate
           </Button>
           <Button

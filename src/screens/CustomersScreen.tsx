@@ -239,7 +239,19 @@ export function CustomerDetailScreen() {
     openEstimateBuilder,
     openInvoiceBuilder,
     openSchedule,
+    openEstimate,
+    openInvoice,
+    openCreateTask,
+    openHelpRequest,
+    addCustomerNote,
+    addFileMetadata,
+    saveProject,
+    showNotice,
   } = useAppState();
+  const [showNote, setShowNote] = useState(false);
+  const [note, setNote] = useState("");
+  const [showProject, setShowProject] = useState(false);
+  const [projectName, setProjectName] = useState("");
   const customer = workspace.customers.find(
     (item) => item.id === selectedCustomerId,
   );
@@ -287,7 +299,27 @@ export function CustomerDetailScreen() {
           { label: "Email", icon: Mail },
           { label: "Add Note", icon: StickyNote },
         ].map(({ label, icon: Icon }) => (
-          <button key={label}>
+          <button
+            key={label}
+            onClick={() => {
+              if (label === "Add Note") return setShowNote(true);
+              const destination =
+                label === "Call"
+                  ? customer.phone
+                    ? `tel:${customer.phone}`
+                    : ""
+                  : label === "Text"
+                    ? customer.phone
+                      ? `sms:${customer.phone}`
+                      : ""
+                    : customer.email
+                      ? `mailto:${customer.email}`
+                      : "";
+              if (!destination)
+                return showNotice(`${label} needs contact information first.`);
+              window.location.href = destination;
+            }}
+          >
             <Icon size={20} />
             <span>{label}</span>
           </button>
@@ -349,8 +381,22 @@ export function CustomerDetailScreen() {
                   ? openEstimateBuilder(customer.id)
                   : label === "New Invoice"
                     ? openInvoiceBuilder(customer.id)
-                    : label === "Schedule Appointment"
-                      ? openSchedule({ customerId: customer.id })
+                    : label === "Send Promo"
+                      ? openCreateTask("Send Promotion")
+                      : label === "Send Review Request"
+                        ? openCreateTask("Review Booster")
+                        : label === "Add File"
+                          ? (addFileMetadata({
+                              name: `${customer.name}-file-placeholder.mock`,
+                              customerId: customer.id,
+                            }),
+                            setCurrentScreen("file-vault"))
+                      : label === "Schedule Appointment"
+                        ? openSchedule({ customerId: customer.id })
+                        : label === "Create Job / Project"
+                          ? setShowProject(true)
+                          : label === "Request Start Here Help"
+                            ? openHelpRequest("general")
                       : setCurrentScreen(screen)
               }
             >
@@ -387,7 +433,7 @@ export function CustomerDetailScreen() {
               <button
                 className="list-row"
                 key={estimate.id}
-                onClick={() => setCurrentScreen("money")}
+                onClick={() => openEstimate(estimate.id)}
               >
                 <span className="icon-box">$</span>
                 <span className="grow">
@@ -404,7 +450,11 @@ export function CustomerDetailScreen() {
               </button>
             ))}
             {relatedInvoices.map((invoice) => (
-              <div className="list-row" key={invoice.id}>
+              <button
+                className="list-row"
+                key={invoice.id}
+                onClick={() => openInvoice(invoice.id)}
+              >
                 <span className="icon-box">$</span>
                 <span className="grow">
                   <strong>Invoice {invoice.number}</strong>
@@ -417,7 +467,7 @@ export function CustomerDetailScreen() {
                 >
                   {invoice.status}
                 </StatusBadge>
-              </div>
+              </button>
             ))}
           </div>
         </section>
@@ -434,7 +484,9 @@ export function CustomerDetailScreen() {
             ) : (
               <p className="muted">No internal notes yet.</p>
             )}
-            <Button variant="outline">Add Note</Button>
+            <Button variant="outline" onClick={() => setShowNote(true)}>
+              Add Note
+            </Button>
           </div>
         </section>
       </div>
@@ -444,13 +496,20 @@ export function CustomerDetailScreen() {
           {workspace.projects
             .filter((item) => item.customerId === customer.id)
             .map((project) => (
-              <div className="list-row" key={project.id}>
+              <button
+                className="list-row"
+                key={project.id}
+                onClick={() => openSchedule({
+                  customerId: customer.id,
+                  projectId: project.id,
+                })}
+              >
                 <FolderPlus />
                 <span className="grow">
                   <strong>{project.name}</strong>
                   <small>{project.status}</small>
                 </span>
-              </div>
+              </button>
             ))}
           {workspace.calendarEvents
             .filter((item) => item.relatedCustomerId === customer.id)
@@ -476,7 +535,10 @@ export function CustomerDetailScreen() {
         <div className="customer-record-grid">
           <article className="card panel">
             <strong>Files</strong>
-            <p>{customer.filesCount ?? 0} linked files</p>
+            <p>
+              {workspace.files.filter((file) => file.customerId === customer.id)
+                .length} linked files
+            </p>
             <Button
               variant="outline"
               onClick={() => setCurrentScreen("file-vault")}
@@ -514,6 +576,62 @@ export function CustomerDetailScreen() {
           </article>
         </div>
       </section>
+      {showNote && (
+        <Modal title="Add customer note" onClose={() => setShowNote(false)}>
+          <textarea
+            className="textarea"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="Add a useful customer note"
+          />
+          <div className="modal-actions">
+            <Button
+              variant="primary"
+              disabled={!note.trim()}
+              onClick={() => {
+                addCustomerNote(customer.id, note);
+                setNote("");
+                setShowNote(false);
+              }}
+            >
+              Save Note
+            </Button>
+            <Button variant="ghost" onClick={() => setShowNote(false)}>
+              Cancel
+            </Button>
+          </div>
+        </Modal>
+      )}
+      {showProject && (
+        <Modal title="Add project" onClose={() => setShowProject(false)}>
+          <input
+            className="input"
+            value={projectName}
+            onChange={(event) => setProjectName(event.target.value)}
+            placeholder="Project or job name"
+          />
+          <div className="modal-actions">
+            <Button
+              variant="primary"
+              disabled={!projectName.trim()}
+              onClick={() => {
+                saveProject({
+                  customerId: customer.id,
+                  name: projectName.trim(),
+                  status: "Planning",
+                });
+                setProjectName("");
+                setShowProject(false);
+              }}
+            >
+              Save Project
+            </Button>
+            <Button variant="ghost" onClick={() => setShowProject(false)}>
+              Cancel
+            </Button>
+          </div>
+        </Modal>
+      )}
     </section>
   );
 }

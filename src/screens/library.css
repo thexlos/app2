@@ -40,6 +40,11 @@
   background: white;
   box-shadow: var(--shadow-sm);
 }
+
+.creation-card--selected {
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 32%, transparent);
+  outline-offset: 2px;
+}
 .creation-card__preview {
   min-height: 78px;
   display: flex;

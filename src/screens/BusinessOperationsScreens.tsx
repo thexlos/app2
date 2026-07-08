@@ -34,6 +34,7 @@ export function ImportWizardScreen() {
   const [recordType, setRecordType] = useState("Customers");
   const [fileName, setFileName] = useState("");
   const [complete, setComplete] = useState(false);
+  const [duplicateChoice, setDuplicateChoice] = useState("Link to Existing");
   const columns =
     recordType === "Items / Services"
       ? [
@@ -203,10 +204,17 @@ export function ImportWizardScreen() {
               </div>
             </div>
             <div className="operation-choice-grid">
-              <button className="active">Link to Existing</button>
-              <button>Update Existing</button>
-              <button>Keep Separate</button>
-              <button>Skip</button>
+              {["Link to Existing", "Update Existing", "Keep Separate", "Skip"].map(
+                (choice) => (
+                  <button
+                    key={choice}
+                    className={duplicateChoice === choice ? "active" : ""}
+                    onClick={() => setDuplicateChoice(choice)}
+                  >
+                    {choice}
+                  </button>
+                ),
+              )}
             </div>
           </>
         )}
@@ -859,7 +867,13 @@ export function LeadDetailScreen() {
     openEstimateBuilder,
     openSchedule,
     openCustomer,
+    addLeadNote,
+    addFileMetadata,
+    archiveLead,
+    setCurrentScreen,
   } = useAppState();
+  const [showNote, setShowNote] = useState(false);
+  const [note, setNote] = useState("");
   const lead = workspace.leads.find((item) => item.id === selectedLeadId);
   if (!lead)
     return (
@@ -912,7 +926,7 @@ export function LeadDetailScreen() {
         </button>
         <button
           className="action-card"
-          onClick={() => openEstimateBuilder(undefined)}
+          onClick={() => openEstimateBuilder(undefined, undefined, lead.id)}
         >
           <FileSpreadsheet />
           <span>Create Estimate</span>
@@ -927,7 +941,60 @@ export function LeadDetailScreen() {
           <UserRoundCheck />
           <span>Convert to Customer</span>
         </button>
+        <button className="action-card" onClick={() => setShowNote(true)}>
+          <FileSpreadsheet />
+          <span>Add Note</span>
+        </button>
+        <button
+          className="action-card"
+          onClick={() => {
+            addFileMetadata({
+              name: `${lead.name}-lead-file-placeholder.mock`,
+              leadId: lead.id,
+            });
+            setCurrentScreen("file-vault");
+          }}
+        >
+          <Upload />
+          <span>Add File</span>
+        </button>
+        <button className="action-card" onClick={() => archiveLead(lead.id)}>
+          <RefreshCw />
+          <span>Archive Lead</span>
+        </button>
       </div>
+      {(lead.notes?.length ?? 0) > 0 && (
+        <section className="card panel section stack">
+          <h2 className="section-heading">Notes</h2>
+          {lead.notes?.map((item) => <p key={item}>{item}</p>)}
+        </section>
+      )}
+      {showNote && (
+        <Modal title="Add lead note" onClose={() => setShowNote(false)}>
+          <textarea
+            className="textarea"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="Add a useful lead note"
+          />
+          <div className="modal-actions">
+            <Button
+              variant="primary"
+              disabled={!note.trim()}
+              onClick={() => {
+                addLeadNote(lead.id, note);
+                setNote("");
+                setShowNote(false);
+              }}
+            >
+              Save Note
+            </Button>
+            <Button variant="ghost" onClick={() => setShowNote(false)}>
+              Cancel
+            </Button>
+          </div>
+        </Modal>
+      )}
     </section>
   );
 }

@@ -7,12 +7,30 @@ import {
   Plus,
 } from "lucide-react";
 import { Button } from "../components/common/Button";
+import { Modal } from "../components/common/Modal";
 import { DetailHeader } from "../components/common/ScreenHeader";
 import { StatusBadge } from "../components/common/StatusBadge";
 import { useAppState } from "../state/AppState";
+import { useEffect, useState } from "react";
 
 export function FileVaultScreen() {
-  const { workspace, currentBusiness } = useAppState();
+  const {
+    workspace,
+    currentBusiness,
+    selectedFileId,
+    openFile,
+    addFileMetadata,
+    archiveFile,
+    pinFileToBusinessKit,
+    openCreateTask,
+    openHelpRequest,
+    openSchedule,
+    showNotice,
+  } = useAppState();
+  const [activeFileId, setActiveFileId] = useState(selectedFileId);
+  useEffect(() => setActiveFileId(selectedFileId), [selectedFileId]);
+  const activeFile = workspace.files.find((file) => file.id === activeFileId);
+  const files = workspace.files.filter((file) => !file.archived);
   return (
     <section className="screen screen--detail">
       <DetailHeader title="File Vault" backTo="create" />
@@ -28,13 +46,30 @@ export function FileVaultScreen() {
           <h2 className="section-heading">Saved files</h2>
           <p className="section-copy">Customer visibility is explicit.</p>
         </div>
-        <Button variant="primary" icon={<Plus size={18} />}>
-          Upload
-        </Button>
+        <label className="btn btn--primary">
+          <Plus size={18} /> Upload
+          <input
+            hidden
+            type="file"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              const id = addFileMetadata({ name: file.name, type: file.type });
+              setActiveFileId(id);
+            }}
+          />
+        </label>
       </div>
       <div className="list">
-        {workspace.files.map((file) => (
-          <div className="list-row" key={file.id}>
+        {files.map((file) => (
+          <button
+            className="list-row"
+            key={file.id}
+            onClick={() => {
+              setActiveFileId(file.id);
+              openFile(file.id);
+            }}
+          >
             <span className="icon-box">
               {file.type.startsWith("image") ? (
                 <FileImage size={21} />
@@ -54,7 +89,7 @@ export function FileVaultScreen() {
             <StatusBadge tone="neutral">
               <LockKeyhole size={12} /> {file.visibility}
             </StatusBadge>
-          </div>
+          </button>
         ))}
       </div>
       <div className="card panel section">
@@ -71,7 +106,11 @@ export function FileVaultScreen() {
       </div>
       <div className="list">
         {workspace.projects.map((project) => (
-          <div className="list-row" key={project.id}>
+          <button
+            className="list-row"
+            key={project.id}
+            onClick={() => openSchedule({ projectId: project.id })}
+          >
             <span className="icon-box">
               <FolderOpen size={21} />
             </span>
@@ -85,7 +124,7 @@ export function FileVaultScreen() {
               </span>
             </span>
             <StatusBadge tone="info">Project</StatusBadge>
-          </div>
+          </button>
         ))}
       </div>
       <div className="card panel section">
@@ -100,6 +139,76 @@ export function FileVaultScreen() {
           </div>
         </div>
       </div>
+      {activeFile && (
+        <Modal title={activeFile.name} onClose={() => setActiveFileId(undefined)}>
+          <p>
+            <strong>Type:</strong> {activeFile.type}
+          </p>
+          <p>
+            <strong>Visibility:</strong> {activeFile.visibility}
+          </p>
+          <div className="alert alert--info section">
+            This prototype stores file metadata only unless a real URL is shown.
+            Live file storage is not connected.
+          </div>
+          <div className="stack">
+            <Button
+              variant="primary"
+              wide
+              onClick={() =>
+                showNotice(
+                  "Download prepared in prototype mode. A storage provider is required for real file bytes.",
+                )
+              }
+            >
+              Download
+            </Button>
+            {activeFile.url && (
+              <Button
+                variant="outline"
+                wide
+                onClick={() => {
+                  void navigator.clipboard?.writeText(activeFile.url!);
+                  showNotice("File link copied.");
+                }}
+              >
+                Copy Link
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              wide
+              onClick={() => openCreateTask("Fix Something")}
+            >
+              Use in Create
+            </Button>
+            <Button
+              variant="outline"
+              wide
+              onClick={() => openHelpRequest("general")}
+            >
+              Attach to Help Request
+            </Button>
+            <Button
+              variant="neutral"
+              wide
+              onClick={() => pinFileToBusinessKit(activeFile.id)}
+            >
+              Pin to My Business Kit
+            </Button>
+            <Button
+              variant="ghost"
+              wide
+              onClick={() => {
+                archiveFile(activeFile.id);
+                setActiveFileId(undefined);
+              }}
+            >
+              Archive
+            </Button>
+          </div>
+        </Modal>
+      )}
     </section>
   );
 }

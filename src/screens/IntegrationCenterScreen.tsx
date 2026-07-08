@@ -9,9 +9,12 @@ import { Button } from "../components/common/Button";
 import { DetailHeader } from "../components/common/ScreenHeader";
 import { StatusBadge, statusTone } from "../components/common/StatusBadge";
 import { useAppState } from "../state/AppState";
+import { useState } from "react";
 
 export function IntegrationCenterScreen() {
-  const { currentBusiness, workspace, setCurrentScreen } = useAppState();
+  const { currentBusiness, workspace, setCurrentScreen, recordIntegrationAction } =
+    useAppState();
+  const [message, setMessage] = useState("");
   return (
     <section className="screen screen--detail">
       <DetailHeader title="Connected Accounts" backTo="create" />
@@ -69,7 +72,10 @@ export function IntegrationCenterScreen() {
               {integration.provider === "QuickBooks" && (
                 <Button
                   variant="outline"
-                  onClick={() => setCurrentScreen("sync-center")}
+                  onClick={() => {
+                    recordIntegrationAction("QuickBooks", "Review Sync Queue");
+                    setCurrentScreen("sync-center");
+                  }}
                 >
                   Review Sync Queue
                 </Button>
@@ -77,16 +83,33 @@ export function IntegrationCenterScreen() {
               {!["Excel / CSV", "QuickBooks"].includes(
                 integration.provider,
               ) && (
-                <Button variant="outline" disabled>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const action =
+                      integration.status === "Mock Connected"
+                        ? "Manage Demo Status"
+                        : "Review Connection Requirements";
+                    recordIntegrationAction(integration.provider, action);
+                    setMessage(
+                      `${integration.provider} needs approved credentials and provider setup. No live account was connected.`,
+                    );
+                  }}
+                >
                   {integration.status === "Mock Connected"
                     ? "Manage Demo Status"
-                    : `Connect Later`}
+                    : "Connection Details"}
                 </Button>
               )}
             </div>
           </article>
         ))}
       </div>
+      {message && (
+        <div className="alert alert--info section" aria-live="polite">
+          <strong>{message}</strong>
+        </div>
+      )}
       <section className="card panel section">
         <div className="row">
           <LockKeyhole color="var(--color-success)" />
@@ -115,6 +138,11 @@ export function IntegrationCenterScreen() {
           variant="neutral"
           wide
           icon={<ExternalLink size={17} />}
+          onClick={() =>
+            setMessage(
+              `Integration plan: ${currentBusiness.name} keeps provider connections business-specific. Credentials, consent, field mapping, and sync rules are required before live use.`,
+            )
+          }
         >
           Read integration plan
         </Button>
