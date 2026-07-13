@@ -202,7 +202,6 @@ export function QRCodeBuilderScreen() {
     setPreviewSvg(selectedQr?.svg ?? "");
     setPreviewDataUrl(selectedQr?.dataUrl ?? "");
     setHasUserEdited(false);
-    setPendingVaultCopy(undefined);
   }, [
     guided,
     initialDestination,
@@ -574,6 +573,7 @@ export function QRCodeBuilderScreen() {
         setActionMessage(
           context === "updated" ? "File Vault copy updated." : result.message,
         );
+        setCurrentScreen("qr-detail");
       },
     );
   };
@@ -587,6 +587,7 @@ export function QRCodeBuilderScreen() {
         ? "No File Vault copy was saved. Your QR is still saved in My Creations."
         : "No File Vault copy was saved. Your QR changes are still saved in My Creations.",
     );
+    setCurrentScreen("qr-detail");
   };
 
   return (

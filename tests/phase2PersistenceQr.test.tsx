@@ -622,7 +622,7 @@ describe("QR save flow cleanup and duplicate prevention", () => {
     ).toContain("My Creations");
     expect(screen.queryByText("What do you want to do next?")).toBeNull();
     expect(screen.queryByRole("button", { name: /Download PNG/i })).toBeNull();
-    expect(screen.getByRole("button", { name: /View QR/i })).toBeTruthy();
+    expect(latest!.currentScreen).toBe("qr-detail");
   });
 
   it("QR download no longer asks for File Vault and does not auto-save a file", async () => {
@@ -775,6 +775,7 @@ describe("QR save flow cleanup and duplicate prevention", () => {
     expect(
       latest!.workspace.files.filter((file) => file.qrCodeId === qrCodeId),
     ).toHaveLength(1);
+    expect(latest!.currentScreen).toBe("qr-detail");
   });
 
   it("Save as New Copy uses unique Version names and keeps the original", async () => {

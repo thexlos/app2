@@ -41,7 +41,10 @@ Completed locally for the focused QR detail cleanup, save timing, overwrite prot
 - New QR creation now saves the editable QR to My Creations and then immediately opens a modal: “Save a copy to File Vault?”
 - Saying Yes creates or updates the File Vault copy with duplicate protection.
 - Saying No leaves the QR saved in My Creations and My Business Kit and shows: “No File Vault copy was saved. Your QR is still saved in My Creations.”
+- The modal is no longer cleared by the selected QR refresh after generation.
+- After the user chooses Yes or No, the QR Builder closes and the app opens QR Detail / Preview.
 - Edited saved QR records that were not opened from File Vault now keep the overwrite confirmation first, save the QR, then open a modal: “Save updated copy to File Vault?”
+- After Save updated copy or No on edited QR, the app also opens QR Detail / Preview.
 - The Save to File Vault prompt now behaves like the overwrite confirmation modal instead of an inline section lower on the builder page.
 - The QR Builder shows a simple “View QR” action after save/create instead of a large next-action grid.
 - File Vault is only used for chosen file/export copies, not every draft or every download.
@@ -115,10 +118,12 @@ Completed locally for the focused QR detail cleanup, save timing, overwrite prot
 - QR Detail Edit opens the QR Builder with the selected QR loaded.
 - Download no longer asks File Vault and does not create File Vault records.
 - New QR creation opens the File Vault modal immediately and preserves My Creations when the user says No.
+- Answering the File Vault modal routes to QR Detail / Preview.
 - Editing an existing QR requires overwrite confirmation.
 - Cancel on overwrite does not change the saved QR.
 - Save Changes updates the same QR id and WorkshopItem id.
 - Save Changes opens the Save updated copy modal after overwrite confirmation.
+- Answering the Save updated copy modal routes to QR Detail / Preview.
 - QR Builder no longer shows the old next-action grid after create/save.
 - Save as New Copy uses Version naming and keeps the original unchanged.
 - File Vault source QR edits ask to overwrite and update the existing file copy.
