@@ -19,7 +19,7 @@ export function AppShell({
   screen: Screen;
   children: ReactNode;
 }) {
-  const showAppHeader = topLevelScreens.includes(screen);
+  const showAppHeader = topLevelScreens.includes(screen) && screen !== "home";
   return (
     <div className="app-shell">
       {showAppHeader && (

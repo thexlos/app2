@@ -1,6 +1,6 @@
 import {
   CircleHelp,
-  Hammer,
+  CirclePlus,
   Home,
   UsersRound,
   WalletCards,
@@ -12,7 +12,7 @@ const items: { id: MainTab; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Home", icon: Home },
   { id: "customers", label: "Customers", icon: UsersRound },
   { id: "money", label: "Money", icon: WalletCards },
-  { id: "create", label: "Create", icon: Hammer },
+  { id: "create", label: "Create", icon: CirclePlus },
   { id: "help", label: "Help", icon: CircleHelp },
 ];
 

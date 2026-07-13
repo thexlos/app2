@@ -4,7 +4,7 @@ import { useAppState } from "../../state/AppState";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
 
-export function BusinessSwitcher() {
+export function BusinessSwitcher({ className = "" }: { className?: string } = {}) {
   const {
     currentBusiness,
     profiles,
@@ -37,13 +37,7 @@ export function BusinessSwitcher() {
   return (
     <>
       <button
-        className="card between"
-        style={{
-          width: "100%",
-          padding: "13px 14px",
-          marginTop: 14,
-          color: "var(--color-text)",
-        }}
+        className={`card between business-switcher${className ? ` ${className}` : ""}`}
         onClick={() => setOpen(true)}
       >
         <span className="row">
