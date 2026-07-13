@@ -1,18 +1,12 @@
 import {
   Check,
   CheckCircle2,
-  CircleHelp,
-  Download,
   ExternalLink,
-  FileImage,
-  FileText,
   Link2,
   Plus,
   QrCode,
   Save,
-  Send,
   UserRound,
-  WalletCards,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../components/common/Button";
@@ -23,9 +17,6 @@ import { businessSavedLinks } from "../data/mock/businessLinks";
 import {
   buildQrPayload,
   buildVCardPayload,
-  createQrPdfSign,
-  downloadDataUrl,
-  downloadSvgFile,
   generateQrDataUrl,
   generateQrSvg,
   normalizeUrlInput,
@@ -47,19 +38,6 @@ const savedLinkKeys: Partial<
   "Instagram Page": "instagram",
 };
 
-const nextActions = [
-  { label: "Open in My Creations", icon: ExternalLink },
-  { label: "Download PNG", icon: FileImage },
-  { label: "Download SVG", icon: FileImage },
-  { label: "Download PDF Sign", icon: FileText },
-  { label: "Add to Flyer", icon: Plus },
-  { label: "Add to Business Card", icon: WalletCards },
-  { label: "Add to Lead Form", icon: Plus },
-  { label: "Add to Estimate/Invoice", icon: FileText },
-  { label: "Send to Customers", icon: Send },
-  { label: "Request Start Here Help", icon: CircleHelp },
-];
-
 export function QRCodeBuilderScreen() {
   const {
     currentBusiness,
@@ -70,7 +48,6 @@ export function QRCodeBuilderScreen() {
     openCreateTask,
     openHelpRequest,
     setCurrentScreen,
-    recordWorkshopAction,
     saveRecoveryDraft,
     clearRecoveryDraftForBuilder,
     selectedRecoveryDraftId,
@@ -588,97 +565,28 @@ export function QRCodeBuilderScreen() {
 
   const savePendingCopyToFileVault = () => {
     if (!pendingVaultCopy) return;
+    const context = pendingVaultCopy.context;
     const qrCodeId = savedQrId || selectedQr?.id;
     if (!qrCodeId) return;
     void createQrFileVaultCopy(qrCodeId, pendingVaultCopy.format).then(
       (result) => {
         setPendingVaultCopy(undefined);
-        setActionMessage(result.message);
+        setActionMessage(
+          context === "updated" ? "File Vault copy updated." : result.message,
+        );
       },
     );
   };
 
-  const createDownload = async (format: "png" | "svg" | "pdf") => {
-    if (!qrName.trim()) {
-      setActionMessage("Name this QR code so you can find it later.");
-      return;
-    }
-    const payloadResult = buildQrPayload({ qrType, destination, contact });
-    if (!payloadResult.valid || !payloadResult.payload) {
-      setActionMessage(payloadResult.message ?? "Complete the QR before download.");
-      return;
-    }
-    const baseName = sanitizeQrFileName(qrName);
-    const options = {
-      foregroundColor: advanced.qrColor,
-      backgroundColor: advanced.backgroundColor,
-      errorCorrectionLevel: advanced.errorCorrectionLevel,
-      size: format === "png" ? 1024 : 320,
-    };
-    const svg =
-      previewSvg || (await generateQrSvg(payloadResult.payload, options));
-    const dataUrl =
-      previewDataUrl || (await generateQrDataUrl(payloadResult.payload, options));
-    let fileName = `${baseName}.png`;
-    let fileDataUrl = dataUrl;
-    if (format === "svg") {
-      fileName = `${baseName}.svg`;
-      downloadSvgFile(fileName, svg);
-    } else if (format === "pdf") {
-      fileName = `${baseName}-sign.pdf`;
-      fileDataUrl = await createQrPdfSign({
-        title: qrName,
-        label: shortLabel || qrName,
-        dataUrl,
-      });
-      downloadDataUrl(fileName, fileDataUrl);
-    } else {
-      downloadDataUrl(fileName, dataUrl);
-    }
+  const dismissPendingVaultCopy = () => {
+    if (!pendingVaultCopy) return;
+    const context = pendingVaultCopy.context;
+    setPendingVaultCopy(undefined);
     setActionMessage(
-      format === "pdf"
-        ? "PDF sign downloaded to your device."
-        : `${format.toUpperCase()} downloaded to your device.`,
+      context === "created"
+        ? "No File Vault copy was saved. Your QR is still saved in My Creations."
+        : "No File Vault copy was saved. Your QR changes are still saved in My Creations.",
     );
-  };
-
-  const runNextAction = async (label: string) => {
-    if (label === "Open in My Creations") {
-      setCurrentScreen("workshop-library");
-      return;
-    }
-    if (label === "Request Start Here Help") {
-      openHelpRequest(contract.helpHandoffType);
-      return;
-    }
-    if (label === "Download PNG") {
-      await createDownload("png");
-      return;
-    }
-    if (label === "Download SVG") {
-      await createDownload("svg");
-      return;
-    }
-    if (label === "Download PDF Sign") {
-      await createDownload("pdf");
-      return;
-    }
-    if (label === "Add to Flyer") return openCreateTask("Make a Flyer");
-    if (label === "Add to Business Card")
-      return openCreateTask("Business Cards");
-    if (label === "Add to Lead Form") return openCreateTask("Lead Forms");
-    if (label === "Add to Estimate/Invoice") {
-      if (savedItemId) recordWorkshopAction(savedItemId, label);
-      setCurrentScreen("money");
-      return;
-    }
-    if (label === "Send to Customers") {
-      if (savedItemId) recordWorkshopAction(savedItemId, label);
-      setCurrentScreen("customers");
-      return;
-    }
-    if (savedItemId) recordWorkshopAction(savedItemId, label);
-    setActionMessage(`${label} is ready as the next mock workflow step.`);
   };
 
   return (
@@ -1135,24 +1043,38 @@ export function QRCodeBuilderScreen() {
           <CheckCircle2 size={20} />
           <div>
             <strong>{actionMessage}</strong>
+            {created && savedQrId && (
+              <div style={{ marginTop: "0.75rem" }}>
+                <Button
+                  variant="outline"
+                  icon={<ExternalLink size={18} />}
+                  onClick={() => setCurrentScreen("qr-detail")}
+                >
+                  View QR
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
       {pendingVaultCopy && (
-        <section className="card panel section stack" aria-live="polite">
+        <Modal
+          title={
+            pendingVaultCopy.context === "created"
+              ? "Save a copy to File Vault?"
+              : "Save updated copy to File Vault?"
+          }
+          onClose={dismissPendingVaultCopy}
+        >
+          <div className="stack">
           <div>
-            <h2 className="section-heading">
-              {pendingVaultCopy.context === "created"
-                ? "Save a copy to File Vault?"
-                : "Save updated copy to File Vault?"}
-            </h2>
             <p className="section-copy">
               {pendingVaultCopy.context === "created"
                 ? "My Creations keeps the editable QR. File Vault keeps chosen files and exports."
                 : "My Creations keeps the editable QR. File Vault keeps the chosen export copy."}
             </p>
           </div>
-          <div className="row wrap">
+          <div className="modal-actions">
             <Button
               variant="primary"
               onClick={savePendingCopyToFileVault}
@@ -1163,21 +1085,13 @@ export function QRCodeBuilderScreen() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                setPendingVaultCopy(undefined);
-                setActionMessage(
-                  pendingVaultCopy.context === "created"
-                    ? "No File Vault copy was saved. Your QR is still saved in My Creations."
-                    : "No File Vault copy was saved. Your QR changes are still saved in My Creations.",
-                );
-              }}
+              onClick={dismissPendingVaultCopy}
             >
-              {pendingVaultCopy.context === "created"
-                ? "No, not now"
-                : "No, not now"}
+              No, not now
             </Button>
           </div>
-        </section>
+          </div>
+        </Modal>
       )}
 
       {overwritePromptOpen && (
@@ -1267,28 +1181,6 @@ export function QRCodeBuilderScreen() {
         </Modal>
       )}
 
-      {created && (
-        <section className="section">
-          <div>
-            <h2 className="section-heading">What do you want to do next?</h2>
-            <p className="section-copy">
-              Reuse this QR code without rebuilding it.
-            </p>
-          </div>
-          <div className="qr-next-actions">
-            {nextActions.map(({ label, icon: Icon }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => void runNextAction(label)}
-              >
-                <Icon size={20} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
       {!created && (
         <button
           type="button"

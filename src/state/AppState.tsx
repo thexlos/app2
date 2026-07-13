@@ -1934,6 +1934,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return { message };
     }
     const targetFileName = options.fileNameOverride ?? generated.fileName;
+    const matchesQrFileIdentity = (
+      file: BusinessWorkspaceData["files"][number],
+      workshopItemId = qr.workshopItemId,
+    ) =>
+      !file.archived &&
+      file.businessId === currentBusinessId &&
+      normalizeComparable(file.source ?? "Upload") ===
+        normalizeComparable("QR Generator") &&
+      normalizeComparable(file.type) === normalizeComparable(generated.type) &&
+      (file.qrCodeId ?? "") === qrCodeId &&
+      (file.workshopItemId ?? "") === (workshopItemId ?? "");
+    const hasSameGeneratedContent = (file: BusinessWorkspaceData["files"][number]) =>
+      Boolean(
+        (generated.generatedContent &&
+          file.generatedContent === generated.generatedContent) ||
+          (generated.fileDataUrl && file.dataUrl === generated.fileDataUrl),
+      );
     const sourceFileBefore = options.sourceFileId
       ? workspace.files.find(
           (file) =>
@@ -1942,25 +1959,29 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             file.qrCodeId === qrCodeId,
         )
       : undefined;
-    const existingFileBefore = sourceFileBefore ?? workspace.files.find(
+    const exactFileBefore = workspace.files.find(
       (file) =>
-        !file.archived &&
-        file.businessId === currentBusinessId &&
-        normalizeComparable(file.source ?? "Upload") ===
-          normalizeComparable("QR Generator") &&
+        matchesQrFileIdentity(file) &&
         normalizeComparable(file.name) === normalizeComparable(targetFileName) &&
-        normalizeComparable(file.type) === normalizeComparable(generated.type) &&
-        (file.qrCodeId ?? "") === qrCodeId &&
-        (file.workshopItemId ?? "") === (qr.workshopItemId ?? "") &&
-        ((generated.generatedContent &&
-          file.generatedContent === generated.generatedContent) ||
-          (generated.fileDataUrl && file.dataUrl === generated.fileDataUrl) ||
-          file.metadataOnly),
+        (hasSameGeneratedContent(file) || file.metadataOnly),
     );
+    const sameQrFileBefore = workspace.files.find((file) =>
+      matchesQrFileIdentity(file),
+    );
+    const existingFileBefore =
+      sourceFileBefore ?? exactFileBefore ?? sameQrFileBefore;
     const willReplaceSource = Boolean(options.replaceExisting && sourceFileBefore);
     const willUpdateMetadataOnly = Boolean(
       existingFileBefore?.metadataOnly &&
         (generated.fileDataUrl || generated.generatedContent),
+    );
+    const willUpdateExistingFile = Boolean(
+      existingFileBefore &&
+        !willReplaceSource &&
+        !willUpdateMetadataOnly &&
+        (!hasSameGeneratedContent(existingFileBefore) ||
+          normalizeComparable(existingFileBefore.name) !==
+            normalizeComparable(targetFileName)),
     );
     let fileId = existingFileBefore?.id ?? makeId(`${currentBusinessId}-file`);
     const message = willReplaceSource
@@ -1968,7 +1989,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       : existingFileBefore
       ? willUpdateMetadataOnly
         ? "File Vault copy updated with generated content."
-        : "This QR file is already saved in File Vault."
+        : willUpdateExistingFile
+          ? "File Vault copy updated."
+          : "This QR file is already saved in File Vault."
       : "Saved a copy to File Vault.";
     const now = new Date().toISOString();
     updateWorkspace((value) => {
@@ -1980,19 +2003,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           : undefined) ??
         value.files.find(
           (file) =>
-            !file.archived &&
-            file.businessId === currentBusinessId &&
-            normalizeComparable(file.source ?? "Upload") ===
-              normalizeComparable("QR Generator") &&
+            matchesQrFileIdentity(file, workshopItemId) &&
             normalizeComparable(file.name) ===
               normalizeComparable(targetFileName) &&
-            normalizeComparable(file.type) === normalizeComparable(generated.type) &&
-            (file.qrCodeId ?? "") === qrCodeId &&
-            (file.workshopItemId ?? "") === (workshopItemId ?? "") &&
-            ((generated.generatedContent &&
-              file.generatedContent === generated.generatedContent) ||
-              (generated.fileDataUrl && file.dataUrl === generated.fileDataUrl) ||
-              file.metadataOnly),
+            (hasSameGeneratedContent(file) || file.metadataOnly),
         );
       fileId = existingFile?.id ?? fileId;
       const files = existingFile
@@ -2000,6 +2014,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             if (file.id !== existingFile.id) return file;
             if (
               willReplaceSource ||
+              willUpdateExistingFile ||
               (file.metadataOnly &&
                 (generated.fileDataUrl || generated.generatedContent))
             ) {

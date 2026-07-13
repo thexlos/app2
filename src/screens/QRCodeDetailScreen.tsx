@@ -20,6 +20,7 @@ import { StatusBadge } from "../components/common/StatusBadge";
 import { useAppState } from "../state/AppState";
 
 type QrDownloadFormat = "png" | "svg" | "pdf";
+type ShareMode = "options" | "text" | "email" | "customer" | "custom" | null;
 
 function formatQrPayload(value?: string) {
   if (!value) return "No destination payload saved yet.";
@@ -45,10 +46,9 @@ export function QRCodeDetailScreen() {
     openCreateTask,
     setCurrentScreen,
     archiveWorkshopItem,
-    showNotice,
   } = useAppState();
   const [actionMessage, setActionMessage] = useState("");
-  const [shareSheetOpen, setShareSheetOpen] = useState(false);
+  const [shareMode, setShareMode] = useState<ShareMode>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [customRecipient, setCustomRecipient] = useState("");
 
@@ -147,7 +147,7 @@ export function QRCodeDetailScreen() {
     }
     const result = await downloadQrToDevice(qr.id, "png");
     setActionMessage(
-      `${result.message} Attach it from your device’s photo/files app to a text message.`,
+      "Your QR image was downloaded. Attach it from your device’s photo/files app to a text message.",
     );
   };
 
@@ -176,8 +176,260 @@ export function QRCodeDetailScreen() {
       return;
     }
     await navigator.clipboard?.writeText(shareMessage);
-    setActionMessage(
-      "Custom recipient message copied. No SMS or email was sent.",
+    setActionMessage("Message copied. Nothing was sent by the app.");
+  };
+
+  const openCustomTextApp = () => {
+    if (!customRecipient.trim()) {
+      setActionMessage("Enter an email or phone number first.");
+      return;
+    }
+    window.location.href = `sms:${encodeURIComponent(customRecipient)}?&body=${encodeURIComponent(shareMessage)}`;
+    setActionMessage("Text app opened with a prepared message. Nothing was sent by the app.");
+  };
+
+  const openCustomEmailApp = () => {
+    if (!customRecipient.trim()) {
+      setActionMessage("Enter an email or phone number first.");
+      return;
+    }
+    const subject = encodeURIComponent(qr.name);
+    const body = encodeURIComponent(shareMessage);
+    window.location.href = `mailto:${encodeURIComponent(customRecipient)}?subject=${subject}&body=${body}`;
+    setActionMessage("Email app opened with a prepared message. Nothing was sent by the app.");
+  };
+
+  const shareModalTitle = (() => {
+    if (shareMode === "text") return "Text from my device";
+    if (shareMode === "email") return "Email from my device";
+    if (shareMode === "customer") return "Send QR to saved customer";
+    if (shareMode === "custom") return "Send to custom recipient";
+    return "Share or send this QR";
+  })();
+
+  const closeShareModal = () => setShareMode(null);
+
+  const renderShareModalContent = () => {
+    if (shareMode === "text") {
+      return (
+        <div className="stack">
+          <p className="section-copy">
+            Text message, data, and carrier charges may apply. Messages are sent
+            from your device, not from Start Here Helper.
+          </p>
+          <div className="modal-actions">
+            <Button variant="primary" onClick={() => void openTextFromDevice()}>
+              Open device share/text options
+            </Button>
+            <Button variant="outline" onClick={() => void downloadQr("png")}>
+              Download QR image
+            </Button>
+            <Button variant="outline" onClick={() => void copyShareMessage()}>
+              Copy message
+            </Button>
+            <Button variant="ghost" onClick={closeShareModal}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    if (shareMode === "email") {
+      return (
+        <div className="stack">
+          <p className="section-copy">
+            Attachments through email links are not reliable. Download the QR
+            image and attach it manually if needed.
+          </p>
+          <div className="field">
+            <label htmlFor="email-subject">Prepared subject</label>
+            <input id="email-subject" className="input" readOnly value={qr.name} />
+          </div>
+          <div className="field">
+            <label htmlFor="email-body">Prepared body</label>
+            <textarea id="email-body" className="textarea" readOnly value={shareMessage} />
+          </div>
+          <div className="modal-actions">
+            <Button variant="primary" onClick={openEmailFromDevice}>
+              Open email app
+            </Button>
+            <Button variant="outline" onClick={() => void copyShareMessage()}>
+              Copy message
+            </Button>
+            <Button variant="outline" onClick={() => void downloadQr("png")}>
+              Download QR image
+            </Button>
+            <Button variant="ghost" onClick={closeShareModal}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    if (shareMode === "customer") {
+      return (
+        <div className="stack">
+          <div className="field">
+            <label htmlFor="share-customer">Saved customer</label>
+            <select
+              id="share-customer"
+              className="select"
+              value={selectedCustomerId}
+              onChange={(event) => setSelectedCustomerId(event.target.value)}
+            >
+              <option value="">Choose a customer</option>
+              {workspace.customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="customer-message">Prepared message preview</label>
+            <textarea
+              id="customer-message"
+              className="textarea"
+              readOnly
+              value={shareMessage}
+            />
+          </div>
+          <div className="modal-actions">
+            <Button variant="primary" onClick={prepareCustomerSend}>
+              Prepare customer send
+            </Button>
+            <Button variant="outline" onClick={() => void copyShareMessage()}>
+              Copy message
+            </Button>
+            <Button variant="ghost" onClick={closeShareModal}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    if (shareMode === "custom") {
+      return (
+        <div className="stack">
+          <div className="field">
+            <label htmlFor="custom-recipient">Phone or email</label>
+            <input
+              id="custom-recipient"
+              className="input"
+              value={customRecipient}
+              onChange={(event) => setCustomRecipient(event.target.value)}
+              placeholder="Phone or email"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="custom-message">Prepared message preview</label>
+            <textarea
+              id="custom-message"
+              className="textarea"
+              readOnly
+              value={shareMessage}
+            />
+          </div>
+          <div className="modal-actions">
+            <Button variant="primary" onClick={() => void prepareCustomRecipient()}>
+              Copy message
+            </Button>
+            <Button variant="outline" onClick={openCustomTextApp}>
+              Open text app
+            </Button>
+            <Button variant="outline" onClick={openCustomEmailApp}>
+              Open email app
+            </Button>
+            <Button variant="ghost" onClick={closeShareModal}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="stack">
+        <p className="section-copy">
+          Choose how you want to share this QR. Messages are sent from your
+          device or prepared for you unless a real integration is connected.
+        </p>
+        <div className="qr-share-options-grid">
+          <button type="button" onClick={() => setShareMode("text")}>
+            <MessageSquareText size={19} />
+            <span>
+              <strong>Text from my device</strong>
+              <small>Open a focused device text/share flow.</small>
+            </span>
+          </button>
+          <button type="button" onClick={() => setShareMode("email")}>
+            <Mail size={19} />
+            <span>
+              <strong>Email from my device</strong>
+              <small>Prepare an email without claiming it was sent.</small>
+            </span>
+          </button>
+          <button type="button" onClick={() => setShareMode("customer")}>
+            <UserRound size={19} />
+            <span>
+              <strong>Send to saved customer</strong>
+              <small>Choose a customer in a focused mock send flow.</small>
+            </span>
+          </button>
+          <button type="button" onClick={() => setShareMode("custom")}>
+            <Send size={19} />
+            <span>
+              <strong>Custom recipient</strong>
+              <small>Prepare a message for any phone or email.</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void copyPayload();
+              closeShareModal();
+            }}
+          >
+            <Copy size={19} />
+            <span>
+              <strong>{isContactCard ? "Copy vCard" : "Copy link"}</strong>
+              <small>Copy the QR destination to your clipboard.</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void downloadQr("png");
+              closeShareModal();
+            }}
+          >
+            <Download size={19} />
+            <span>
+              <strong>Download QR image</strong>
+              <small>Download to device only. No File Vault copy is saved.</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              closeShareModal();
+              openCreateTask("Send Promotion", {
+                qrCodeId: qr.id,
+                workshopItemId: qr.workshopItemId,
+              });
+            }}
+          >
+            <QrCode size={19} />
+            <span>
+              <strong>Create promo with this QR</strong>
+              <small>Open Create with this QR attached to the workflow.</small>
+            </span>
+          </button>
+        </div>
+      </div>
     );
   };
 
@@ -241,7 +493,7 @@ export function QRCodeDetailScreen() {
               <Button
                 variant="outline"
                 icon={<Send size={18} />}
-                onClick={() => setShareSheetOpen(true)}
+                onClick={() => setShareMode("options")}
               >
                 Share / Send
               </Button>
@@ -382,118 +634,9 @@ export function QRCodeDetailScreen() {
         </section>
       )}
 
-      {shareSheetOpen && (
-        <Modal title="Share or send this QR" onClose={() => setShareSheetOpen(false)}>
-          <div className="stack">
-            <p className="section-copy">
-              Choose how you want to share this QR. Messages are sent from your
-              device or prepared for you unless a real integration is connected.
-            </p>
-            <div className="qr-share-options-grid">
-              <button type="button" onClick={() => void openTextFromDevice()}>
-                <MessageSquareText size={19} />
-                <span>
-                  <strong>Text from my device</strong>
-                  <small>
-                    Text message, data, and carrier charges may apply. Messages
-                    are sent from your device, not from Start Here Helper.
-                  </small>
-                </span>
-              </button>
-              <button type="button" onClick={openEmailFromDevice}>
-                <Mail size={19} />
-                <span>
-                  <strong>Email from my device</strong>
-                  <small>
-                    Opens your email app with prepared text. Attachments may
-                    need to be added manually.
-                  </small>
-                </span>
-              </button>
-              <button type="button" onClick={prepareCustomerSend}>
-                <UserRound size={19} />
-                <span>
-                  <strong>Send to saved customer</strong>
-                  <small>
-                    Prepare customer workflow. No SMS or email is sent in this
-                    prototype.
-                  </small>
-                </span>
-              </button>
-              <button type="button" onClick={() => void prepareCustomRecipient()}>
-                <Send size={19} />
-                <span>
-                  <strong>Custom recipient</strong>
-                  <small>Prepare and copy a message for any phone or email.</small>
-                </span>
-              </button>
-              <button type="button" onClick={() => void copyPayload()}>
-                <Copy size={19} />
-                <span>
-                  <strong>{isContactCard ? "Copy vCard" : "Copy link"}</strong>
-                  <small>Copy the QR destination to your clipboard.</small>
-                </span>
-              </button>
-              <button type="button" onClick={() => void downloadQr("png")}>
-                <Download size={19} />
-                <span>
-                  <strong>Download QR image</strong>
-                  <small>Download to device only. No File Vault copy is saved.</small>
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShareSheetOpen(false);
-                  openCreateTask("Send Promotion", {
-                    qrCodeId: qr.id,
-                    workshopItemId: qr.workshopItemId,
-                  });
-                }}
-              >
-                <QrCode size={19} />
-                <span>
-                  <strong>Create promo with this QR</strong>
-                  <small>Open Create with this QR attached to the workflow.</small>
-                </span>
-              </button>
-            </div>
-            <div className="field">
-              <label htmlFor="share-customer">Saved customer</label>
-              <select
-                id="share-customer"
-                className="select"
-                value={selectedCustomerId}
-                onChange={(event) => setSelectedCustomerId(event.target.value)}
-              >
-                <option value="">Choose a customer</option>
-                {workspace.customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="custom-recipient">Custom recipient</label>
-              <input
-                id="custom-recipient"
-                className="input"
-                value={customRecipient}
-                onChange={(event) => setCustomRecipient(event.target.value)}
-                placeholder="Phone or email"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="prepared-message">Prepared message</label>
-              <textarea
-                id="prepared-message"
-                className="textarea"
-                readOnly
-                value={shareMessage}
-              />
-            </div>
-          </div>
+      {shareMode && (
+        <Modal title={shareModalTitle} onClose={closeShareModal}>
+          {renderShareModalContent()}
         </Modal>
       )}
     </section>

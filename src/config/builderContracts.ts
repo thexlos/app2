@@ -121,16 +121,7 @@ export const builderContracts: BuilderContract[] = [
     },
     primaryActions: ["Test Link", "Create QR Code", "Save Draft"],
     secondaryActions: [],
-    afterCreatedActions: [
-      "Download PNG",
-      "Download PDF Sign",
-      "Add to Flyer",
-      "Add to Business Card",
-      "Add to Lead Form",
-      "Add to Estimate/Invoice",
-      "Send to Customers",
-      "Request Start Here Help",
-    ],
+    afterCreatedActions: ["View QR"],
     helpHandoffType: "QR code setup",
     emptyStateCopy: "Choose a QR type and add its destination to begin.",
     sampleMockData: {
