@@ -1,5 +1,13 @@
-import { act, cleanup, render, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getBuilderContract } from "../src/config/builderContracts";
+import { ContractBuilderScreen } from "../src/screens/ContractBuilderScreen";
+import {
+  canDownloadFileAsset,
+  getFileVaultCategories,
+  getFileVaultStatus,
+  getLinkedRecordSummary,
+} from "../src/lib/fileVault";
 import {
   duplicateWorkshopItemPayload,
   normalizeWorkshopItem,
@@ -13,11 +21,12 @@ import {
 } from "../src/services/storage/appStorage";
 import {
   buildQrPayload,
+  downloadDataUrl,
   generateQrSvg,
   validateQrInput,
 } from "../src/services/qr/qrGenerator";
 import { AppStateProvider, useAppState } from "../src/state/AppState";
-import type { WorkshopItem } from "../src/types/models";
+import type { FileAsset, WorkshopItem } from "../src/types/models";
 
 type State = ReturnType<typeof useAppState>;
 
@@ -242,6 +251,28 @@ describe("Phase 2/3 workshop payload contracts", () => {
   });
 });
 
+describe("Phase 2/3 cleanup builder examples", () => {
+  it("opens new workshop builders blank until Load Example is selected", () => {
+    const contract = getBuilderContract("Make a Flyer")!;
+    render(
+      <AppStateProvider>
+        <ContractBuilderScreen contract={contract} />
+      </AppStateProvider>,
+    );
+    const headline = screen.getByLabelText(
+      "Flyer title / headline",
+    ) as HTMLInputElement;
+    expect(headline.value).toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: /load example/i }));
+
+    expect(headline.value).toBe(contract.sampleMockData.headline);
+    expect(
+      screen.getByText(/example content loaded/i).textContent,
+    ).toContain("Replace it");
+  });
+});
+
 describe("Phase 2/3 real QR generator", () => {
   it("validates URL and contact-card QR inputs", () => {
     expect(
@@ -301,5 +332,60 @@ describe("Phase 2/3 real QR generator", () => {
     const file = view.state().workspace.files.find((item) => item.qrCodeId === qrCodeId);
     expect(file?.workshopItemId).toBe(workshopItemId);
     expect(file?.metadataOnly).toBe(false);
+  });
+
+  it("uses a browser download anchor for generated data URLs", () => {
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+
+    downloadDataUrl("test-qr.png", "data:image/png;base64,AA==");
+
+    expect(click).toHaveBeenCalledOnce();
+    click.mockRestore();
+  });
+});
+
+describe("Phase 2/3 cleanup File Vault helpers", () => {
+  it("categorizes generated QR files and metadata-only export records", () => {
+    const view = renderState();
+    const workspace = view.state().workspace;
+    const generatedQrFile: FileAsset = {
+      id: "file-generated-qr",
+      businessId: view.state().currentBusinessId,
+      name: "review-qr.svg",
+      type: "image/svg+xml",
+      source: "QR Generator",
+      generatedContent: "<svg></svg>",
+      metadataOnly: false,
+      qrCodeId: workspace.qrCodes[0]?.id,
+      visibility: "Internal",
+    };
+    const metadataOnlyFile: FileAsset = {
+      id: "file-export-metadata",
+      businessId: view.state().currentBusinessId,
+      name: "flyer-export.pdf",
+      type: "application/pdf",
+      source: "Workshop Export",
+      metadataOnly: true,
+      workshopItemId: workspace.workshopItems[0]?.id,
+      visibility: "Internal",
+    };
+
+    expect(getFileVaultStatus(generatedQrFile).label).toBe("Generated File");
+    expect(getFileVaultCategories(generatedQrFile, workspace)).toContain("QR Codes");
+    expect(getFileVaultCategories(generatedQrFile, workspace)).toContain(
+      "Generated Exports",
+    );
+    expect(canDownloadFileAsset(generatedQrFile)).toBe(true);
+
+    expect(getFileVaultStatus(metadataOnlyFile).label).toBe("Metadata Only");
+    expect(getFileVaultCategories(metadataOnlyFile, workspace)).toContain(
+      "Metadata Only",
+    );
+    expect(canDownloadFileAsset(metadataOnlyFile)).toBe(false);
+    expect(getLinkedRecordSummary(metadataOnlyFile, workspace)).toContain(
+      "Creation:",
+    );
   });
 });

@@ -314,9 +314,7 @@ export function ContractBuilderScreen({
         contract.simpleModeFields.map((field) => [
           field.id,
           toFormValue(
-            savedItem?.builderData?.[field.id] ??
-              guidedAnswers?.[field.id] ??
-              contract.sampleMockData[field.id],
+            savedItem?.builderData?.[field.id] ?? guidedAnswers?.[field.id],
             field.kind === "checkboxes" ? [] : "",
           ),
         ]),
@@ -331,6 +329,23 @@ export function ContractBuilderScreen({
     setValues(initialValues);
     setSavedItemId(savedItem?.id ?? "");
   }, [initialValues, savedItem?.id]);
+  const loadExample = () => {
+    setValues(
+      Object.fromEntries(
+        contract.simpleModeFields.map((field) => [
+          field.id,
+          toFormValue(
+            contract.sampleMockData[field.id],
+            field.kind === "checkboxes" ? [] : "",
+          ),
+        ]),
+      ),
+    );
+    setCreated(false);
+    setMessage(
+      "Example content loaded. Replace it with this business's real details before saving.",
+    );
+  };
   const missing = contract.requiredFields.filter((id) => {
     const value = values[id];
     return Array.isArray(value)
@@ -448,7 +463,12 @@ export function ContractBuilderScreen({
       <div className="section builder-contract-intro">
         <h1 className="page-title">{contract.builderName}</h1>
         <p className="page-subtitle">{contract.purpose}</p>
-        <span className="simple-mode-label">Simple Mode</span>
+        <div className="row wrap">
+          <span className="simple-mode-label">Simple Mode</span>
+          <button type="button" className="inline-link" onClick={loadExample}>
+            <Sparkles size={16} /> Load Example
+          </button>
+        </div>
       </div>
       <div className="builder-layout section">
         <div className="stack">

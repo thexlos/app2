@@ -205,6 +205,7 @@ interface AppStateValue {
   }) => string;
   archiveFile: (fileId: string) => void;
   pinFileToBusinessKit: (fileId: string) => void;
+  toggleFileVisibility: (fileId: string) => void;
   recordIntegrationAction: (provider: string, action: string) => void;
   toggleSetupTask: (taskId: string) => void;
   completeGuidedWizard: (
@@ -1132,7 +1133,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           id: `${Date.now()}`,
           businessId: currentBusinessId,
           label: "File metadata saved",
-          detail: `${file.name} · prototype metadata only`,
+          detail: `${file.name} · ${
+            file.dataUrl || file.generatedContent
+              ? "generated file copy"
+              : file.url
+                ? "external link"
+                : "metadata only"
+          }`,
           occurredAt: "Just now",
           tone: "info",
           type: "file.created",
@@ -1145,7 +1152,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }));
     setSelectedFileId(id);
     setNotice(
-      "File metadata saved in prototype mode. Live file storage is not connected.",
+      file.dataUrl || file.generatedContent
+        ? "Generated file copy saved to File Vault."
+        : file.url
+          ? "External file link saved to File Vault."
+          : "File metadata saved. Real file storage is not connected yet.",
     );
     return id;
   };
@@ -1197,6 +1208,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       };
     });
     setNotice("File pinned to My Business Kit.");
+  };
+
+  const toggleFileVisibility = (fileId: string) => {
+    const currentFile = workspace.files.find((file) => file.id === fileId);
+    const nextVisibility: "Internal" | "Customer" =
+      currentFile?.visibility === "Customer" ? "Internal" : "Customer";
+    updateWorkspace((value) => ({
+      ...value,
+      files: value.files.map((file) =>
+        file.id === fileId ? { ...file, visibility: nextVisibility } : file,
+      ),
+    }));
+    setNotice(
+      nextVisibility === "Customer"
+        ? "File visibility changed to Customer Visible."
+        : "File visibility changed to Internal.",
+    );
   };
 
   const recordIntegrationAction = (provider: string, action: string) => {
@@ -1671,7 +1699,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           candidate.id === itemId
             ? {
                 ...normalizeWorkshopItem(candidate),
-                status: "Downloaded",
+                status: normalizeWorkshopItem(candidate).status,
                 updatedAt: new Date().toISOString(),
                 fileAssetIds: [fileId, ...normalizeWorkshopItem(candidate).fileAssetIds],
                 exportHistory: [
@@ -1687,7 +1715,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
                 activityHistory: [
                   {
                     id: `activity-${Date.now()}`,
-                    label: `Downloaded export: ${format}`,
+                    label: `Prepared export metadata: ${format}`,
                     occurredAt: "Just now",
                   },
                   ...candidate.activityHistory,
@@ -1697,7 +1725,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ),
       };
     });
-    setNotice("Export saved to File Vault and linked to this creation.");
+    setNotice(
+      "Export metadata saved to File Vault. Real file generation is not connected for this creation yet.",
+    );
   };
 
   const recordWorkshopAction: AppStateValue["recordWorkshopAction"] = (
@@ -2996,6 +3026,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       addFileMetadata,
       archiveFile,
       pinFileToBusinessKit,
+      toggleFileVisibility,
       recordIntegrationAction,
       toggleSetupTask,
       completeGuidedWizard,

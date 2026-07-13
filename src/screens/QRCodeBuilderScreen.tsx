@@ -23,8 +23,8 @@ import {
   buildQrPayload,
   buildVCardPayload,
   createQrPdfSign,
-  downloadQrPng,
-  downloadQrSvg,
+  downloadDataUrl,
+  downloadSvgFile,
   generateQrDataUrl,
   generateQrSvg,
   normalizeUrlInput,
@@ -150,7 +150,7 @@ export function QRCodeBuilderScreen() {
     qrColor: selectedQr?.foregroundColor ?? "#101c3b",
     backgroundColor: selectedQr?.backgroundColor ?? "#ffffff",
     addLogo: false,
-    saveToVault: true,
+    saveToVault: false,
     exportSize: "1024 × 1024 PNG",
     errorCorrectionLevel: (selectedQr?.errorCorrectionLevel ?? "M") as
       | "L"
@@ -387,6 +387,10 @@ export function QRCodeBuilderScreen() {
   };
 
   const createDownload = async (format: "png" | "svg" | "pdf") => {
+    if (!qrName.trim()) {
+      setActionMessage("Name this QR code so you can find it later.");
+      return;
+    }
     const payloadResult = buildQrPayload({ qrType, destination, contact });
     if (!payloadResult.valid || !payloadResult.payload) {
       setActionMessage(payloadResult.message ?? "Complete the QR before download.");
@@ -411,7 +415,7 @@ export function QRCodeBuilderScreen() {
       fileName = `${baseName}.svg`;
       type = "image/svg+xml";
       generatedContent = svg;
-      downloadQrSvg(fileName, svg);
+      downloadSvgFile(fileName, svg);
     } else if (format === "pdf") {
       fileName = `${baseName}-sign.pdf`;
       type = "application/pdf";
@@ -420,21 +424,23 @@ export function QRCodeBuilderScreen() {
         label: shortLabel || qrName,
         dataUrl,
       });
-      downloadQrPng(fileName, fileDataUrl);
+      downloadDataUrl(fileName, fileDataUrl);
     } else {
-      downloadQrPng(fileName, dataUrl);
+      downloadDataUrl(fileName, dataUrl);
     }
-    const fileId = addFileMetadata({
-      name: fileName,
-      type,
-      workshopItemId: savedItemId || selectedWorkshopItem?.id,
-      qrCodeId: savedQrId || selectedQr?.id,
-      source: "QR Generator",
-      dataUrl: format === "svg" ? undefined : fileDataUrl,
-      generatedContent,
-      metadataOnly: false,
-    });
-    if (savedQrId || selectedQr?.id) {
+    const fileId = advanced.saveToVault
+      ? addFileMetadata({
+          name: fileName,
+          type,
+          workshopItemId: savedItemId || selectedWorkshopItem?.id,
+          qrCodeId: savedQrId || selectedQr?.id,
+          source: "QR Generator",
+          dataUrl: format === "svg" ? undefined : fileDataUrl,
+          generatedContent,
+          metadataOnly: false,
+        })
+      : undefined;
+    if ((savedQrId || selectedQr?.id) && fileId) {
       createQrCode({
         id: savedQrId || selectedQr?.id,
         workshopItemId: savedItemId || selectedWorkshopItem?.id,
@@ -463,7 +469,7 @@ export function QRCodeBuilderScreen() {
         },
       });
     }
-    if (savedItemId || selectedWorkshopItem?.id) {
+    if ((savedItemId || selectedWorkshopItem?.id) && fileId) {
       saveWorkshopItem({
         ...(selectedWorkshopItem ?? {
           itemType: "qr_code",
@@ -486,7 +492,11 @@ export function QRCodeBuilderScreen() {
         ),
       });
     }
-    setActionMessage(`${fileName} downloaded and saved to File Vault.`);
+    setActionMessage(
+      advanced.saveToVault
+        ? `${fileName} downloaded to your device and saved to File Vault.`
+        : `${fileName} downloaded to your device.`,
+    );
   };
 
   const runNextAction = async (label: string) => {
@@ -811,7 +821,12 @@ export function QRCodeBuilderScreen() {
                     setAdvanced({ ...advanced, addLogo: event.target.checked })
                   }
                 />{" "}
-                Add logo in center
+                <span>
+                  Show logo/initials in preview only
+                  <small className="field-help">
+                    Logo embedding in exported QR files is not connected yet.
+                  </small>
+                </span>
               </label>
               <label className="check-row">
                 <input
@@ -824,7 +839,12 @@ export function QRCodeBuilderScreen() {
                     })
                   }
                 />{" "}
-                Save to File Vault
+                <span>
+                  Also save a copy to File Vault
+                  <small className="field-help">
+                    Downloads still save to your device first.
+                  </small>
+                </span>
               </label>
               <div className="field">
                 <label htmlFor="export-size">Export size</label>
@@ -868,7 +888,7 @@ export function QRCodeBuilderScreen() {
               </div>
               <p className="small muted qr-advanced-note">
                 Add to customer/project · Add to campaign/promo · Scan tracking
-                and error correction are planned placeholders.
+                placeholders stay behind advanced controls until those systems are connected.
               </p>
             </div>
           </details>

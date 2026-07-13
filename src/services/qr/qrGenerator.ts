@@ -182,7 +182,7 @@ export async function generateQrDataUrl(
   });
 }
 
-function triggerDownload(filename: string, href: string) {
+export function triggerBrowserDownload(filename: string, href: string) {
   const anchor = document.createElement("a");
   anchor.href = href;
   anchor.download = filename;
@@ -191,15 +191,23 @@ function triggerDownload(filename: string, href: string) {
   anchor.remove();
 }
 
-export function downloadQrSvg(filename: string, svg: string) {
+export function downloadSvgFile(filename: string, svg: string) {
   const blob = new Blob([svg], { type: "image/svg+xml" });
   const url = URL.createObjectURL(blob);
-  triggerDownload(filename, url);
+  triggerBrowserDownload(filename, url);
   URL.revokeObjectURL(url);
 }
 
+export function downloadDataUrl(filename: string, dataUrl: string) {
+  triggerBrowserDownload(filename, dataUrl);
+}
+
+export function downloadQrSvg(filename: string, svg: string) {
+  downloadSvgFile(filename, svg);
+}
+
 export function downloadQrPng(filename: string, dataUrl: string) {
-  triggerDownload(filename, dataUrl);
+  downloadDataUrl(filename, dataUrl);
 }
 
 export async function createQrPdfSign(input: {

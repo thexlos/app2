@@ -77,10 +77,7 @@ export const workshopBuilderFieldConfigs: BuilderFieldConfig[] =
       helperText: field.helperText ?? field.placeholder,
       inputType: kindMap[field.kind],
       required: contract.requiredFields.includes(field.id),
-      defaultValue:
-        typeof contract.sampleMockData[field.id] === "string"
-          ? String(contract.sampleMockData[field.id])
-          : undefined,
+      defaultValue: undefined,
       options: field.options,
       mapsTo: field.id,
       section: "Simple Mode",

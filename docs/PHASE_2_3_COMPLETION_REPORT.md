@@ -136,6 +136,20 @@ Generated QR downloads create File Vault records with:
 
 Prototype uploads and generic workshop exports remain metadata-only unless generated content exists.
 
+## Cleanup pass added
+
+- QR downloads now trigger browser/device downloads first.
+- Saving a QR export copy to File Vault is optional and clearly labeled.
+- PDF sign downloads use a generic data URL download helper instead of a PNG-specific helper.
+- My Business Kit QR actions separate PNG/SVG downloads from “Save Copy”.
+- Generic Workshop exports no longer mark metadata-only records as “Downloaded”.
+- File Vault now has summary cards, filters, status labels, linked-record summaries, detail previews, and clearer metadata-only messaging.
+- Fresh Workshop builders and guided wizards no longer auto-load sample/demo values.
+- Builder examples are now loaded only through the explicit “Load Example” action.
+- QR logo/initial controls are labeled preview-only until real logo embedding is implemented.
+- Stale older-phase app wording was removed.
+- Success and limitation messages were updated so the prototype does not imply cloud storage or live file bytes exist where they do not.
+
 ## Tests added
 
 Added `tests/phase2PersistenceQr.test.tsx` covering:
@@ -150,6 +164,9 @@ Added `tests/phase2PersistenceQr.test.tsx` covering:
 - QR URL/contact validation
 - QR SVG generation
 - File Vault metadata linked to QR/workshop records
+- blank builder start plus explicit Load Example behavior
+- File Vault status/category helper behavior
+- browser download helper behavior
 
 ## Build result
 
@@ -169,7 +186,7 @@ Passed:
 npm test
 ```
 
-Result: 9 test files passed, 39 tests passed.
+Result: 9 test files passed, 42 tests passed.
 
 ## Known limitations
 

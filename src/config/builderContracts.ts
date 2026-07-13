@@ -104,8 +104,8 @@ export const builderContracts: BuilderContract[] = [
     advancedFields: [
       "QR color",
       "Background color",
-      "Add logo in center",
-      "Save to File Vault",
+      "Show logo/initials in preview only",
+      "Also save a copy to File Vault",
       "Add to customer/project",
       "Add to campaign/promo",
       "Track scans later placeholder",

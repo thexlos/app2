@@ -155,6 +155,76 @@
   color: var(--color-muted);
   line-height: 1.5;
 }
+.vault-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.vault-summary-grid article {
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+.vault-summary-grid strong {
+  display: block;
+  color: var(--color-primary);
+  font-size: 1.3rem;
+  letter-spacing: -0.03em;
+}
+.vault-summary-grid span {
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+.vault-file-grid {
+  display: grid;
+  gap: 10px;
+}
+.vault-file-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  padding: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  text-align: left;
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+.vault-file-card small {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-muted);
+  line-height: 1.35;
+}
+.vault-card-badges {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.vault-detail-stack {
+  display: grid;
+  gap: 14px;
+}
+.vault-detail-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.vault-preview-image,
+.vault-preview-svg {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: white;
+}
+.vault-preview-image {
+  display: block;
+}
 .library-create-fab {
   position: fixed;
   z-index: 12;
@@ -177,6 +247,12 @@
     grid-template-columns: minmax(0, 1fr) 220px;
   }
   .creation-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vault-summary-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .vault-file-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

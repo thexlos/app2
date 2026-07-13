@@ -21,8 +21,8 @@ import { Button } from "../components/common/Button";
 import { Modal } from "../components/common/Modal";
 import { DetailHeader } from "../components/common/ScreenHeader";
 import {
-  downloadQrPng,
-  downloadQrSvg,
+  downloadDataUrl,
+  downloadSvgFile,
   generateQrDataUrl,
   generateQrSvg,
   sanitizeQrFileName,
@@ -128,13 +128,12 @@ export function MyBusinessKitScreen() {
     await navigator.clipboard?.writeText(value);
     setMessage("Link copied.");
   };
-  const downloadQr = async (qr: QRCodeRecord, format: "png" | "svg") => {
+  const ensureQrFiles = async (qr: QRCodeRecord) => {
     const payload = qr.payload ?? qr.url;
     if (!payload) {
       setMessage("This QR needs a saved payload before it can be downloaded.");
-      return;
+      return undefined;
     }
-    const baseName = sanitizeQrFileName(qr.name);
     const svg =
       qr.svg ??
       (await generateQrSvg(payload, {
@@ -149,37 +148,44 @@ export function MyBusinessKitScreen() {
         backgroundColor: qr.backgroundColor,
         errorCorrectionLevel: qr.errorCorrectionLevel,
       }));
-    const fileId =
-      format === "svg"
-        ? addFileMetadata({
-            name: `${baseName}.svg`,
-            type: "image/svg+xml",
-            qrCodeId: qr.id,
-            workshopItemId: qr.workshopItemId,
-            source: "QR Generator",
-            generatedContent: svg,
-            metadataOnly: false,
-          })
-        : addFileMetadata({
-            name: `${baseName}.png`,
-            type: "image/png",
-            qrCodeId: qr.id,
-            workshopItemId: qr.workshopItemId,
-            source: "QR Generator",
-            dataUrl,
-            metadataOnly: false,
-          });
     createQrCode({
       ...qr,
       status: qr.status === "Draft" ? "Draft" : "Ready",
       payload,
       svg,
       dataUrl,
+    });
+    return { payload, svg, dataUrl };
+  };
+  const downloadQr = async (qr: QRCodeRecord, format: "png" | "svg") => {
+    const generated = await ensureQrFiles(qr);
+    if (!generated) return;
+    const baseName = sanitizeQrFileName(qr.name);
+    if (format === "svg") downloadSvgFile(`${baseName}.svg`, generated.svg);
+    else downloadDataUrl(`${baseName}.png`, generated.dataUrl);
+    setMessage(`${qr.name} ${format.toUpperCase()} downloaded to your device.`);
+  };
+  const saveQrFileVaultCopy = async (qr: QRCodeRecord) => {
+    const generated = await ensureQrFiles(qr);
+    if (!generated) return;
+    const baseName = sanitizeQrFileName(qr.name);
+    const fileId = addFileMetadata({
+      name: `${baseName}.svg`,
+      type: "image/svg+xml",
+      qrCodeId: qr.id,
+      workshopItemId: qr.workshopItemId,
+      source: "QR Generator",
+      generatedContent: generated.svg,
+      metadataOnly: false,
+    });
+    createQrCode({
+      ...qr,
+      payload: generated.payload,
+      svg: generated.svg,
+      dataUrl: generated.dataUrl,
       fileAssetIds: Array.from(new Set([fileId, ...(qr.fileAssetIds ?? [])])),
     });
-    if (format === "svg") downloadQrSvg(`${baseName}.svg`, svg);
-    else downloadQrPng(`${baseName}.png`, dataUrl);
-    setMessage(`${qr.name} ${format.toUpperCase()} downloaded and saved to File Vault.`);
+    setMessage(`${qr.name} SVG copy saved to File Vault.`);
   };
   return (
     <section className="screen screen--detail business-home-kit">
@@ -379,7 +385,7 @@ export function MyBusinessKitScreen() {
                 <button
                   onClick={() =>
                     setMessage(
-                      "Link editing is planned for Phase 2. Copy or test the current saved link now.",
+                      "Link editing is not connected yet. Copy or test the current saved link now.",
                     )
                   }
                 >
@@ -396,7 +402,10 @@ export function MyBusinessKitScreen() {
           </span>
           <div>
             <h2>QR Codes</h2>
-            <p>Saved destinations and reusable QR files for this business.</p>
+            <p>
+              Saved destinations and reusable QR files for this business.
+              Downloads save to your device; File Vault copies are separate.
+            </p>
           </div>
         </header>
         <div className="kit-qr-list">
@@ -450,6 +459,12 @@ export function MyBusinessKitScreen() {
               </Button>
               <Button variant="ghost" onClick={() => void downloadQr(qr, "svg")}>
                 SVG
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => void saveQrFileVaultCopy(qr)}
+              >
+                Save Copy
               </Button>
             </article>
           ))}
@@ -708,7 +723,7 @@ export function MyBusinessKitScreen() {
               variant="neutral"
               onClick={() =>
                 showNotice(
-                  "Download prepared in prototype mode. Live file storage is required for real file bytes.",
+                  "This asset is metadata-only in the prototype. Real file storage is required before it can download file bytes.",
                 )
               }
             >
