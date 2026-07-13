@@ -609,9 +609,7 @@ describe("QR save flow cleanup and duplicate prevention", () => {
     fireEvent.click(screen.getByRole("button", { name: /Create QR Code/i }));
 
     await screen.findByText("Save a copy to File Vault?");
-    expect(screen.getByText(/QR code generated and saved/i).textContent).toContain(
-      "Saved to My Creations",
-    );
+    expect(screen.getByText("QR code generated and saved to My Creations.")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /No, not now/i }));
 
@@ -621,7 +619,7 @@ describe("QR save flow cleanup and duplicate prevention", () => {
     ).toContain("My Creations");
   });
 
-  it("QR download shows a File Vault follow-up without auto-saving a file", async () => {
+  it("QR download no longer asks for File Vault and does not auto-save a file", async () => {
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(() => undefined);
@@ -653,14 +651,11 @@ describe("QR save flow cleanup and duplicate prevention", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /Download PNG/i }));
 
-    await screen.findByText("Save this downloaded file to File Vault?");
     expect(screen.getByText("PNG downloaded to your device.")).toBeTruthy();
+    expect(screen.queryByText("Save this downloaded file to File Vault?")).toBeNull();
     expect(click).toHaveBeenCalledOnce();
 
-    fireEvent.click(screen.getByRole("button", { name: /No thanks/i }));
-
     expect(latest!.workspace.files).toHaveLength(startingFiles);
-    expect(screen.getByText("No File Vault copy was saved.")).toBeTruthy();
     click.mockRestore();
   });
 
@@ -703,6 +698,184 @@ describe("QR save flow cleanup and duplicate prevention", () => {
     act(() => latest!.openQrEditor(qrCodeId, workshopItemId));
     expect(latest!.currentScreen).toBe("create-builder");
     expect(latest!.selectedCreateTask).toBe("Create QR Code");
+  });
+
+  it("editing an existing QR requires overwrite confirmation before updating", async () => {
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <QRCodeBuilderScreen />
+      </AppStateProvider>,
+    );
+    let qrCodeId = "";
+    let workshopItemId = "";
+    act(() => {
+      const saved = latest!.createQrCode({
+        name: "Overwrite Guard QR",
+        type: "Website / Link",
+        status: "Ready",
+        payloadType: "url",
+        payload: "https://example.com/original-overwrite",
+        url: "https://example.com/original-overwrite",
+        createdFrom: "Manual Builder",
+      });
+      qrCodeId = saved.qrCodeId;
+      workshopItemId = saved.workshopItemId;
+      latest!.openQrEditor(qrCodeId, workshopItemId);
+    });
+
+    fireEvent.change(screen.getByLabelText("Destination link"), {
+      target: { value: "https://example.com/updated-overwrite" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Save Changes/i }));
+
+    expect(screen.getByText("Save changes to this QR?")).toBeTruthy();
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Cancel",
+      }),
+    );
+    expect(
+      latest!.workspace.qrCodes.find((item) => item.id === qrCodeId)?.payload,
+    ).toBe("https://example.com/original-overwrite");
+
+    fireEvent.click(screen.getByRole("button", { name: /Save Changes/i }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Save Changes",
+      }),
+    );
+
+    await screen.findByText("Save updated copy to File Vault?");
+    const updated = latest!.workspace.qrCodes.find((item) => item.id === qrCodeId);
+    expect(updated?.payload).toBe("https://example.com/updated-overwrite");
+    expect(updated?.workshopItemId).toBe(workshopItemId);
+  });
+
+  it("Save as New Copy uses unique Version names and keeps the original", async () => {
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <QRCodeBuilderScreen />
+      </AppStateProvider>,
+    );
+    let originalQrId = "";
+    act(() => {
+      const saved = latest!.createQrCode({
+        name: "Versioned QR",
+        type: "Website / Link",
+        status: "Ready",
+        payloadType: "url",
+        payload: "https://example.com/original-versioned",
+        url: "https://example.com/original-versioned",
+        createdFrom: "Manual Builder",
+      });
+      originalQrId = saved.qrCodeId;
+      latest!.createQrCode({
+        name: "Versioned QR - Version 2",
+        type: "Website / Link",
+        status: "Ready",
+        payloadType: "url",
+        payload: "https://example.com/version-2",
+        url: "https://example.com/version-2",
+        createdFrom: "Manual Builder",
+        forceNew: true,
+      });
+      latest!.openQrEditor(originalQrId, saved.workshopItemId);
+    });
+
+    fireEvent.change(screen.getByLabelText("Destination link"), {
+      target: { value: "https://example.com/version-3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Save as New Copy/i }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Name this new copy")).toBeTruthy();
+    expect(
+      (within(dialog).getByLabelText("New name") as HTMLInputElement).value,
+    ).toBe("Versioned QR - Version 3");
+
+    fireEvent.click(within(dialog).getByRole("button", { name: /Save New Copy/i }));
+
+    await screen.findByText("Save a copy to File Vault?");
+    expect(
+      latest!.workspace.qrCodes.find((item) => item.id === originalQrId)?.payload,
+    ).toBe("https://example.com/original-versioned");
+    expect(
+      latest!.workspace.qrCodes.some(
+        (item) =>
+          item.name === "Versioned QR - Version 3" &&
+          item.payload === "https://example.com/version-3",
+      ),
+    ).toBe(true);
+  });
+
+  it("File Vault source QR edits ask to overwrite and update the existing file copy", async () => {
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <QRCodeBuilderScreen />
+      </AppStateProvider>,
+    );
+    let qrCodeId = "";
+    let workshopItemId = "";
+    let fileId = "";
+    await act(async () => {
+      const saved = latest!.createQrCode({
+        name: "Vault Source QR",
+        type: "Website / Link",
+        status: "Ready",
+        payloadType: "url",
+        payload: "https://example.com/source-original",
+        url: "https://example.com/source-original",
+        createdFrom: "Manual Builder",
+      });
+      qrCodeId = saved.qrCodeId;
+      workshopItemId = saved.workshopItemId;
+      const copy = await latest!.createQrFileVaultCopy(qrCodeId, "png");
+      fileId = copy.fileId!;
+      latest!.openQrEditor(qrCodeId, workshopItemId, fileId);
+    });
+
+    fireEvent.change(screen.getByLabelText("Destination link"), {
+      target: { value: "https://example.com/source-updated" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Save Changes/i }));
+
+    await screen.findByText("Overwrite saved File Vault copy?");
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Yes, overwrite saved file",
+      }),
+    );
+
+    await screen.findByText("Saved QR and File Vault copy updated.");
+    expect(
+      latest!.workspace.qrCodes.find((item) => item.id === qrCodeId)?.payload,
+    ).toBe("https://example.com/source-updated");
+    expect(
+      latest!.workspace.files.filter((file) => file.qrCodeId === qrCodeId),
+    ).toHaveLength(1);
+    expect(latest!.workspace.files.find((file) => file.id === fileId)?.metadataOnly).toBe(false);
+    expect(screen.queryByText("Save a copy to File Vault?")).toBeNull();
   });
 
   it("updates one recovery draft for the same active work", () => {
@@ -927,10 +1100,11 @@ describe("QR save flow cleanup and duplicate prevention", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Share \/ Send/i }));
 
-    expect(screen.getByText("Share options")).toBeTruthy();
+    expect(screen.getByText("Share or send this QR")).toBeTruthy();
     expect(
-      screen.getByText(/They do not send SMS, email, or social posts/i),
+      screen.getByText(/Messages are sent from your device or prepared for you/i),
     ).toBeTruthy();
+    expect(screen.getByText(/Text message, data, and carrier charges may apply/i)).toBeTruthy();
     expect(screen.queryByText(/SMS was sent/i)).toBeNull();
 
     Object.defineProperty(navigator, "share", {

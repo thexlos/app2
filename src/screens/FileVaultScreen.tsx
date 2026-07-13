@@ -129,7 +129,7 @@ export function FileVaultScreen() {
   const handleUseInCreate = (file: FileAsset) => {
     setActiveFileId(undefined);
     if (file.qrCodeId) {
-      openQrDetail(file.qrCodeId, file.workshopItemId);
+      openQrDetail(file.qrCodeId, file.workshopItemId, file.id);
       return;
     }
     if (file.workshopItemId) {
@@ -405,7 +405,11 @@ export function FileVaultScreen() {
                   icon={<QrCode size={18} />}
                   onClick={() => {
                     setActiveFileId(undefined);
-                    openQrDetail(activeFile.qrCodeId!, activeFile.workshopItemId);
+                    openQrDetail(
+                      activeFile.qrCodeId!,
+                      activeFile.workshopItemId,
+                      activeFile.id,
+                    );
                   }}
                 >
                   Open QR
@@ -417,7 +421,11 @@ export function FileVaultScreen() {
                   icon={<FileImage size={18} />}
                   onClick={() => {
                     setActiveFileId(undefined);
-                    openQrEditor(activeFile.qrCodeId!, activeFile.workshopItemId);
+                    openQrEditor(
+                      activeFile.qrCodeId!,
+                      activeFile.workshopItemId,
+                      activeFile.id,
+                    );
                   }}
                 >
                   Edit QR

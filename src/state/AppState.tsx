@@ -216,8 +216,16 @@ interface AppStateValue {
   openAsset: (assetId: string) => void;
   openWorkshopItem: (itemId: string) => void;
   openFile: (fileId: string) => void;
-  openQrDetail: (qrCodeId: string, workshopItemId?: string) => void;
-  openQrEditor: (qrCodeId: string, workshopItemId?: string) => void;
+  openQrDetail: (
+    qrCodeId: string,
+    workshopItemId?: string,
+    sourceFileId?: string,
+  ) => void;
+  openQrEditor: (
+    qrCodeId: string,
+    workshopItemId?: string,
+    sourceFileId?: string,
+  ) => void;
   toggleAssetPin: (assetId: string) => void;
   archiveBusinessAsset: (assetId: string) => void;
   showNotice: (message: string) => void;
@@ -309,11 +317,17 @@ interface AppStateValue {
       Partial<QRCodeRecord> & {
         builderData?: BuilderData;
         previewData?: BuilderData;
+        forceNew?: boolean;
       },
   ) => { qrCodeId: string; workshopItemId: string };
   createQrFileVaultCopy: (
     qrCodeId: string,
     format?: "png" | "svg" | "pdf",
+    options?: {
+      sourceFileId?: string;
+      replaceExisting?: boolean;
+      fileNameOverride?: string;
+    },
   ) => Promise<{ fileId?: string; message: string }>;
   downloadQrToDevice: (
     qrCodeId: string,
@@ -569,6 +583,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     useState<AppStateValue["scheduleContext"]>();
   const unsavedSaverRef = useRef<(() => void) | undefined>(undefined);
   const suppressNextStorageSaveRef = useRef(false);
+  const qrWriteCacheRef = useRef<Record<string, QRCodeRecord>>({});
 
   const currentBusiness = businessProfiles.find(
     (profile) => profile.id === currentBusinessId,
@@ -1155,10 +1170,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const openQrDetail: AppStateValue["openQrDetail"] = (
     qrCodeId,
     workshopItemId,
+    sourceFileId,
   ) => {
     const qr = workspace.qrCodes.find((item) => item.id === qrCodeId);
     setSelectedQrId(qrCodeId);
     setSelectedWorkshopItemId(workshopItemId ?? qr?.workshopItemId);
+    setSelectedFileId(sourceFileId);
     setSelectedCreateTask(undefined);
     setQrBuilderPrefill(undefined);
     setSelectedRecoveryDraftId(undefined);
@@ -1168,10 +1185,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const openQrEditor: AppStateValue["openQrEditor"] = (
     qrCodeId,
     workshopItemId,
+    sourceFileId,
   ) => {
     const qr = workspace.qrCodes.find((item) => item.id === qrCodeId);
     setSelectedQrId(qrCodeId);
     setSelectedWorkshopItemId(workshopItemId ?? qr?.workshopItemId);
+    setSelectedFileId(sourceFileId);
     setSelectedCreateTask("Create QR Code");
     setQrBuilderPrefill(undefined);
     setSelectedRecoveryDraftId(undefined);
@@ -1578,6 +1597,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setGuidedDraft(undefined);
     setSelectedWorkshopItemId(options.workshopItemId);
     setSelectedQrId(options.qrCodeId);
+    setSelectedFileId(undefined);
     setQrBuilderPrefill(options.qrBuilderPrefill);
     setSelectedRecoveryDraftId(undefined);
     setCurrentScreen("create-mode");
@@ -1605,8 +1625,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const createQrCode: AppStateValue["createQrCode"] = (record) => {
     const now = new Date().toISOString();
-    const explicitQrId = record.id ?? selectedQrId;
-    const requestedWorkshopItemId = record.workshopItemId ?? selectedWorkshopItemId;
+    const explicitQrId = record.forceNew
+      ? undefined
+      : record.id ?? selectedQrId;
+    const requestedWorkshopItemId = record.forceNew
+      ? undefined
+      : record.workshopItemId ?? selectedWorkshopItemId;
     const payload = getQrPayload(record);
     const payloadType =
       record.payloadType ?? (record.type === "Contact Card" ? "vcard" : "url");
@@ -1615,7 +1639,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           ?.qrCodeIds[0]
       : undefined;
     const matchingQr =
-      explicitQrId || linkedQrId
+      record.forceNew || explicitQrId || linkedQrId
         ? undefined
         : workspace.qrCodes.find(
             (item) =>
@@ -1654,6 +1678,28 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         qrName: record.name,
         shortLabel: record.label ?? "",
       } satisfies BuilderData);
+    const immediateExistingQr =
+      workspace.qrCodes.find((item) => item.id === qrCodeId) ?? matchingQr;
+    qrWriteCacheRef.current[qrCodeId] = {
+      ...immediateExistingQr,
+      ...record,
+      id: qrCodeId,
+      businessId: currentBusinessId,
+      name: record.name || "Untitled QR Draft",
+      type: record.type || "Custom URL",
+      status: readyStatus,
+      payloadType:
+        record.payloadType ?? (record.type === "Contact Card" ? "vcard" : "url"),
+      payload,
+      url: record.url,
+      scans: immediateExistingQr?.scans ?? record.scans ?? 0,
+      fileAssetIds: record.fileAssetIds ?? immediateExistingQr?.fileAssetIds ?? [],
+      createdAt: immediateExistingQr?.createdAt ?? now,
+      updatedAt: now,
+      createdFrom:
+        record.createdFrom ?? immediateExistingQr?.createdFrom ?? "Manual Builder",
+      workshopItemId,
+    };
     updateWorkspace((value) => {
       const existingQr = value.qrCodes.find((item) => item.id === qrCodeId);
       const linkedWorkshop =
@@ -1678,6 +1724,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         createdFrom: record.createdFrom ?? existingQr?.createdFrom ?? "Manual Builder",
         workshopItemId,
       };
+      qrWriteCacheRef.current[qrCodeId] = qrRecord;
       const workshop = linkedWorkshop
         ? normalizeWorkshopItem({
             ...linkedWorkshop,
@@ -1870,8 +1917,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const createQrFileVaultCopy: AppStateValue["createQrFileVaultCopy"] = async (
     qrCodeId,
     format = "png",
+    options = {},
   ) => {
-    const qr = workspace.qrCodes.find((item) => item.id === qrCodeId);
+    const qr =
+      qrWriteCacheRef.current[qrCodeId] ??
+      workspace.qrCodes.find((item) => item.id === qrCodeId);
     if (!qr) {
       const message = "This QR code could not be found.";
       setNotice(message);
@@ -1883,14 +1933,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setNotice(message);
       return { message };
     }
-    const existingFileBefore = workspace.files.find(
+    const targetFileName = options.fileNameOverride ?? generated.fileName;
+    const sourceFileBefore = options.sourceFileId
+      ? workspace.files.find(
+          (file) =>
+            file.id === options.sourceFileId &&
+            file.businessId === currentBusinessId &&
+            file.qrCodeId === qrCodeId,
+        )
+      : undefined;
+    const existingFileBefore = sourceFileBefore ?? workspace.files.find(
       (file) =>
         !file.archived &&
         file.businessId === currentBusinessId &&
         normalizeComparable(file.source ?? "Upload") ===
           normalizeComparable("QR Generator") &&
-        normalizeComparable(file.name) ===
-          normalizeComparable(generated.fileName) &&
+        normalizeComparable(file.name) === normalizeComparable(targetFileName) &&
         normalizeComparable(file.type) === normalizeComparable(generated.type) &&
         (file.qrCodeId ?? "") === qrCodeId &&
         (file.workshopItemId ?? "") === (qr.workshopItemId ?? "") &&
@@ -1899,12 +1957,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           (generated.fileDataUrl && file.dataUrl === generated.fileDataUrl) ||
           file.metadataOnly),
     );
+    const willReplaceSource = Boolean(options.replaceExisting && sourceFileBefore);
     const willUpdateMetadataOnly = Boolean(
       existingFileBefore?.metadataOnly &&
         (generated.fileDataUrl || generated.generatedContent),
     );
-    let fileId = "";
-    const message = existingFileBefore
+    let fileId = existingFileBefore?.id ?? makeId(`${currentBusinessId}-file`);
+    const message = willReplaceSource
+      ? "File Vault copy updated."
+      : existingFileBefore
       ? willUpdateMetadataOnly
         ? "File Vault copy updated with generated content."
         : "This QR file is already saved in File Vault."
@@ -1924,7 +1985,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             normalizeComparable(file.source ?? "Upload") ===
               normalizeComparable("QR Generator") &&
             normalizeComparable(file.name) ===
-              normalizeComparable(generated.fileName) &&
+              normalizeComparable(targetFileName) &&
             normalizeComparable(file.type) === normalizeComparable(generated.type) &&
             (file.qrCodeId ?? "") === qrCodeId &&
             (file.workshopItemId ?? "") === (workshopItemId ?? "") &&
@@ -1933,16 +1994,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
               (generated.fileDataUrl && file.dataUrl === generated.fileDataUrl) ||
               file.metadataOnly),
         );
-      fileId = existingFile?.id ?? makeId(`${currentBusinessId}-file`);
+      fileId = existingFile?.id ?? fileId;
       const files = existingFile
         ? value.files.map((file) => {
             if (file.id !== existingFile.id) return file;
             if (
-              file.metadataOnly &&
-              (generated.fileDataUrl || generated.generatedContent)
+              willReplaceSource ||
+              (file.metadataOnly &&
+                (generated.fileDataUrl || generated.generatedContent))
             ) {
               return {
                 ...file,
+                name: targetFileName,
+                type: generated.type,
+                workshopItemId,
+                qrCodeId,
                 dataUrl: generated.fileDataUrl ?? file.dataUrl,
                 generatedContent:
                   generated.generatedContent ?? file.generatedContent,
@@ -1955,7 +2021,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             {
               id: fileId,
               businessId: currentBusinessId,
-              name: generated.fileName,
+              name: targetFileName,
               type: generated.type,
               workshopItemId,
               qrCodeId,
@@ -2004,7 +2070,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
                 id: `${Date.now()}`,
                 businessId: currentBusinessId,
                 label: "QR file copy saved",
-                detail: `${generated.fileName} saved to File Vault.`,
+                detail: `${targetFileName} saved to File Vault.`,
                 occurredAt: "Just now",
                 tone: "info",
                 type: "file.created",

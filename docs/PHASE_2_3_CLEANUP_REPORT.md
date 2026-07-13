@@ -2,140 +2,117 @@
 
 ## Status
 
-Implemented locally for the Phase 2 + 3 cleanup scope.
+Completed locally for the focused QR detail cleanup, save timing, overwrite protection, duplicate prevention, and share/send flow correction.
 
 ## Scope guardrails followed
 
-- Did not start Phase 4.
-- Did not add backend, auth, login, payments, or live integrations.
-- Kept localStorage persistence, saved builder payloads, and the real QR generator.
-- Kept all live-account features as honest placeholders.
+- Phase 4 was not started.
+- No backend, auth, login, payments, SMS provider, email provider, or live integrations were added.
+- localStorage persistence remains in place.
+- Recovery drafts remain in place.
+- QR viewer/detail mode remains in place.
+- Duplicate protection remains in place.
+- Text, email, and customer-send actions stay honest mock/device-prepared flows. The app does not claim anything was sent by Start Here Helper.
+
+## QR Detail mobile/tablet cleanup
+
+- QR Detail now uses a mobile-first app layout instead of a wide desktop dashboard layout.
+- Phone and small tablet layouts stack into one column.
+- The QR preview appears near the top.
+- Details use compact rows with wrapping text instead of wide table-style rows.
+- Primary actions are large app-style buttons: Download, Share / Send, and Edit.
+- Secondary actions are placed in a responsive wrapped grid.
+- Destination/link/vCard text uses wrapping so it does not push the page wider than the viewport.
+- Tablet/desktop can use a wider layout only when there is enough space.
 
 ## Download behavior corrected
 
-- QR Builder downloads now trigger a real browser/device download.
-- The QR Builder no longer uses a hidden File Vault checkbox.
-- After Create QR Code, the app shows “Save a copy to File Vault?” with Yes/No choices.
-- After QR PNG/SVG/PDF download, the app shows “Save this downloaded file to File Vault?” with Save Copy / No thanks choices.
-- File Vault copies are only created after the user explicitly chooses to save a copy.
-- Saved QR records now open in QR Detail / viewer mode first.
-- Edit is separate from Open/View and is the only action that opens the QR Builder for saved QR records.
-- Recovery drafts still open the QR Builder because they are unfinished work.
-- My Business Kit QR actions now separate:
-  - View
-  - Download
-  - Share / Send
-  - Edit
-  - Save Copy
-- PDF sign download uses a generic data URL download helper.
-- Metadata-only workshop exports no longer change the creation status to “Downloaded”.
-- Flyer, business card, and other workshop export references now use an explicit Save Copy to File Vault prompt where real file generation is not connected yet.
-- Metadata-only records now explain that real storage/file bytes are not connected.
+- Download to Device now downloads to the device only.
+- Download PNG, SVG, and PDF Sign no longer show a File Vault prompt afterward.
+- Downloads do not create File Vault metadata.
+- Downloads do not automatically save exports to File Vault.
+- Download messages use clear wording:
+  - “PNG downloaded to your device.”
+  - “SVG downloaded to your device.”
+  - “PDF sign downloaded to your device.”
 
-## Auto-save / recovery draft behavior
+## File Vault prompt timing corrected
 
-- Create builders now keep auto-save recovery drafts separate from File Vault.
-- Recovery drafts are stored in localStorage under `startHereHelper.recoveryDrafts`.
-- Recovery drafts store builder id, source tool, selected task, active business id, selected workshop item id when editing, form values, updated time, and `Recoverable Draft` status.
-- QR recovery drafts also store the selected QR id when editing an existing QR.
-- Repeated auto-save updates the existing recovery draft for the same active work instead of creating a new draft per keystroke.
-- Fresh builders still open blank.
-- Auto-save begins only after meaningful user input.
-- Auto-save does not create File Vault metadata.
-- Auto-save does not mark anything downloaded, sent, posted, or ready.
-- Recovery drafts can be continued, saved as My Creations drafts, or discarded from My Creations.
-- Discarding a recovery draft does not delete official saved WorkshopItems.
-- Manual Save Draft converts/updates the normal My Creations draft and clears the temporary recovery draft.
+- New QR creation now saves the editable QR to My Creations and then immediately asks: “Save a copy to File Vault?”
+- Saying Yes creates or updates the File Vault copy with duplicate protection.
+- Saying No leaves the QR saved in My Creations and My Business Kit and shows: “No File Vault copy was saved. Your QR is still saved in My Creations.”
+- Edited saved QR records that were not opened from File Vault now save the QR first, then ask: “Save updated copy to File Vault?”
+- File Vault is only used for chosen file/export copies, not every draft or every download.
 
-## My Creations vs File Vault
+## File Vault source edit behavior
 
-- My Creations stores editable projects and creations automatically.
-- My Business Kit stores reusable business assets like saved QR records.
-- File Vault stores chosen files, exports, links, uploads, and references.
-- File Vault is not the automatic home for every generated item or unfinished draft.
+- Opening a QR from File Vault carries source file context into QR Detail and QR Builder.
+- Editing a QR opened from File Vault no longer asks “Save to File Vault?” after save.
+- Saving from that context asks: “Overwrite saved File Vault copy?”
+- Confirming updates the saved QR, linked WorkshopItem, and existing File Vault copy.
+- Cancel leaves the existing QR and File Vault copy unchanged.
+- Save as New Copy creates a separate QR/WorkshopItem and a separate File Vault copy with a versioned name.
 
-## Recoverable draft vs saved draft
+## Overwrite protection
 
-- A recoverable draft protects in-progress form values after refresh, browser close, app close, or accidental navigation.
-- A saved draft is a normal editable WorkshopItem visible in My Creations.
-- A File Vault copy is optional file/reference storage created only by explicit user choice.
+- Editing an existing saved QR no longer silently overwrites the record.
+- Save Changes opens the confirmation: “Save changes to this QR?”
+- Save Changes updates the same QRCodeRecord and WorkshopItem.
+- Cancel does not save changes.
+- Save as New Copy starts the version-name flow.
 
-## File Vault organization added
+## Save as New Copy naming
 
-- Summary cards:
-  - Active files
-  - Generated exports
-  - Metadata only
-  - Customer visible
-  - Archived
-- Filters:
-  - All
-  - Logos & Brand
-  - QR Codes
-  - Flyers & Posts
-  - Business Cards
-  - Print Files
-  - Estimates & Invoices
-  - Customer Files
-  - Project Files
-  - Help Request Files
-  - Canva / VistaPrint
-  - Uploads
-  - Generated Exports
-  - Metadata Only
-  - Archived
-- File cards now show status, visibility, type, linked records, and saved date.
-- Detail modal now shows storage status, previews when generated content exists, download/open/copy actions, use in Create, attach to help request, pin to kit, visibility toggle, and archive.
-- Linked QR files now show Open QR and Edit QR as separate actions.
-- Metadata-only QR File Vault records try to regenerate from the saved QR payload before showing “This File Vault item does not have downloadable QR content yet.”
+- Save as New Copy opens the prompt: “Name this new copy”.
+- The original name is shown read-only.
+- The new name defaults to version naming, such as “Menu QR - Version 2”.
+- If Version 2 already exists, the next available version is used.
+- Exact duplicate names are blocked with: “That name already exists. Use a different name or save changes to the existing item.”
+- Saving creates a new QRCodeRecord and WorkshopItem while leaving the original unchanged.
 
-## Duplicate prevention added
+## Share / Send flow
 
-- Repeated QR creation updates the selected, linked, or matching QR record instead of creating duplicate QR records.
-- Matching QR detection uses business id, QR name, QR type, payload type, and payload/destination.
-- My Creations Save Draft updates the selected or clearly matching draft instead of creating repeated copies.
-- My Business Kit QR lists reference the saved QR record and do not add extra duplicate business assets.
-- Save Copy to File Vault checks for an existing matching QR/workshop export before adding a file record.
-- Metadata-only File Vault records update with generated content when the generated copy becomes available.
-- Device downloads can run repeatedly, but File Vault copy creation stays duplicate-safe.
+- Share / Send now opens a structured sheet titled: “Share or send this QR”.
+- The sheet explains: “Choose how you want to share this QR. Messages are sent from your device or prepared for you unless a real integration is connected.”
+- Options include:
+  - Text from my device
+  - Email from my device
+  - Send to saved customer
+  - Custom recipient
+  - Copy link / Copy vCard
+  - Download QR image
+  - Create promo with this QR
+- Text flow includes the carrier/data note and does not claim Start Here Helper sent the text.
+- Email flow opens/prepares a device email and does not claim the email was sent.
+- Saved customer and custom recipient flows are mock/prepared flows only.
 
-## Sample data behavior corrected
+## Duplicate protection retained
 
-- Fresh Workshop builders now open blank.
-- Guided wizard field defaults no longer come from sample mock data.
-- Saved creations and guided drafts still restore their saved values.
-- “Load Example” explicitly loads the builder’s sample mock data.
-
-## QR controls corrected
-
-- The QR logo option is labeled “Show logo/initials in preview only”.
-- Exported QR files do not claim embedded logos.
-- Advanced QR placeholders remain behind More Options.
-- Download success messages distinguish device download from optional File Vault copy.
+- Recovery Drafts update the same active-work draft instead of creating a new draft on every keystroke.
+- Manual save clears the matching recovery draft.
+- My Creations Save Draft updates the selected or matching WorkshopItem instead of creating repeated copies.
+- QR Records use business id, name, type, payload, and payloadType matching to avoid duplicates unless Save as New Copy is chosen.
+- My Business Kit references saved QR records and avoids repeated QR assets for the same QR.
+- File Vault checks for an existing matching file before creating a new record.
+- Metadata-only File Vault records update when generated content becomes available.
+- Immediate QR save-to-vault timing is hardened so a just-created QR can be copied to File Vault without waiting for a separate render cycle.
 
 ## Tests added or expanded
 
-- Builder opens blank until “Load Example” is clicked.
-- Recovery drafts auto-save after meaningful flyer input.
-- Blank opened builders do not create recovery drafts.
-- Recovery drafts survive localStorage reload.
-- Recovery drafts can restore flyer and QR fields.
-- Recovery drafts can be discarded.
-- Manual Save Draft clears the related recovery draft.
-- QR recovery drafts do not create File Vault records.
-- File Vault helpers categorize generated QR files and metadata-only exports.
-- File Vault helper identifies downloadability correctly.
-- Download data URL helper triggers the browser anchor download path.
-- No File Vault checkbox appears in QR Builder More Options.
-- Create QR shows the visible File Vault Yes/No follow-up.
-- QR download shows the visible File Vault Save Copy / No thanks follow-up.
-- My Creations opens saved QR records in viewer mode first.
+- QR Detail opens saved QR records in viewer mode first.
+- QR Detail renders primary actions without requiring the editor.
 - QR Detail Edit opens the QR Builder with the selected QR loaded.
-- Duplicate QR creation updates the existing QR and linked WorkshopItem.
+- Download no longer asks File Vault and does not create File Vault records.
+- New QR creation asks File Vault immediately and preserves My Creations when the user says No.
+- Editing an existing QR requires overwrite confirmation.
+- Cancel on overwrite does not change the saved QR.
+- Save Changes updates the same QR id and WorkshopItem id.
+- Save as New Copy uses Version naming and keeps the original unchanged.
+- File Vault source QR edits ask to overwrite and update the existing file copy.
 - Save Copy to File Vault twice does not duplicate QR files.
-- Metadata-only File Vault QR records update when generated content arrives.
-- Repeated QR downloads are allowed while File Vault stays single-copy.
-- QR Detail share fallback shows copy/send options and does not claim anything was sent.
+- Repeated QR creation updates matching existing QR unless Save as New Copy is chosen.
+- Recovery drafts update one record for the same active work.
+- Share / Send opens honest device/customer/custom recipient options and does not claim SMS/email was sent.
 
 ## Validation result
 
@@ -143,18 +120,20 @@ Passed:
 
 ```text
 npm run build
-npm test
+npm test -- --run
 ```
 
-Build completed with the existing Vite chunk-size warning only. Tests passed:
+Build completed with the existing Vite chunk-size warning only.
+
+Tests passed:
 
 ```text
 9 test files passed
-56 tests passed
+59 tests passed
 ```
 
-Commit and push to `main` with:
+Commit message:
 
 ```text
-Clean up QR view save and File Vault choice flow
+Clean up mobile QR detail save timing and share flow
 ```

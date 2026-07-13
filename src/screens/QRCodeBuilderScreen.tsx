@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../components/common/Button";
+import { Modal } from "../components/common/Modal";
 import { DetailHeader } from "../components/common/ScreenHeader";
 import { getBuilderContract } from "../config/builderContracts";
 import { businessSavedLinks } from "../data/mock/businessLinks";
@@ -77,6 +78,7 @@ export function QRCodeBuilderScreen() {
     guidedDraft,
     clearGuidedDraft,
     selectedWorkshopItemId,
+    selectedFileId,
     selectedQrId,
     qrBuilderPrefill,
   } = useAppState();
@@ -92,6 +94,13 @@ export function QRCodeBuilderScreen() {
     (selectedWorkshopItem?.qrCodeIds[0]
       ? workspace.qrCodes.find((item) => item.id === selectedWorkshopItem.qrCodeIds[0])
       : undefined);
+  const sourceFile =
+    selectedFileId && selectedQr
+      ? workspace.files.find(
+          (file) => file.id === selectedFileId && file.qrCodeId === selectedQr.id,
+        )
+      : undefined;
+  const sourceFileId = sourceFile?.id ?? selectedFileId;
   const guided =
     guidedDraft?.builderId === "qr-code-builder"
       ? guidedDraft.answers
@@ -163,7 +172,7 @@ export function QRCodeBuilderScreen() {
   const [previewDataUrl, setPreviewDataUrl] = useState(selectedQr?.dataUrl ?? "");
   const [hasUserEdited, setHasUserEdited] = useState(false);
   const [pendingVaultCopy, setPendingVaultCopy] = useState<{
-    context: "created" | "download";
+    context: "created" | "updated";
     fileName: string;
     type: string;
     format: "png" | "svg" | "pdf";
@@ -172,6 +181,10 @@ export function QRCodeBuilderScreen() {
     qrDataUrl?: string;
     svg?: string;
   }>();
+  const [overwritePromptOpen, setOverwritePromptOpen] = useState(false);
+  const [copyNamePromptOpen, setCopyNamePromptOpen] = useState(false);
+  const [copyName, setCopyName] = useState("");
+  const [copyNameError, setCopyNameError] = useState("");
   const [advanced, setAdvanced] = useState({
     qrColor: selectedQr?.foregroundColor ?? "#101c3b",
     backgroundColor: selectedQr?.backgroundColor ?? "#ffffff",
@@ -246,6 +259,24 @@ export function QRCodeBuilderScreen() {
   const previewDestination = isContact
     ? encodedContact
     : validation.normalizedUrl ?? destination;
+  const isEditingExistingQr = Boolean(selectedQr || savedQrId);
+  const generateVersionName = (name: string) => {
+    const base =
+      name.trim().replace(/\s+-\s+Version\s+\d+$/i, "") || "QR Code";
+    const existingNames = new Set(
+      [
+        ...workspace.qrCodes.map((item) => item.name),
+        ...workspace.workshopItems.map((item) => item.title),
+      ].map((value) => value.trim().toLowerCase()),
+    );
+    let version = 2;
+    let candidate = `${base} - Version ${version}`;
+    while (existingNames.has(candidate.toLowerCase())) {
+      version += 1;
+      candidate = `${base} - Version ${version}`;
+    }
+    return candidate;
+  };
 
   const validationStatus = created
     ? "Created and saved"
@@ -388,14 +419,14 @@ export function QRCodeBuilderScreen() {
     shortLabel,
   ]);
 
-  const save = async (status: "Draft" | "Ready") => {
-    if (!qrName.trim()) {
+  const validateBeforeSave = (status: "Draft" | "Ready", name = qrName) => {
+    if (!name.trim()) {
       setActionMessage("Name this QR code so you can find it later.");
-      return;
+      return false;
     }
     if (!qrType) {
       setActionMessage("Choose what this QR code is for.");
-      return;
+      return false;
     }
     const payloadResult = buildQrPayload({ qrType, destination, contact });
     if (status === "Ready" && (!payloadResult.valid || !payloadResult.payload)) {
@@ -403,8 +434,24 @@ export function QRCodeBuilderScreen() {
         payloadResult.message ??
           "Add a destination link so the QR code knows where to send people.",
       );
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const applySave = async (
+    status: "Draft" | "Ready",
+    options: {
+      forceNew?: boolean;
+      overrideName?: string;
+      editedExisting?: boolean;
+      sourceFileId?: string;
+      saveAsNewCopy?: boolean;
+    } = {},
+  ) => {
+    const effectiveName = options.overrideName ?? qrName;
+    if (!validateBeforeSave(status, effectiveName)) return;
+    const payloadResult = buildQrPayload({ qrType, destination, contact });
     const payload = payloadResult.payload ?? (isContact ? encodedContact : destination);
     const svg =
       status === "Ready" && payload
@@ -425,9 +472,12 @@ export function QRCodeBuilderScreen() {
           })
         : undefined;
     const saved = createQrCode({
-      id: savedQrId || selectedQr?.id,
-      workshopItemId: savedItemId || selectedWorkshopItem?.id,
-      name: qrName.trim() || "Untitled QR Draft",
+      id: options.forceNew ? undefined : savedQrId || selectedQr?.id,
+      workshopItemId: options.forceNew
+        ? undefined
+        : savedItemId || selectedWorkshopItem?.id,
+      forceNew: options.forceNew,
+      name: effectiveName.trim() || "Untitled QR Draft",
       type: qrType || "Not selected",
       url: payloadResult.normalizedUrl,
       payloadType: payloadResult.payloadType ?? (isContact ? "vcard" : "url"),
@@ -441,11 +491,11 @@ export function QRCodeBuilderScreen() {
       margin: 2,
       label: shortLabel.trim() || undefined,
       status,
-      fileAssetIds: selectedQr?.fileAssetIds ?? [],
+      fileAssetIds: options.forceNew ? [] : selectedQr?.fileAssetIds ?? [],
       createdFrom: guided ? "Guided Wizard" : "Manual Builder",
       builderData: buildBuilderData(),
       previewData: {
-        qrName,
+        qrName: effectiveName,
         qrType,
         destination: previewDestination,
         shortLabel,
@@ -459,20 +509,81 @@ export function QRCodeBuilderScreen() {
     if (dataUrl) setPreviewDataUrl(dataUrl);
     if (status === "Ready") {
       setCreated(true);
-    setPendingVaultCopy({
-        context: "created",
-        fileName: `${sanitizeQrFileName(qrName)}.png`,
+      if (options.sourceFileId && options.saveAsNewCopy) {
+        await createQrFileVaultCopy(saved.qrCodeId, "png", {
+          fileNameOverride: `${sanitizeQrFileName(effectiveName)}.png`,
+        });
+        setPendingVaultCopy(undefined);
+        setActionMessage(`New QR copy saved as ${effectiveName}.`);
+        return;
+      }
+      if (options.sourceFileId) {
+        await createQrFileVaultCopy(saved.qrCodeId, "png", {
+          sourceFileId: options.sourceFileId,
+          replaceExisting: true,
+          fileNameOverride: `${sanitizeQrFileName(effectiveName)}.png`,
+        });
+        setPendingVaultCopy(undefined);
+        setActionMessage("Saved QR and File Vault copy updated.");
+        return;
+      }
+      setPendingVaultCopy({
+        context: options.editedExisting ? "updated" : "created",
+        fileName: `${sanitizeQrFileName(effectiveName)}.png`,
         type: "image/png",
         format: "png",
         dataUrl,
         qrDataUrl: dataUrl,
         svg,
       });
-      setActionMessage("QR code generated and saved. Saved to My Creations.");
+      setActionMessage(
+        options.saveAsNewCopy
+          ? `New QR copy saved as ${effectiveName}.`
+          : options.editedExisting
+            ? "QR changes saved."
+            : "QR code generated and saved to My Creations.",
+      );
     } else
       setActionMessage(
         "Draft saved. You can finish the destination and name later.",
       );
+  };
+
+  const requestSave = async (status: "Draft" | "Ready") => {
+    if (!validateBeforeSave(status)) return;
+    if (status === "Ready" && isEditingExistingQr) {
+      setOverwritePromptOpen(true);
+      return;
+    }
+    await applySave(status);
+  };
+
+  const openSaveAsNewCopyPrompt = () => {
+    setCopyName(generateVersionName(qrName || selectedQr?.name || "QR Code"));
+    setCopyNameError("");
+    setOverwritePromptOpen(false);
+    setCopyNamePromptOpen(true);
+  };
+
+  const saveAsNewCopy = async () => {
+    const normalized = copyName.trim().toLowerCase();
+    const exists = [
+      ...workspace.qrCodes.map((item) => item.name),
+      ...workspace.workshopItems.map((item) => item.title),
+    ].some((name) => name.trim().toLowerCase() === normalized);
+    if (!copyName.trim() || exists) {
+      setCopyNameError(
+        "That name already exists. Use a different name or save changes to the existing item.",
+      );
+      return;
+    }
+    setCopyNamePromptOpen(false);
+    await applySave("Ready", {
+      forceNew: true,
+      overrideName: copyName,
+      saveAsNewCopy: true,
+      sourceFileId,
+    });
   };
 
   const savePendingCopyToFileVault = () => {
@@ -509,17 +620,12 @@ export function QRCodeBuilderScreen() {
     const dataUrl =
       previewDataUrl || (await generateQrDataUrl(payloadResult.payload, options));
     let fileName = `${baseName}.png`;
-    let type = "image/png";
     let fileDataUrl = dataUrl;
-    let generatedContent: string | undefined;
     if (format === "svg") {
       fileName = `${baseName}.svg`;
-      type = "image/svg+xml";
-      generatedContent = svg;
       downloadSvgFile(fileName, svg);
     } else if (format === "pdf") {
       fileName = `${baseName}-sign.pdf`;
-      type = "application/pdf";
       fileDataUrl = await createQrPdfSign({
         title: qrName,
         label: shortLabel || qrName,
@@ -529,16 +635,6 @@ export function QRCodeBuilderScreen() {
     } else {
       downloadDataUrl(fileName, dataUrl);
     }
-    setPendingVaultCopy({
-      context: "download",
-      fileName,
-      type,
-      format,
-      dataUrl: format === "svg" ? undefined : fileDataUrl,
-      generatedContent,
-      qrDataUrl: dataUrl,
-      svg,
-    });
     setActionMessage(
       format === "pdf"
         ? "PDF sign downloaded to your device."
@@ -997,17 +1093,35 @@ export function QRCodeBuilderScreen() {
           variant="primary"
           icon={<QrCode size={18} />}
           disabled={!canCreate}
-          onClick={() => void save("Ready")}
+          onClick={() => void requestSave("Ready")}
         >
-          Create QR Code
+          {isEditingExistingQr ? "Save Changes" : "Create QR Code"}
         </Button>
-        <Button
-          variant="neutral"
-          icon={<Save size={18} />}
-          onClick={() => void save("Draft")}
-        >
-          Save Draft
-        </Button>
+        {isEditingExistingQr ? (
+          <>
+            <Button
+              variant="neutral"
+              icon={<Save size={18} />}
+              onClick={openSaveAsNewCopyPrompt}
+            >
+              Save as New Copy
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setCurrentScreen("qr-detail")}
+            >
+              Cancel
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="neutral"
+            icon={<Save size={18} />}
+            onClick={() => void requestSave("Draft")}
+          >
+            Save Draft
+          </Button>
+        )}
       </section>
       {actionMessage && (
         <div
@@ -1030,12 +1144,12 @@ export function QRCodeBuilderScreen() {
             <h2 className="section-heading">
               {pendingVaultCopy.context === "created"
                 ? "Save a copy to File Vault?"
-                : "Save this downloaded file to File Vault?"}
+                : "Save updated copy to File Vault?"}
             </h2>
             <p className="section-copy">
               {pendingVaultCopy.context === "created"
                 ? "My Creations keeps the editable QR. File Vault keeps chosen files and exports."
-                : "File Vault keeps a copy or reference inside this app."}
+                : "My Creations keeps the editable QR. File Vault keeps the chosen export copy."}
             </p>
           </div>
           <div className="row wrap">
@@ -1045,7 +1159,7 @@ export function QRCodeBuilderScreen() {
             >
               {pendingVaultCopy.context === "created"
                 ? "Yes, save copy"
-                : "Save Copy to File Vault"}
+                : "Save updated copy"}
             </Button>
             <Button
               variant="outline"
@@ -1054,16 +1168,103 @@ export function QRCodeBuilderScreen() {
                 setActionMessage(
                   pendingVaultCopy.context === "created"
                     ? "No File Vault copy was saved. Your QR is still saved in My Creations."
-                    : "No File Vault copy was saved.",
+                    : "No File Vault copy was saved. Your QR changes are still saved in My Creations.",
                 );
               }}
             >
               {pendingVaultCopy.context === "created"
                 ? "No, not now"
-                : "No thanks"}
+                : "No, not now"}
             </Button>
           </div>
         </section>
+      )}
+
+      {overwritePromptOpen && (
+        <Modal
+          title={
+            sourceFileId ? "Overwrite saved File Vault copy?" : "Save changes to this QR?"
+          }
+          onClose={() => setOverwritePromptOpen(false)}
+        >
+          <div className="stack">
+            <p>
+              {sourceFileId
+                ? "This will update the saved QR and replace the existing File Vault copy."
+                : "This will update the existing saved QR. The previous version may be replaced."}
+            </p>
+            <div className="modal-actions">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setOverwritePromptOpen(false);
+                  void applySave("Ready", {
+                    editedExisting: true,
+                    sourceFileId,
+                  });
+                }}
+              >
+                {sourceFileId ? "Yes, overwrite saved file" : "Save Changes"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setOverwritePromptOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button variant="neutral" onClick={openSaveAsNewCopyPrompt}>
+                Save as New Copy
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {copyNamePromptOpen && (
+        <Modal
+          title="Name this new copy"
+          onClose={() => setCopyNamePromptOpen(false)}
+        >
+          <div className="stack">
+            <p>The original will stay unchanged.</p>
+            <div className="field">
+              <label>Original name</label>
+              <input
+                className="input"
+                value={selectedQr?.name ?? qrName}
+                readOnly
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="qr-copy-name">New name</label>
+              <input
+                id="qr-copy-name"
+                className="input"
+                value={copyName}
+                onChange={(event) => {
+                  setCopyName(event.target.value);
+                  setCopyNameError("");
+                }}
+              />
+              {copyNameError && (
+                <small className="field-help" role="alert">
+                  {copyNameError}
+                </small>
+              )}
+            </div>
+            <div className="modal-actions">
+              <Button variant="primary" onClick={() => void saveAsNewCopy()}>
+                Save New Copy
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCopyNamePromptOpen(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {created && (

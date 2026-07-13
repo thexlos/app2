@@ -5,12 +5,16 @@ import {
   Edit3,
   ExternalLink,
   FileImage,
+  Mail,
+  MessageSquareText,
   QrCode,
   Send,
+  UserRound,
   Vault,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "../components/common/Button";
+import { Modal } from "../components/common/Modal";
 import { DetailHeader } from "../components/common/ScreenHeader";
 import { StatusBadge } from "../components/common/StatusBadge";
 import { useAppState } from "../state/AppState";
@@ -23,23 +27,30 @@ function formatQrPayload(value?: string) {
   return value;
 }
 
+function buildShareMessage(name: string, destination?: string) {
+  return destination
+    ? `${name}: ${destination}`
+    : `${name}: QR code is ready to share from Start Here Helper.`;
+}
+
 export function QRCodeDetailScreen() {
   const {
     workspace,
     selectedQrId,
     selectedWorkshopItemId,
+    selectedFileId,
     openQrEditor,
     downloadQrToDevice,
     createQrFileVaultCopy,
+    openCreateTask,
     setCurrentScreen,
     archiveWorkshopItem,
     showNotice,
   } = useAppState();
   const [actionMessage, setActionMessage] = useState("");
-  const [shareOptionsVisible, setShareOptionsVisible] = useState(false);
-  const [pendingVaultCopy, setPendingVaultCopy] = useState<{
-    format: QrDownloadFormat;
-  }>();
+  const [shareSheetOpen, setShareSheetOpen] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [customRecipient, setCustomRecipient] = useState("");
 
   const selectedWorkshopItem = selectedWorkshopItemId
     ? workspace.workshopItems.find((item) => item.id === selectedWorkshopItemId)
@@ -84,6 +95,12 @@ export function QRCodeDetailScreen() {
   const isContactCard = qr.payloadType === "vcard";
   const canTestLink = !isContactCard && Boolean(qr.url ?? qr.payload);
   const hasDownloadablePayload = Boolean(destination);
+  const sourceFile = selectedFileId
+    ? workspace.files.find(
+        (file) => file.id === selectedFileId && file.qrCodeId === qr.id,
+      )
+    : undefined;
+  const shareMessage = buildShareMessage(qr.name, destination);
 
   const copyPayload = async () => {
     if (!destination) {
@@ -94,60 +111,97 @@ export function QRCodeDetailScreen() {
     setActionMessage(isContactCard ? "vCard copied." : "Link copied.");
   };
 
+  const copyShareMessage = async () => {
+    await navigator.clipboard?.writeText(shareMessage);
+    setActionMessage("Message copied. Nothing was sent by the app.");
+  };
+
   const downloadQr = async (format: QrDownloadFormat) => {
     const result = await downloadQrToDevice(qr.id, format);
     setActionMessage(result.message);
-    if (result.fileName) setPendingVaultCopy({ format });
   };
 
   const saveCopy = async (format: QrDownloadFormat = "png") => {
     const result = await createQrFileVaultCopy(qr.id, format);
-    setPendingVaultCopy(undefined);
     setActionMessage(result.message);
   };
 
-  const shareQr = async () => {
-    const url = !isContactCard ? qr.url ?? qr.payload : undefined;
-    if (url && typeof navigator.share === "function") {
+  const openTextFromDevice = async () => {
+    if (!hasDownloadablePayload) {
+      setActionMessage("This QR needs a destination before it can be shared.");
+      return;
+    }
+    if (typeof navigator.share === "function" && !isContactCard) {
       try {
         await navigator.share({
           title: qr.name,
-          text: qr.label ?? `QR code for ${qr.type}`,
-          url,
+          text: shareMessage,
+          url: qr.url ?? qr.payload,
         });
-        setActionMessage("Share sheet opened. Nothing was sent by the app.");
+        setActionMessage("Device share sheet opened. Nothing was sent by the app.");
         return;
       } catch {
         setActionMessage("Share was canceled. Nothing was sent.");
         return;
       }
     }
-    setShareOptionsVisible(true);
+    const result = await downloadQrToDevice(qr.id, "png");
     setActionMessage(
-      "Share options are shown below. Nothing was sent automatically.",
+      `${result.message} Attach it from your device’s photo/files app to a text message.`,
+    );
+  };
+
+  const openEmailFromDevice = () => {
+    const subject = encodeURIComponent(qr.name);
+    const body = encodeURIComponent(
+      `${shareMessage}\n\nAttachments through email links are not reliable. Download the QR image and attach it manually if needed.`,
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    setActionMessage("Email app opened with a prepared message. No email was sent by Start Here Helper.");
+  };
+
+  const prepareCustomerSend = () => {
+    if (!selectedCustomerId) {
+      setActionMessage("Choose a saved customer first.");
+      return;
+    }
+    setActionMessage(
+      "Customer send is prepared in mock mode. No SMS or email was sent.",
+    );
+  };
+
+  const prepareCustomRecipient = async () => {
+    if (!customRecipient.trim()) {
+      setActionMessage("Enter an email or phone number first.");
+      return;
+    }
+    await navigator.clipboard?.writeText(shareMessage);
+    setActionMessage(
+      "Custom recipient message copied. No SMS or email was sent.",
     );
   };
 
   return (
-    <section className="screen screen--detail qr-builder-screen">
+    <section className="screen screen--detail qr-detail-screen">
       <DetailHeader title="QR Detail" backTo="workshop-library" />
-      <div className="section qr-builder-intro">
+      <div className="section qr-detail-heading">
         <div className="icon-box">
           <QrCode size={23} />
         </div>
         <div>
+          <p className="eyebrow">Saved QR code</p>
           <h1 className="page-title">{qr.name}</h1>
           <p className="page-subtitle">
-            Saved QR codes open in view mode first. Use Edit only when you want
-            to change the QR.
+            View, download, share, or copy this QR. Use Edit only when you want
+            to change the saved QR.
           </p>
         </div>
       </div>
 
-      <div className="qr-builder-layout section">
-        <aside className="qr-preview-card" aria-label="Saved QR preview">
+      <div className="section qr-detail-layout">
+        <article className="qr-detail-preview-card" aria-label="Saved QR preview">
           <div className="qr-preview-top">
-            <span>QR Viewer</span>
+            <span>QR Code</span>
             <StatusBadge tone={qr.status === "Draft" ? "warning" : "success"}>
               {qr.status ?? "Ready"}
             </StatusBadge>
@@ -170,46 +224,49 @@ export function QRCodeDetailScreen() {
             <p>{formatQrPayload(destination)}</p>
             {qr.label && <div className="qr-short-label">{qr.label}</div>}
           </div>
-          {!hasDownloadablePayload && (
-            <div className="qr-status qr-status--warning">
-              <QrCode size={19} />
-              <span>This QR is missing a payload or destination.</span>
-            </div>
-          )}
-        </aside>
+        </article>
 
-        <div className="stack qr-builder-form">
+        <div className="qr-detail-side stack">
           <section className="card panel stack">
-            <div className="between">
-              <div>
-                <h2 className="section-heading">Saved QR details</h2>
-                <p className="section-copy">
-                  View, download, share, or copy this QR without opening the
-                  editor.
-                </p>
-              </div>
-              <StatusBadge tone="info">{qr.payloadType ?? "url"}</StatusBadge>
+            <h2 className="section-heading">Primary actions</h2>
+            <div className="qr-detail-primary-actions">
+              <Button
+                variant="primary"
+                icon={<Download size={18} />}
+                disabled={!hasDownloadablePayload}
+                onClick={() => void downloadQr("png")}
+              >
+                Download
+              </Button>
+              <Button
+                variant="outline"
+                icon={<Send size={18} />}
+                onClick={() => setShareSheetOpen(true)}
+              >
+                Share / Send
+              </Button>
+              <Button
+                variant="neutral"
+                icon={<Edit3 size={18} />}
+                onClick={() =>
+                  openQrEditor(qr.id, qr.workshopItemId, sourceFile?.id)
+                }
+              >
+                Edit
+              </Button>
             </div>
-            <dl className="help-detail-list">
-              <div>
-                <dt>QR type</dt>
-                <dd>{qr.type}</dd>
-              </div>
+          </section>
+
+          <section className="card panel stack">
+            <h2 className="section-heading">Info</h2>
+            <dl className="qr-detail-info-list">
               <div>
                 <dt>Status</dt>
                 <dd>{qr.status ?? "Ready"}</dd>
               </div>
               <div>
-                <dt>Destination</dt>
-                <dd>{formatQrPayload(destination)}</dd>
-              </div>
-              <div>
-                <dt>Created</dt>
-                <dd>
-                  {qr.createdAt
-                    ? new Date(qr.createdAt).toLocaleString()
-                    : "No date saved"}
-                </dd>
+                <dt>Vault Copy</dt>
+                <dd>{linkedFiles.length > 0 ? "Saved" : "Not saved"}</dd>
               </div>
               <div>
                 <dt>Updated</dt>
@@ -220,180 +277,97 @@ export function QRCodeDetailScreen() {
                 </dd>
               </div>
               <div>
+                <dt>Created</dt>
+                <dd>
+                  {qr.createdAt
+                    ? new Date(qr.createdAt).toLocaleString()
+                    : "No date saved"}
+                </dd>
+              </div>
+              <div>
                 <dt>Linked File Vault copies</dt>
                 <dd>{linkedFiles.length}</dd>
               </div>
             </dl>
           </section>
-
-          <section className="card panel stack">
-            <h2 className="section-heading">Primary actions</h2>
-            <div className="row wrap">
-              <Button
-                variant="primary"
-                icon={<Download size={18} />}
-                disabled={!hasDownloadablePayload}
-                onClick={() => void downloadQr("png")}
-              >
-                Download to Device
-              </Button>
-              <Button
-                variant="outline"
-                icon={<Send size={18} />}
-                onClick={() => void shareQr()}
-              >
-                Share / Send
-              </Button>
-              <Button
-                variant="neutral"
-                icon={<Edit3 size={18} />}
-                onClick={() => openQrEditor(qr.id, qr.workshopItemId)}
-              >
-                Edit
-              </Button>
-            </div>
-          </section>
-
-          <section className="card panel stack">
-            <h2 className="section-heading">More actions</h2>
-            <div className="row wrap">
-              <Button
-                variant="outline"
-                icon={<Copy size={18} />}
-                onClick={() => void copyPayload()}
-              >
-                {isContactCard ? "Copy vCard" : "Copy Link"}
-              </Button>
-              {canTestLink && (
-                <Button
-                  variant="outline"
-                  icon={<ExternalLink size={18} />}
-                  onClick={() => {
-                    window.open(
-                      qr.url ?? qr.payload,
-                      "_blank",
-                      "noopener,noreferrer",
-                    );
-                    setActionMessage("The destination link opened in a new tab.");
-                  }}
-                >
-                  Test Link
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                icon={<FileImage size={18} />}
-                disabled={!hasDownloadablePayload}
-                onClick={() => void downloadQr("svg")}
-              >
-                Download SVG
-              </Button>
-              <Button
-                variant="outline"
-                icon={<FileImage size={18} />}
-                disabled={!hasDownloadablePayload}
-                onClick={() => void downloadQr("pdf")}
-              >
-                Download PDF Sign
-              </Button>
-              <Button
-                variant="outline"
-                icon={<Vault size={18} />}
-                disabled={!hasDownloadablePayload}
-                onClick={() => void saveCopy("png")}
-              >
-                Save Copy to File Vault
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentScreen("workshop-library")}
-              >
-                Open in My Creations
-              </Button>
-              {qr.workshopItemId && (
-                <Button
-                  variant="ghost"
-                  icon={<Archive size={18} />}
-                  onClick={() => {
-                    archiveWorkshopItem(qr.workshopItemId!);
-                    setCurrentScreen("workshop-library");
-                  }}
-                >
-                  Archive
-                </Button>
-              )}
-            </div>
-          </section>
         </div>
       </div>
+
+      <section className="card panel section stack">
+        <h2 className="section-heading">More actions</h2>
+        <div className="qr-detail-actions-grid">
+          <Button
+            variant="outline"
+            icon={<Copy size={18} />}
+            onClick={() => void copyPayload()}
+          >
+            {isContactCard ? "Copy vCard" : "Copy Link"}
+          </Button>
+          {canTestLink && (
+            <Button
+              variant="outline"
+              icon={<ExternalLink size={18} />}
+              onClick={() => {
+                window.open(
+                  qr.url ?? qr.payload,
+                  "_blank",
+                  "noopener,noreferrer",
+                );
+                setActionMessage("The destination link opened in a new tab.");
+              }}
+            >
+              Test Link
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            icon={<Vault size={18} />}
+            disabled={!hasDownloadablePayload}
+            onClick={() => void saveCopy("png")}
+          >
+            Save Copy to File Vault
+          </Button>
+          <Button
+            variant="outline"
+            icon={<FileImage size={18} />}
+            disabled={!hasDownloadablePayload}
+            onClick={() => void downloadQr("svg")}
+          >
+            Download SVG
+          </Button>
+          <Button
+            variant="outline"
+            icon={<FileImage size={18} />}
+            disabled={!hasDownloadablePayload}
+            onClick={() => void downloadQr("pdf")}
+          >
+            Download PDF Sign
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentScreen("workshop-library")}
+          >
+            Open in My Creations
+          </Button>
+          {qr.workshopItemId && (
+            <Button
+              variant="ghost"
+              icon={<Archive size={18} />}
+              onClick={() => {
+                archiveWorkshopItem(qr.workshopItemId!);
+                setCurrentScreen("workshop-library");
+              }}
+            >
+              Archive
+            </Button>
+          )}
+        </div>
+      </section>
 
       {actionMessage && (
         <div className="alert alert--info section" aria-live="polite">
           <strong>{actionMessage}</strong>
         </div>
-      )}
-
-      {pendingVaultCopy && (
-        <section className="card panel section stack" aria-live="polite">
-          <div>
-            <h2 className="section-heading">
-              Save this downloaded file to File Vault?
-            </h2>
-            <p className="section-copy">
-              File Vault keeps a copy or reference inside this app.
-            </p>
-          </div>
-          <div className="row wrap">
-            <Button
-              variant="primary"
-              onClick={() => void saveCopy(pendingVaultCopy.format)}
-            >
-              Save Copy to File Vault
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPendingVaultCopy(undefined);
-                setActionMessage("No File Vault copy was saved.");
-              }}
-            >
-              No thanks
-            </Button>
-          </div>
-        </section>
-      )}
-
-      {shareOptionsVisible && (
-        <section className="card panel section stack" aria-live="polite">
-          <div>
-            <h2 className="section-heading">Share options</h2>
-            <p className="section-copy">
-              These actions prepare the next step. They do not send SMS, email,
-              or social posts without a connected service.
-            </p>
-          </div>
-          <div className="row wrap">
-            <Button
-              variant="outline"
-              icon={<Copy size={18} />}
-              onClick={() => void copyPayload()}
-            >
-              {isContactCard ? "Copy vCard" : "Copy Link"}
-            </Button>
-            <Button
-              variant="outline"
-              icon={<Send size={18} />}
-              onClick={() => {
-                showNotice(
-                  "Send to Customers is prepared in mock mode. No SMS or email was sent.",
-                );
-                setCurrentScreen("customers");
-              }}
-            >
-              Send to Customers
-            </Button>
-          </div>
-        </section>
       )}
 
       {linkedFiles.length > 0 && (
@@ -406,6 +380,121 @@ export function QRCodeDetailScreen() {
             </div>
           ))}
         </section>
+      )}
+
+      {shareSheetOpen && (
+        <Modal title="Share or send this QR" onClose={() => setShareSheetOpen(false)}>
+          <div className="stack">
+            <p className="section-copy">
+              Choose how you want to share this QR. Messages are sent from your
+              device or prepared for you unless a real integration is connected.
+            </p>
+            <div className="qr-share-options-grid">
+              <button type="button" onClick={() => void openTextFromDevice()}>
+                <MessageSquareText size={19} />
+                <span>
+                  <strong>Text from my device</strong>
+                  <small>
+                    Text message, data, and carrier charges may apply. Messages
+                    are sent from your device, not from Start Here Helper.
+                  </small>
+                </span>
+              </button>
+              <button type="button" onClick={openEmailFromDevice}>
+                <Mail size={19} />
+                <span>
+                  <strong>Email from my device</strong>
+                  <small>
+                    Opens your email app with prepared text. Attachments may
+                    need to be added manually.
+                  </small>
+                </span>
+              </button>
+              <button type="button" onClick={prepareCustomerSend}>
+                <UserRound size={19} />
+                <span>
+                  <strong>Send to saved customer</strong>
+                  <small>
+                    Prepare customer workflow. No SMS or email is sent in this
+                    prototype.
+                  </small>
+                </span>
+              </button>
+              <button type="button" onClick={() => void prepareCustomRecipient()}>
+                <Send size={19} />
+                <span>
+                  <strong>Custom recipient</strong>
+                  <small>Prepare and copy a message for any phone or email.</small>
+                </span>
+              </button>
+              <button type="button" onClick={() => void copyPayload()}>
+                <Copy size={19} />
+                <span>
+                  <strong>{isContactCard ? "Copy vCard" : "Copy link"}</strong>
+                  <small>Copy the QR destination to your clipboard.</small>
+                </span>
+              </button>
+              <button type="button" onClick={() => void downloadQr("png")}>
+                <Download size={19} />
+                <span>
+                  <strong>Download QR image</strong>
+                  <small>Download to device only. No File Vault copy is saved.</small>
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShareSheetOpen(false);
+                  openCreateTask("Send Promotion", {
+                    qrCodeId: qr.id,
+                    workshopItemId: qr.workshopItemId,
+                  });
+                }}
+              >
+                <QrCode size={19} />
+                <span>
+                  <strong>Create promo with this QR</strong>
+                  <small>Open Create with this QR attached to the workflow.</small>
+                </span>
+              </button>
+            </div>
+            <div className="field">
+              <label htmlFor="share-customer">Saved customer</label>
+              <select
+                id="share-customer"
+                className="select"
+                value={selectedCustomerId}
+                onChange={(event) => setSelectedCustomerId(event.target.value)}
+              >
+                <option value="">Choose a customer</option>
+                {workspace.customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="custom-recipient">Custom recipient</label>
+              <input
+                id="custom-recipient"
+                className="input"
+                value={customRecipient}
+                onChange={(event) => setCustomRecipient(event.target.value)}
+                placeholder="Phone or email"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="prepared-message">Prepared message</label>
+              <textarea
+                id="prepared-message"
+                className="textarea"
+                readOnly
+                value={shareMessage}
+              />
+            </div>
+          </div>
+        </Modal>
       )}
     </section>
   );

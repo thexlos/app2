@@ -47,10 +47,6 @@ export function MyBusinessKitScreen() {
   const [query, setQuery] = useState("");
   const [selectedAsset, setSelectedAsset] = useState<BusinessAsset>();
   const [message, setMessage] = useState("");
-  const [pendingVaultCopy, setPendingVaultCopy] = useState<{
-    qrCodeId: string;
-    format: "png" | "svg" | "pdf";
-  }>();
   const [selectedBankItem, setSelectedBankItem] =
     useState<ItemServiceBankItem>();
   const [categoryDraft, setCategoryDraft] = useState<string[]>();
@@ -123,7 +119,6 @@ export function MyBusinessKitScreen() {
   const downloadQr = async (qr: QRCodeRecord) => {
     const result = await downloadQrToDevice(qr.id, "png");
     setMessage(result.message);
-    if (result.fileName) setPendingVaultCopy({ qrCodeId: qr.id, format: "png" });
   };
   const saveQrFileVaultCopy = async (qr: QRCodeRecord) => {
     const result = await createQrFileVaultCopy(qr.id, "png");
@@ -168,37 +163,6 @@ export function MyBusinessKitScreen() {
         <div className="alert alert--info section">
           <strong>{message}</strong>
         </div>
-      )}
-      {pendingVaultCopy && (
-        <section className="business-kit-card section">
-          <h2>Save this downloaded file to File Vault?</h2>
-          <p>File Vault keeps a copy or reference inside this app.</p>
-          <div className="row wrap">
-            <Button
-              variant="primary"
-              onClick={() => {
-                void createQrFileVaultCopy(
-                  pendingVaultCopy.qrCodeId,
-                  pendingVaultCopy.format,
-                ).then((result) => {
-                  setPendingVaultCopy(undefined);
-                  setMessage(result.message);
-                });
-              }}
-            >
-              Save Copy to File Vault
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPendingVaultCopy(undefined);
-                setMessage("No File Vault copy was saved.");
-              }}
-            >
-              No thanks
-            </Button>
-          </div>
-        </section>
       )}
       {query && (
         <section className="business-kit-card section">
