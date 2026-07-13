@@ -29,6 +29,7 @@ import { WorkshopLibraryScreen } from "../screens/WorkshopLibraryScreen";
 import { EstimateBuilderScreen } from "../screens/EstimateBuilderScreen";
 import { MyBusinessKitScreen } from "../screens/MyBusinessKitScreen";
 import { QRCodeDetailScreen } from "../screens/QRCodeDetailScreen";
+import { TrashScreen } from "../screens/TrashScreen";
 import {
   HelpGuideScreen,
   HelpRequestDetailScreen,
@@ -100,6 +101,7 @@ const screens = {
   "file-vault": FileVaultScreen,
   "workshop-library": WorkshopLibraryScreen,
   "qr-detail": QRCodeDetailScreen,
+  trash: TrashScreen,
   "create-mode": CreateModeScreen,
   "create-builder": CreateBuilderScreen,
   "create-wizard": CreateWizardScreen,

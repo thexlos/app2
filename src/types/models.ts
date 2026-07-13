@@ -409,6 +409,10 @@ export interface QRCodeRecord {
   createdFrom?: "Manual Builder" | "Guided Wizard" | "Quick Link" | "Help Request";
   workshopItemId?: Id;
   fileAssetIds?: Id[];
+  trashed?: boolean;
+  trashedAt?: string;
+  trashedFrom?: string;
+  trashReason?: string;
 }
 export interface Promo {
   id: Id;
@@ -462,6 +466,10 @@ export interface FileAsset {
   url?: string;
   pinned?: boolean;
   archived?: boolean;
+  trashed?: boolean;
+  trashedAt?: string;
+  trashedFrom?: string;
+  trashReason?: string;
   createdAt?: string;
   visibility: "Internal" | "Customer";
 }
@@ -992,6 +1000,10 @@ export interface WorkshopItem {
   templateSourceItemId?: Id;
   isTemplate: boolean;
   archived: boolean;
+  trashed?: boolean;
+  trashedAt?: string;
+  trashedFrom?: string;
+  trashReason?: string;
   activityHistory: WorkshopActivity[];
 }
 

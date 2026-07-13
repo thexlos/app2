@@ -11,8 +11,11 @@ import {
   Search,
   Send,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Button } from "../components/common/Button";
+import { Modal } from "../components/common/Modal";
 import { DetailHeader } from "../components/common/ScreenHeader";
 import { StatusBadge } from "../components/common/StatusBadge";
 import {
@@ -71,7 +74,7 @@ const itemTask: Partial<Record<WorkshopItemType, string>> = {
 };
 
 function actionsFor(item: WorkshopItem) {
-  if (item.archived) return ["Duplicate", "Use Again"];
+  if (item.archived) return ["Duplicate", "Use Again", "Delete"];
   if (item.itemType === "qr_code")
     return [
       "Open",
@@ -80,6 +83,7 @@ function actionsFor(item: WorkshopItem) {
       "Edit",
       "Save Copy",
       "Archive",
+      "Delete",
     ];
   if (item.itemType === "flyer")
     return [
@@ -93,6 +97,7 @@ function actionsFor(item: WorkshopItem) {
       "Save as Template",
       "Request Help",
       "Archive",
+      "Delete",
     ];
   if (item.itemType === "business_card")
     return [
@@ -104,9 +109,10 @@ function actionsFor(item: WorkshopItem) {
       "Save as Template",
       "Request VistaPrint Setup Help",
       "Archive",
+      "Delete",
     ];
   return item.status === "Draft"
-    ? ["Continue Editing", "Duplicate", "Archive"]
+    ? ["Continue Editing", "Duplicate", "Archive", "Delete"]
     : [
         "Open",
         "Edit",
@@ -116,6 +122,7 @@ function actionsFor(item: WorkshopItem) {
         "Save as Template",
         "Request Help",
         "Archive",
+        "Delete",
       ];
 }
 
@@ -134,6 +141,8 @@ export function WorkshopLibraryScreen() {
     openHelpRequest,
     duplicateWorkshopItem,
     archiveWorkshopItem,
+    moveQrToTrash,
+    moveWorkshopItemToTrash,
     saveWorkshopItemAsTemplate,
     exportWorkshopItem,
     recordWorkshopAction,
@@ -157,6 +166,7 @@ export function WorkshopLibraryScreen() {
     title: string;
     action: string;
   }>();
+  const [pendingDeleteItem, setPendingDeleteItem] = useState<WorkshopItem>();
   const activeRecoveryDrafts = useMemo(
     () =>
       recoveryDrafts
@@ -178,6 +188,7 @@ export function WorkshopLibraryScreen() {
   const items = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     const filtered = workspace.workshopItems.filter((item) => {
+      if (item.trashed) return false;
       if (filter === "Archived" ? !item.archived : item.archived) return false;
       if (filter === "Drafts" && item.status !== "Draft") return false;
       if (filterTypes[filter] && !filterTypes[filter]!.includes(item.itemType))
@@ -259,6 +270,10 @@ export function WorkshopLibraryScreen() {
         openQrDetail(qrCodeId, item.id);
         return;
       }
+      if (action === "Delete") {
+        setPendingDeleteItem(item);
+        return;
+      }
     }
     if (["Open", "Edit", "Continue Editing"].includes(action)) {
       openItem(item);
@@ -275,6 +290,10 @@ export function WorkshopLibraryScreen() {
     }
     if (action === "Archive") {
       archiveWorkshopItem(item.id);
+      return;
+    }
+    if (action === "Delete") {
+      setPendingDeleteItem(item);
       return;
     }
     if (action === "Save as Template") {
@@ -344,6 +363,13 @@ export function WorkshopLibraryScreen() {
           <option>Status</option>
           <option>A to Z</option>
         </select>
+        <Button
+          variant="outline"
+          icon={<Trash2 size={18} />}
+          onClick={() => setCurrentScreen("trash")}
+        >
+          Trash
+        </Button>
       </div>
       <div className="library-filters" aria-label="Creation filters">
         {filters.map((value) => (
@@ -538,6 +564,8 @@ export function WorkshopLibraryScreen() {
                           <Send size={16} />
                         ) : action === "Archive" ? (
                           <Archive size={16} />
+                        ) : action === "Delete" ? (
+                          <Trash2 size={16} />
                         ) : action === "Edit" ||
                           action === "Continue Editing" ? (
                           <Edit3 size={16} />
@@ -575,6 +603,141 @@ export function WorkshopLibraryScreen() {
       >
         <Plus size={20} /> Create New
       </button>
+      {pendingDeleteItem && (
+        <Modal
+          title={
+            pendingDeleteItem.itemType === "qr_code"
+              ? "Delete this QR?"
+              : "Delete this creation?"
+          }
+          onClose={() => setPendingDeleteItem(undefined)}
+        >
+          {(() => {
+            const qrId = pendingDeleteItem.qrCodeIds[0] ?? "";
+            const linkedFiles = workspace.files.filter((file) => {
+              if (file.trashed) return false;
+              if (pendingDeleteItem.itemType === "qr_code") {
+                return file.qrCodeId === qrId;
+              }
+              return (
+                pendingDeleteItem.fileAssetIds.includes(file.id) ||
+                file.workshopItemId === pendingDeleteItem.id
+              );
+            });
+            const hasLinkedFiles = linkedFiles.length > 0;
+            return (
+              <div className="stack">
+                <p className="section-copy">
+                  {pendingDeleteItem.itemType === "qr_code"
+                    ? hasLinkedFiles
+                      ? "This QR also has File Vault copies. Choose what should move to Trash."
+                      : "This will move the QR to Trash. You can restore it later."
+                    : hasLinkedFiles
+                      ? "This creation also has File Vault copies. Choose what should move to Trash."
+                      : "This will move the creation to Trash. You can restore it later."}
+                </p>
+                <div className="modal-actions">
+                  {pendingDeleteItem.itemType === "qr_code" ? (
+                    hasLinkedFiles ? (
+                      <>
+                        <Button
+                          variant="danger"
+                          icon={<Trash2 size={18} />}
+                          onClick={() => {
+                            moveQrToTrash(qrId, {
+                              includeFileVaultCopies: false,
+                              from: "My Creations",
+                            });
+                            setPendingDeleteItem(undefined);
+                          }}
+                        >
+                          Move QR to Trash only
+                        </Button>
+                        <Button
+                          variant="danger"
+                          icon={<Trash2 size={18} />}
+                          onClick={() => {
+                            moveQrToTrash(qrId, {
+                              includeFileVaultCopies: true,
+                              from: "My Creations",
+                            });
+                            setPendingDeleteItem(undefined);
+                          }}
+                        >
+                          Move QR and File Vault copies to Trash
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="danger"
+                        icon={<Trash2 size={18} />}
+                        onClick={() => {
+                          moveQrToTrash(qrId, {
+                            includeFileVaultCopies: false,
+                            from: "My Creations",
+                          });
+                          setPendingDeleteItem(undefined);
+                        }}
+                      >
+                        Move to Trash
+                      </Button>
+                    )
+                  ) : hasLinkedFiles ? (
+                    <>
+                      <Button
+                        variant="danger"
+                        icon={<Trash2 size={18} />}
+                        onClick={() => {
+                          moveWorkshopItemToTrash(pendingDeleteItem.id, {
+                            includeFileVaultCopies: false,
+                            from: "My Creations",
+                          });
+                          setPendingDeleteItem(undefined);
+                        }}
+                      >
+                        Move Creation to Trash only
+                      </Button>
+                      <Button
+                        variant="danger"
+                        icon={<Trash2 size={18} />}
+                        onClick={() => {
+                          moveWorkshopItemToTrash(pendingDeleteItem.id, {
+                            includeFileVaultCopies: true,
+                            from: "My Creations",
+                          });
+                          setPendingDeleteItem(undefined);
+                        }}
+                      >
+                        Move Creation and File Vault copies to Trash
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="danger"
+                      icon={<Trash2 size={18} />}
+                      onClick={() => {
+                        moveWorkshopItemToTrash(pendingDeleteItem.id, {
+                          includeFileVaultCopies: false,
+                          from: "My Creations",
+                        });
+                        setPendingDeleteItem(undefined);
+                      }}
+                    >
+                      Move to Trash
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => setPendingDeleteItem(undefined)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </Modal>
+      )}
     </section>
   );
 }

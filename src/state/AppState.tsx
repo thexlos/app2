@@ -89,6 +89,7 @@ export type Screen =
   | "file-vault"
   | "workshop-library"
   | "qr-detail"
+  | "trash"
   | "create-mode"
   | "create-builder"
   | "create-wizard"
@@ -97,6 +98,7 @@ export type Screen =
   | "monthly-support"
   | "help-guide"
   | "official-document";
+export type TrashItemKind = "qr" | "workshop" | "file";
 export type KitSectionKey =
   | "estimateTemplates"
   | "invoiceTemplates"
@@ -348,6 +350,20 @@ interface AppStateValue {
   ) => string;
   duplicateWorkshopItem: (itemId: string, openCopy?: boolean) => string | undefined;
   archiveWorkshopItem: (itemId: string) => void;
+  moveQrToTrash: (
+    qrCodeId: string,
+    options?: { includeFileVaultCopies?: boolean; from?: string; reason?: string },
+  ) => void;
+  moveFileToTrash: (
+    fileId: string,
+    options?: { from?: string; reason?: string },
+  ) => void;
+  moveWorkshopItemToTrash: (
+    itemId: string,
+    options?: { includeFileVaultCopies?: boolean; from?: string; reason?: string },
+  ) => void;
+  restoreTrashItem: (kind: TrashItemKind, id: string) => void;
+  permanentlyDeleteTrashItem: (kind: TrashItemKind, id: string) => void;
   saveWorkshopItemAsTemplate: (itemId: string) => void;
   exportWorkshopItem: (itemId: string, format: string) => void;
   recordWorkshopAction: (itemId: string, action: string) => void;
@@ -426,6 +442,15 @@ const AppStateContext = createContext<AppStateValue | null>(null);
 
 function makeId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function makeTrashMetadata(from = "Saved area", reason?: string) {
+  return {
+    trashed: true,
+    trashedAt: new Date().toISOString(),
+    trashedFrom: from,
+    trashReason: reason,
+  };
 }
 
 function normalizeComparable(value?: string) {
@@ -1134,6 +1159,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (!activity) return;
     const target = resolveActivityTarget(activity);
     const recordId = activity.relatedRecordId;
+    const isTrashedRecord =
+      (activity.relatedRecordType === "workshop_item" &&
+        workspace.workshopItems.some(
+          (item) => item.id === recordId && item.trashed,
+        )) ||
+      (activity.relatedRecordType === "file" &&
+        workspace.files.some((item) => item.id === recordId && item.trashed)) ||
+      (activity.relatedRecordType === "qr_code" &&
+        workspace.qrCodes.some((item) => item.id === recordId && item.trashed));
+    if (recordId && isTrashedRecord) {
+      setNotice("This item is in Trash. Restore it before opening.");
+      setCurrentScreen("trash");
+      return;
+    }
     if (target === "estimate-detail" && recordId) openEstimate(recordId);
     else if (target === "money" && activity.relatedRecordType === "invoice" && recordId)
       openInvoice(recordId);
@@ -1173,6 +1212,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     sourceFileId,
   ) => {
     const qr = workspace.qrCodes.find((item) => item.id === qrCodeId);
+    if (qr?.trashed) {
+      setNotice("This item is in Trash. Restore it before opening.");
+      setCurrentScreen("trash");
+      return;
+    }
     setSelectedQrId(qrCodeId);
     setSelectedWorkshopItemId(workshopItemId ?? qr?.workshopItemId);
     setSelectedFileId(sourceFileId);
@@ -1188,6 +1232,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     sourceFileId,
   ) => {
     const qr = workspace.qrCodes.find((item) => item.id === qrCodeId);
+    if (qr?.trashed) {
+      setNotice("This item is in Trash. Restore it before opening.");
+      setCurrentScreen("trash");
+      return;
+    }
     setSelectedQrId(qrCodeId);
     setSelectedWorkshopItemId(workshopItemId ?? qr?.workshopItemId);
     setSelectedFileId(sourceFileId);
@@ -1199,6 +1248,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const openWorkshopItem = (itemId: string) => {
     const item = workspace.workshopItems.find((candidate) => candidate.id === itemId);
+    if (item?.trashed) {
+      setNotice("This item is in Trash. Restore it before opening.");
+      setCurrentScreen("trash");
+      return;
+    }
     if (item?.itemType === "qr_code" && item.qrCodeIds[0]) {
       openQrDetail(item.qrCodeIds[0], item.id);
       return;
@@ -1208,6 +1262,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   };
 
   const openFile = (fileId: string) => {
+    const file = workspace.files.find((candidate) => candidate.id === fileId);
+    if (file?.trashed) {
+      setNotice("This item is in Trash. Restore it before opening.");
+      setCurrentScreen("trash");
+      return;
+    }
     setSelectedFileId(fileId);
     setCurrentScreen("file-vault");
   };
@@ -1338,6 +1398,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const existingFile = workspace.files.find(
       (candidate) =>
         !candidate.archived &&
+        !candidate.trashed &&
         candidate.businessId === currentBusinessId &&
         normalizeComparable(candidate.source ?? "Upload") ===
           normalizeComparable(source) &&
@@ -1405,6 +1466,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           url: file.url,
           pinned: false,
           archived: false,
+          trashed: false,
           createdAt: now,
           visibility: "Internal",
         },
@@ -1644,6 +1706,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         : workspace.qrCodes.find(
             (item) =>
               item.businessId === currentBusinessId &&
+              !item.trashed &&
               normalizeComparable(item.name) ===
                 normalizeComparable(record.name) &&
               normalizeComparable(item.type) ===
@@ -1694,6 +1757,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       url: record.url,
       scans: immediateExistingQr?.scans ?? record.scans ?? 0,
       fileAssetIds: record.fileAssetIds ?? immediateExistingQr?.fileAssetIds ?? [],
+      trashed: false,
+      trashedAt: undefined,
+      trashedFrom: undefined,
+      trashReason: undefined,
       createdAt: immediateExistingQr?.createdAt ?? now,
       updatedAt: now,
       createdFrom:
@@ -1719,6 +1786,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         url: record.url,
         scans: existingQr?.scans ?? record.scans ?? 0,
         fileAssetIds: record.fileAssetIds ?? existingQr?.fileAssetIds ?? [],
+        trashed: false,
+        trashedAt: undefined,
+        trashedFrom: undefined,
+        trashReason: undefined,
         createdAt: existingQr?.createdAt ?? now,
         updatedAt: now,
         createdFrom: record.createdFrom ?? existingQr?.createdFrom ?? "Manual Builder",
@@ -1939,6 +2010,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       workshopItemId = qr.workshopItemId,
     ) =>
       !file.archived &&
+      !file.trashed &&
       file.businessId === currentBusinessId &&
       normalizeComparable(file.source ?? "Upload") ===
         normalizeComparable("QR Generator") &&
@@ -1956,6 +2028,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           (file) =>
             file.id === options.sourceFileId &&
             file.businessId === currentBusinessId &&
+            !file.trashed &&
             file.qrCodeId === qrCodeId,
         )
       : undefined;
@@ -2046,6 +2119,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
               metadataOnly: false,
               pinned: false,
               archived: false,
+              trashed: false,
               createdAt: now,
               visibility: "Internal" as const,
             },
@@ -2127,6 +2201,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         existing = value.workshopItems.find(
           (candidate) =>
             !candidate.archived &&
+            !candidate.trashed &&
             candidate.businessProfileId === currentBusinessId &&
             candidate.itemType === item.itemType &&
             normalizeComparable(candidate.title) ===
@@ -2332,6 +2407,282 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setNotice("Creation archived.");
   };
 
+  const moveQrToTrash: AppStateValue["moveQrToTrash"] = (
+    qrCodeId,
+    options = {},
+  ) => {
+    const trashMeta = makeTrashMetadata(options.from ?? "QR Detail", options.reason);
+    updateWorkspace((value) => {
+      const qr = value.qrCodes.find((item) => item.id === qrCodeId);
+      if (!qr) return value;
+      const linkedWorkshopIds = value.workshopItems
+        .filter(
+          (item) =>
+            item.id === qr.workshopItemId || item.qrCodeIds.includes(qrCodeId),
+        )
+        .map((item) => item.id);
+      const linkedFileIds = value.files
+        .filter((file) => file.qrCodeId === qrCodeId && !file.trashed)
+        .map((file) => file.id);
+      return {
+        ...value,
+        qrCodes: value.qrCodes.map((item) =>
+          item.id === qrCodeId
+            ? {
+                ...item,
+                ...trashMeta,
+                updatedAt: trashMeta.trashedAt,
+              }
+            : item,
+        ),
+        workshopItems: value.workshopItems.map((item) =>
+          linkedWorkshopIds.includes(item.id)
+            ? {
+                ...normalizeWorkshopItem(item),
+                ...trashMeta,
+                updatedAt: trashMeta.trashedAt,
+                activityHistory: [
+                  {
+                    id: `activity-${Date.now()}`,
+                    label: "Moved to Trash",
+                    occurredAt: "Just now",
+                  },
+                  ...item.activityHistory,
+                ],
+              }
+            : item,
+        ),
+        files: options.includeFileVaultCopies
+          ? value.files.map((file) =>
+              linkedFileIds.includes(file.id)
+                ? {
+                    ...file,
+                    ...makeTrashMetadata("QR Detail", options.reason),
+                  }
+                : file,
+            )
+          : value.files,
+      };
+    });
+    setSelectedQrId(undefined);
+    setSelectedWorkshopItemId(undefined);
+    setSelectedFileId(undefined);
+    setCurrentScreen("trash");
+    setNotice(
+      options.includeFileVaultCopies
+        ? "QR and File Vault copies moved to Trash."
+        : "QR moved to Trash.",
+    );
+  };
+
+  const moveFileToTrash: AppStateValue["moveFileToTrash"] = (
+    fileId,
+    options = {},
+  ) => {
+    const trashMeta = makeTrashMetadata(
+      options.from ?? "File Vault",
+      options.reason,
+    );
+    updateWorkspace((value) => ({
+      ...value,
+      files: value.files.map((file) =>
+        file.id === fileId
+          ? {
+              ...file,
+              ...trashMeta,
+            }
+          : file,
+      ),
+    }));
+    setSelectedFileId(undefined);
+    setCurrentScreen("trash");
+    setNotice("File moved to Trash.");
+  };
+
+  const moveWorkshopItemToTrash: AppStateValue["moveWorkshopItemToTrash"] = (
+    itemId,
+    options = {},
+  ) => {
+    const item = workspace.workshopItems.find((candidate) => candidate.id === itemId);
+    if (item?.itemType === "qr_code" && item.qrCodeIds[0]) {
+      moveQrToTrash(item.qrCodeIds[0], {
+        includeFileVaultCopies: options.includeFileVaultCopies,
+        from: options.from ?? "My Creations",
+        reason: options.reason,
+      });
+      return;
+    }
+    const trashMeta = makeTrashMetadata(
+      options.from ?? "My Creations",
+      options.reason,
+    );
+    const linkedFileIds = new Set([
+      ...(item?.fileAssetIds ?? []),
+      ...workspace.files
+        .filter((file) => file.workshopItemId === itemId && !file.trashed)
+        .map((file) => file.id),
+    ]);
+    updateWorkspace((value) => ({
+      ...value,
+      workshopItems: value.workshopItems.map((candidate) =>
+        candidate.id === itemId
+          ? {
+              ...normalizeWorkshopItem(candidate),
+              ...trashMeta,
+              updatedAt: trashMeta.trashedAt,
+              activityHistory: [
+                {
+                  id: `activity-${Date.now()}`,
+                  label: "Moved to Trash",
+                  occurredAt: "Just now",
+                },
+                ...candidate.activityHistory,
+              ],
+            }
+          : candidate,
+      ),
+      files: options.includeFileVaultCopies
+        ? value.files.map((file) =>
+            linkedFileIds.has(file.id)
+              ? {
+                  ...file,
+                  ...makeTrashMetadata("My Creations", options.reason),
+                }
+              : file,
+          )
+        : value.files,
+    }));
+    setSelectedWorkshopItemId(undefined);
+    setCurrentScreen("trash");
+    setNotice("Creation moved to Trash.");
+  };
+
+  const restoreTrashItem: AppStateValue["restoreTrashItem"] = (kind, id) => {
+    updateWorkspace((value) => {
+      if (kind === "qr") {
+        const qr = value.qrCodes.find((item) => item.id === id);
+        const linkedWorkshopIds = value.workshopItems
+          .filter(
+            (item) => item.id === qr?.workshopItemId || item.qrCodeIds.includes(id),
+          )
+          .map((item) => item.id);
+        return {
+          ...value,
+          qrCodes: value.qrCodes.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  trashed: false,
+                  trashedAt: undefined,
+                  trashedFrom: undefined,
+                  trashReason: undefined,
+                  updatedAt: new Date().toISOString(),
+                }
+              : item,
+          ),
+          workshopItems: value.workshopItems.map((item) =>
+            linkedWorkshopIds.includes(item.id)
+              ? {
+                  ...normalizeWorkshopItem(item),
+                  archived: false,
+                  status: item.status === "Archived" ? "Draft" : item.status,
+                  trashed: false,
+                  trashedAt: undefined,
+                  trashedFrom: undefined,
+                  trashReason: undefined,
+                  updatedAt: new Date().toISOString(),
+                }
+              : item,
+          ),
+        };
+      }
+      if (kind === "file") {
+        return {
+          ...value,
+          files: value.files.map((file) =>
+            file.id === id
+              ? {
+                  ...file,
+                  archived: false,
+                  trashed: false,
+                  trashedAt: undefined,
+                  trashedFrom: undefined,
+                  trashReason: undefined,
+                }
+              : file,
+          ),
+        };
+      }
+      return {
+        ...value,
+        workshopItems: value.workshopItems.map((item) =>
+          item.id === id
+            ? {
+                ...normalizeWorkshopItem(item),
+                archived: false,
+                status: item.status === "Archived" ? "Draft" : item.status,
+                trashed: false,
+                trashedAt: undefined,
+                trashedFrom: undefined,
+                trashReason: undefined,
+                updatedAt: new Date().toISOString(),
+              }
+            : item,
+        ),
+      };
+    });
+    setNotice("Item restored.");
+  };
+
+  const permanentlyDeleteTrashItem: AppStateValue["permanentlyDeleteTrashItem"] = (
+    kind,
+    id,
+  ) => {
+    updateWorkspace((value) => {
+      if (kind === "qr") {
+        return {
+          ...value,
+          qrCodes: value.qrCodes.filter((qr) => qr.id !== id),
+          workshopItems: value.workshopItems.map((item) => ({
+            ...normalizeWorkshopItem(item),
+            qrCodeIds: item.qrCodeIds.filter((qrId) => qrId !== id),
+          })),
+        };
+      }
+      if (kind === "file") {
+        return {
+          ...value,
+          files: value.files.filter((file) => file.id !== id),
+          qrCodes: value.qrCodes.map((qr) => ({
+            ...qr,
+            fileAssetIds: (qr.fileAssetIds ?? []).filter((fileId) => fileId !== id),
+          })),
+          workshopItems: value.workshopItems.map((item) => ({
+            ...normalizeWorkshopItem(item),
+            fileAssetIds: item.fileAssetIds.filter((fileId) => fileId !== id),
+            exportHistory: (item.exportHistory ?? []).map((exportItem) =>
+              exportItem.fileId === id
+                ? { ...exportItem, fileId: undefined }
+                : exportItem,
+            ),
+          })),
+          businessAssets: value.businessAssets.map((asset) => ({
+            ...asset,
+            fileIds: asset.fileIds.filter((fileId) => fileId !== id),
+          })),
+        };
+      }
+      return {
+        ...value,
+        workshopItems: value.workshopItems.filter((item) => item.id !== id),
+      };
+    });
+    if (selectedQrId === id) setSelectedQrId(undefined);
+    if (selectedFileId === id) setSelectedFileId(undefined);
+    if (selectedWorkshopItemId === id) setSelectedWorkshopItemId(undefined);
+    setNotice("Item permanently deleted.");
+  };
+
   const saveWorkshopItemAsTemplate: AppStateValue["saveWorkshopItemAsTemplate"] =
     (itemId) => {
       updateWorkspace((value) => {
@@ -2380,6 +2731,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const existingFile = value.files.find(
         (file) =>
           !file.archived &&
+          !file.trashed &&
           file.businessId === currentBusinessId &&
           normalizeComparable(file.source ?? "Upload") ===
             normalizeComparable("Workshop Export") &&
@@ -2402,6 +2754,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
               qrCodeId: normalizedItem.qrCodeIds[0],
               source: "Workshop Export",
               metadataOnly: true,
+              archived: false,
+              trashed: false,
               visibility: "Internal" as const,
             },
             ...value.files,
@@ -3778,6 +4132,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       saveWorkshopItem,
       duplicateWorkshopItem,
       archiveWorkshopItem,
+      moveQrToTrash,
+      moveFileToTrash,
+      moveWorkshopItemToTrash,
+      restoreTrashItem,
+      permanentlyDeleteTrashItem,
       saveWorkshopItemAsTemplate,
       exportWorkshopItem,
       recordWorkshopAction,

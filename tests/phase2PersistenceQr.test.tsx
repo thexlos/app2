@@ -5,6 +5,7 @@ import { ContractBuilderScreen } from "../src/screens/ContractBuilderScreen";
 import { QRCodeDetailScreen } from "../src/screens/QRCodeDetailScreen";
 import { QRCodeBuilderScreen } from "../src/screens/QRCodeBuilderScreen";
 import { WorkshopLibraryScreen } from "../src/screens/WorkshopLibraryScreen";
+import { TrashScreen } from "../src/screens/TrashScreen";
 import {
   canDownloadFileAsset,
   getFileVaultCategories,
@@ -182,6 +183,338 @@ describe("Phase 2/3 local persistence", () => {
     });
     expect(view.state().currentScreen).toBe("home");
     expect(view.state().notice).toBe("Demo data reset.");
+  });
+});
+
+describe("QR delete and Trash flow", () => {
+  function saveReadyQr(state: State, name: string) {
+    return state.createQrCode({
+      name,
+      type: "Website / Link",
+      status: "Ready",
+      payloadType: "url",
+      payload: `https://example.com/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      url: `https://example.com/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      createdFrom: "Manual Builder",
+    });
+  }
+
+  it("QR Detail shows Delete action while keeping Archive", () => {
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <QRCodeDetailScreen />
+      </AppStateProvider>,
+    );
+
+    act(() => {
+      const saved = saveReadyQr(latest!, "Delete Action QR");
+      latest!.openQrDetail(saved.qrCodeId, saved.workshopItemId);
+    });
+
+    expect(screen.getByRole("button", { name: "Delete" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Archive" })).toBeTruthy();
+  });
+
+  it("moves a QR without File Vault copies to Trash from QR Detail", () => {
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <QRCodeDetailScreen />
+      </AppStateProvider>,
+    );
+
+    let qrCodeId = "";
+    let workshopItemId = "";
+    act(() => {
+      const saved = saveReadyQr(latest!, "Trash QR Only");
+      qrCodeId = saved.qrCodeId;
+      workshopItemId = saved.workshopItemId;
+      latest!.openQrDetail(qrCodeId, workshopItemId);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByText("Delete this QR?")).toBeTruthy();
+    expect(
+      screen.getByText("This will move the QR to Trash. You can restore it later."),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Move to Trash" }));
+
+    expect(latest!.workspace.qrCodes.find((qr) => qr.id === qrCodeId)?.trashed).toBe(
+      true,
+    );
+    expect(
+      latest!.workspace.workshopItems.find((item) => item.id === workshopItemId)
+        ?.trashed,
+    ).toBe(true);
+    expect(
+      latest!.workspace.qrCodes
+        .filter((qr) => !qr.trashed)
+        .some((qr) => qr.id === qrCodeId),
+    ).toBe(false);
+    expect(
+      latest!.workspace.workshopItems
+        .filter((item) => !item.trashed && !item.archived)
+        .some((item) => item.id === workshopItemId),
+    ).toBe(false);
+    expect(
+      latest!.workspace.qrCodes.filter((qr) => qr.trashed).map((qr) => qr.id),
+    ).toContain(qrCodeId);
+    expect(latest!.currentScreen).toBe("trash");
+    expect(latest!.notice).toBe("QR moved to Trash.");
+  });
+
+  it("can delete a QR with File Vault copies while keeping the files active", async () => {
+    const view = renderState();
+    let qrCodeId = "";
+    let workshopItemId = "";
+    let fileId = "";
+
+    await act(async () => {
+      const saved = saveReadyQr(view.state(), "Keep Vault Copy QR");
+      qrCodeId = saved.qrCodeId;
+      workshopItemId = saved.workshopItemId;
+      const copy = await view.state().createQrFileVaultCopy(qrCodeId, "png");
+      fileId = copy.fileId!;
+      view.state().moveQrToTrash(qrCodeId, {
+        includeFileVaultCopies: false,
+        from: "QR Detail",
+      });
+    });
+
+    expect(view.state().workspace.qrCodes.find((qr) => qr.id === qrCodeId)?.trashed).toBe(
+      true,
+    );
+    expect(
+      view.state().workspace.workshopItems.find((item) => item.id === workshopItemId)
+        ?.trashed,
+    ).toBe(true);
+    expect(view.state().workspace.files.find((file) => file.id === fileId)?.trashed).toBe(
+      false,
+    );
+    expect(view.state().notice).toBe("QR moved to Trash.");
+  });
+
+  it("can delete a QR and move linked File Vault copies to Trash", async () => {
+    const view = renderState();
+    let qrCodeId = "";
+    let workshopItemId = "";
+    let fileId = "";
+
+    await act(async () => {
+      const saved = saveReadyQr(view.state(), "Trash Vault Copy QR");
+      qrCodeId = saved.qrCodeId;
+      workshopItemId = saved.workshopItemId;
+      const copy = await view.state().createQrFileVaultCopy(qrCodeId, "png");
+      fileId = copy.fileId!;
+      view.state().moveQrToTrash(qrCodeId, {
+        includeFileVaultCopies: true,
+        from: "QR Detail",
+      });
+    });
+
+    expect(view.state().workspace.qrCodes.find((qr) => qr.id === qrCodeId)?.trashed).toBe(
+      true,
+    );
+    expect(
+      view.state().workspace.workshopItems.find((item) => item.id === workshopItemId)
+        ?.trashed,
+    ).toBe(true);
+    expect(view.state().workspace.files.find((file) => file.id === fileId)?.trashed).toBe(
+      true,
+    );
+    expect(
+      view.state().workspace.files.filter((file) => file.trashed).map((file) => file.id),
+    ).toContain(fileId);
+    expect(view.state().notice).toBe("QR and File Vault copies moved to Trash.");
+  });
+
+  it("moves a File Vault file to Trash without deleting the linked QR", async () => {
+    const view = renderState();
+    let qrCodeId = "";
+    let fileId = "";
+
+    await act(async () => {
+      const saved = saveReadyQr(view.state(), "File Delete QR");
+      qrCodeId = saved.qrCodeId;
+      const copy = await view.state().createQrFileVaultCopy(qrCodeId, "png");
+      fileId = copy.fileId!;
+      view.state().moveFileToTrash(fileId, { from: "File Vault" });
+    });
+
+    expect(view.state().workspace.files.find((file) => file.id === fileId)?.trashed).toBe(
+      true,
+    );
+    expect(view.state().workspace.qrCodes.find((qr) => qr.id === qrCodeId)?.trashed).toBe(
+      false,
+    );
+    expect(
+      view.state().workspace.files.filter((file) => file.trashed).map((file) => file.id),
+    ).toContain(fileId);
+    expect(view.state().notice).toBe("File moved to Trash.");
+  });
+
+  it("restores a trashed QR and linked creation as active records", () => {
+    const view = renderState();
+    let qrCodeId = "";
+    let workshopItemId = "";
+
+    act(() => {
+      const saved = saveReadyQr(view.state(), "Restore QR");
+      qrCodeId = saved.qrCodeId;
+      workshopItemId = saved.workshopItemId;
+      view.state().moveQrToTrash(qrCodeId, { from: "QR Detail" });
+      view.state().restoreTrashItem("qr", qrCodeId);
+    });
+
+    const restoredQr = view.state().workspace.qrCodes.find((qr) => qr.id === qrCodeId);
+    const restoredCreation = view
+      .state()
+      .workspace.workshopItems.find((item) => item.id === workshopItemId);
+    expect(restoredQr?.trashed).toBe(false);
+    expect(restoredCreation?.trashed).toBe(false);
+    expect(restoredCreation?.archived).toBe(false);
+    expect(
+      view.state().workspace.qrCodes
+        .filter((qr) => !qr.trashed)
+        .map((qr) => qr.id),
+    ).toContain(qrCodeId);
+    expect(
+      view.state().workspace.workshopItems
+        .filter((item) => !item.trashed && !item.archived)
+        .map((item) => item.id),
+    ).toContain(workshopItemId);
+    expect(view.state().notice).toBe("Item restored.");
+  });
+
+  it("permanent delete requires Trash confirmation and cancel keeps the item", () => {
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <TrashScreen />
+      </AppStateProvider>,
+    );
+
+    let qrCodeId = "";
+    act(() => {
+      const saved = saveReadyQr(latest!, "Permanent Delete QR");
+      qrCodeId = saved.qrCodeId;
+      latest!.moveQrToTrash(qrCodeId, { from: "QR Detail" });
+    });
+
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Permanently Delete" })[0],
+    );
+    expect(screen.getByText("Permanently delete this?")).toBeTruthy();
+    expect(screen.getByText("This cannot be undone.")).toBeTruthy();
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
+    expect(latest!.workspace.qrCodes.some((qr) => qr.id === qrCodeId)).toBe(true);
+
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Permanently Delete" })[0],
+    );
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Permanently Delete",
+      }),
+    );
+    expect(latest!.workspace.qrCodes.some((qr) => qr.id === qrCodeId)).toBe(false);
+    expect(latest!.notice).toBe("Item permanently deleted.");
+  });
+
+  it("keeps archived and trashed creations separated", () => {
+    const view = renderState();
+    let archivedId = "";
+    let trashedId = "";
+
+    act(() => {
+      archivedId = view.state().saveWorkshopItem({
+        itemType: "flyer",
+        title: "Archived Flyer",
+        description: "Archive separation",
+        status: "Ready",
+        createdFrom: "Manual Builder",
+        builderId: "flyer-builder",
+        sourceTool: "Make a Flyer",
+        tags: ["flyer"],
+        exportFormats: ["PNG"],
+      });
+      trashedId = view.state().saveWorkshopItem({
+        itemType: "flyer",
+        title: "Deleted Flyer",
+        description: "Trash separation",
+        status: "Ready",
+        createdFrom: "Manual Builder",
+        builderId: "flyer-builder",
+        sourceTool: "Make a Flyer",
+        tags: ["flyer"],
+        exportFormats: ["PNG"],
+      });
+      view.state().archiveWorkshopItem(archivedId);
+      view.state().moveWorkshopItemToTrash(trashedId, { from: "My Creations" });
+    });
+
+    const archivedItems = view
+      .state()
+      .workspace.workshopItems.filter((item) => item.archived && !item.trashed);
+    const trashedItems = view
+      .state()
+      .workspace.workshopItems.filter((item) => item.trashed);
+    expect(archivedItems.map((item) => item.id)).toContain(archivedId);
+    expect(archivedItems.map((item) => item.id)).not.toContain(trashedId);
+    expect(trashedItems.map((item) => item.id)).toContain(trashedId);
+  });
+
+  it("discarding recovery drafts does not create Trash records or affect saved QR", () => {
+    const view = renderState();
+    let draftId = "";
+    let qrCodeId = "";
+
+    act(() => {
+      const saved = saveReadyQr(view.state(), "Draft Discard Safe QR");
+      qrCodeId = saved.qrCodeId;
+      draftId =
+        view.state().saveRecoveryDraft({
+          builderId: "qr-code-builder",
+          sourceTool: "Create QR Code",
+          selectedCreateTask: "Create QR Code",
+          selectedQrId: qrCodeId,
+          builderData: {
+            qrType: "Website / Link",
+            destination: "https://example.com/draft",
+            qrName: "Draft QR",
+          },
+        }) ?? "";
+      view.state().discardRecoveryDraft(draftId);
+    });
+
+    expect(view.state().recoveryDrafts.some((draft) => draft.id === draftId)).toBe(false);
+    expect(view.state().workspace.qrCodes.find((qr) => qr.id === qrCodeId)?.trashed).toBe(
+      false,
+    );
+    expect(view.state().workspace.qrCodes.some((qr) => qr.trashed)).toBe(false);
+    expect(view.state().workspace.workshopItems.some((item) => item.trashed)).toBe(
+      false,
+    );
+    expect(view.state().workspace.files.some((file) => file.trashed)).toBe(false);
   });
 });
 

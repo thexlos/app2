@@ -9,6 +9,7 @@ import {
   MessageSquareText,
   QrCode,
   Send,
+  Trash2,
   UserRound,
   Vault,
 } from "lucide-react";
@@ -46,9 +47,11 @@ export function QRCodeDetailScreen() {
     openCreateTask,
     setCurrentScreen,
     archiveWorkshopItem,
+    moveQrToTrash,
   } = useAppState();
   const [actionMessage, setActionMessage] = useState("");
   const [shareMode, setShareMode] = useState<ShareMode>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [customRecipient, setCustomRecipient] = useState("");
 
@@ -66,7 +69,7 @@ export function QRCodeDetailScreen() {
     () =>
       qr
         ? workspace.files.filter(
-            (file) => !file.archived && file.qrCodeId === qr.id,
+            (file) => !file.archived && !file.trashed && file.qrCodeId === qr.id,
           )
         : [],
     [qr, workspace.files],
@@ -91,13 +94,30 @@ export function QRCodeDetailScreen() {
     );
   }
 
+  if (qr.trashed) {
+    return (
+      <section className="screen screen--detail">
+        <DetailHeader title="QR Detail" backTo="workshop-library" />
+        <div className="library-empty section">
+          <Trash2 size={42} />
+          <h1>This item is in Trash</h1>
+          <p>This item is in Trash. Restore it before opening.</p>
+          <Button variant="primary" onClick={() => setCurrentScreen("trash")}>
+            Open Trash
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
   const destination = qr.payload ?? qr.url;
   const isContactCard = qr.payloadType === "vcard";
   const canTestLink = !isContactCard && Boolean(qr.url ?? qr.payload);
   const hasDownloadablePayload = Boolean(destination);
   const sourceFile = selectedFileId
     ? workspace.files.find(
-        (file) => file.id === selectedFileId && file.qrCodeId === qr.id,
+        (file) =>
+          file.id === selectedFileId && file.qrCodeId === qr.id && !file.trashed,
       )
     : undefined;
   const shareMessage = buildShareMessage(qr.name, destination);
@@ -613,6 +633,20 @@ export function QRCodeDetailScreen() {
               Archive
             </Button>
           )}
+          <Button
+            variant="danger"
+            icon={<Trash2 size={18} />}
+            onClick={() => setShowDeleteModal(true)}
+          >
+            Delete
+          </Button>
+          <Button
+            variant="ghost"
+            icon={<Trash2 size={18} />}
+            onClick={() => setCurrentScreen("trash")}
+          >
+            Trash
+          </Button>
         </div>
       </section>
 
@@ -637,6 +671,67 @@ export function QRCodeDetailScreen() {
       {shareMode && (
         <Modal title={shareModalTitle} onClose={closeShareModal}>
           {renderShareModalContent()}
+        </Modal>
+      )}
+
+      {showDeleteModal && (
+        <Modal title="Delete this QR?" onClose={() => setShowDeleteModal(false)}>
+          <div className="stack">
+            <p className="section-copy">
+              {linkedFiles.length > 0
+                ? "This QR also has File Vault copies. Choose what should move to Trash."
+                : "This will move the QR to Trash. You can restore it later."}
+            </p>
+            <div className="modal-actions">
+              {linkedFiles.length > 0 ? (
+                <>
+                  <Button
+                    variant="danger"
+                    icon={<Trash2 size={18} />}
+                    onClick={() => {
+                      moveQrToTrash(qr.id, {
+                        includeFileVaultCopies: false,
+                        from: "QR Detail",
+                      });
+                      setShowDeleteModal(false);
+                    }}
+                  >
+                    Move QR to Trash only
+                  </Button>
+                  <Button
+                    variant="danger"
+                    icon={<Trash2 size={18} />}
+                    onClick={() => {
+                      moveQrToTrash(qr.id, {
+                        includeFileVaultCopies: true,
+                        from: "QR Detail",
+                      });
+                      setShowDeleteModal(false);
+                    }}
+                  >
+                    Move QR and File Vault copies to Trash
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="danger"
+                  icon={<Trash2 size={18} />}
+                  onClick={() => {
+                    moveQrToTrash(qr.id, {
+                      includeFileVaultCopies: false,
+                      from: "QR Detail",
+                    });
+                    setShowDeleteModal(false);
+                  }}
+                >
+                  Move to Trash
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
     </section>

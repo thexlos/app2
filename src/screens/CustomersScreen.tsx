@@ -536,8 +536,12 @@ export function CustomerDetailScreen() {
           <article className="card panel">
             <strong>Files</strong>
             <p>
-              {workspace.files.filter((file) => file.customerId === customer.id)
-                .length} linked files
+              {
+                workspace.files.filter(
+                  (file) => file.customerId === customer.id && !file.trashed,
+                ).length
+              }{" "}
+              linked files
             </p>
             <Button
               variant="outline"

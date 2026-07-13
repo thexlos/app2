@@ -14,6 +14,7 @@ import {
   QrCode,
   Search,
   Sparkles,
+  Trash2,
   Vault,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -39,6 +40,7 @@ export function MyBusinessKitScreen() {
     openQrEditor,
     downloadQrToDevice,
     createQrFileVaultCopy,
+    moveQrToTrash,
     saveItemBankItem,
     deleteItemBankItem,
     updateBusinessKitCategories,
@@ -47,6 +49,7 @@ export function MyBusinessKitScreen() {
   const [query, setQuery] = useState("");
   const [selectedAsset, setSelectedAsset] = useState<BusinessAsset>();
   const [message, setMessage] = useState("");
+  const [pendingDeleteQr, setPendingDeleteQr] = useState<QRCodeRecord>();
   const [selectedBankItem, setSelectedBankItem] =
     useState<ItemServiceBankItem>();
   const [categoryDraft, setCategoryDraft] = useState<string[]>();
@@ -98,13 +101,15 @@ export function MyBusinessKitScreen() {
         where: "Messages",
         action: () => setMessage(item.message),
       })),
-      ...workspace.qrCodes.map((item) => ({
-        id: item.id,
-        title: item.name,
-        type: "QR code",
-        where: "QR Codes",
-        action: () => openQrDetail(item.id, item.workshopItemId),
-      })),
+      ...workspace.qrCodes
+        .filter((item) => !item.trashed)
+        .map((item) => ({
+          id: item.id,
+          title: item.name,
+          type: "QR code",
+          where: "QR Codes",
+          action: () => openQrDetail(item.id, item.workshopItemId),
+        })),
     ].filter((item) =>
       `${item.title} ${item.type} ${item.where}`
         .toLowerCase()
@@ -219,7 +224,7 @@ export function MyBusinessKitScreen() {
           <span>Document templates</span>
         </div>
         <div>
-          <strong>{workspace.workshopItems.length}</strong>
+          <strong>{workspace.workshopItems.filter((item) => !item.trashed).length}</strong>
           <span>Workshop creations</span>
         </div>
         <div>
@@ -348,7 +353,7 @@ export function MyBusinessKitScreen() {
           </div>
         </header>
         <div className="kit-qr-list">
-          {workspace.qrCodes.map((qr) => (
+          {workspace.qrCodes.filter((qr) => !qr.trashed).map((qr) => (
             <article
               key={qr.id}
               role="button"
@@ -430,6 +435,12 @@ export function MyBusinessKitScreen() {
                 onClick={() => void saveQrFileVaultCopy(qr)}
               >
                 Save Copy
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => setPendingDeleteQr(qr)}
+              >
+                Delete
               </Button>
             </article>
           ))}
@@ -561,6 +572,11 @@ export function MyBusinessKitScreen() {
           <Vault />
           <strong>File Vault</strong>
           <span>Uploads, exports, and approved files</span>
+        </button>
+        <button onClick={() => setCurrentScreen("trash")}>
+          <Trash2 />
+          <strong>Trash</strong>
+          <span>Restore deleted items or permanently delete them</span>
         </button>
         <button onClick={() => setCurrentScreen("business-kits")}>
           <Sparkles />
@@ -897,6 +913,79 @@ export function MyBusinessKitScreen() {
               Cancel
             </Button>
           </div>
+        </Modal>
+      )}
+      {pendingDeleteQr && (
+        <Modal
+          title="Delete this QR?"
+          onClose={() => setPendingDeleteQr(undefined)}
+        >
+          {(() => {
+            const linkedFiles = workspace.files.filter(
+              (file) => file.qrCodeId === pendingDeleteQr.id && !file.trashed,
+            );
+            return (
+              <div className="stack">
+                <p className="section-copy">
+                  {linkedFiles.length > 0
+                    ? "This QR also has File Vault copies. Choose what should move to Trash."
+                    : "This will move the QR to Trash. You can restore it later."}
+                </p>
+                <div className="modal-actions">
+                  {linkedFiles.length > 0 ? (
+                    <>
+                      <Button
+                        variant="danger"
+                        icon={<Trash2 size={18} />}
+                        onClick={() => {
+                          moveQrToTrash(pendingDeleteQr.id, {
+                            includeFileVaultCopies: false,
+                            from: "My Business Kit",
+                          });
+                          setPendingDeleteQr(undefined);
+                        }}
+                      >
+                        Move QR to Trash only
+                      </Button>
+                      <Button
+                        variant="danger"
+                        icon={<Trash2 size={18} />}
+                        onClick={() => {
+                          moveQrToTrash(pendingDeleteQr.id, {
+                            includeFileVaultCopies: true,
+                            from: "My Business Kit",
+                          });
+                          setPendingDeleteQr(undefined);
+                        }}
+                      >
+                        Move QR and File Vault copies to Trash
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="danger"
+                      icon={<Trash2 size={18} />}
+                      onClick={() => {
+                        moveQrToTrash(pendingDeleteQr.id, {
+                          includeFileVaultCopies: false,
+                          from: "My Business Kit",
+                        });
+                        setPendingDeleteQr(undefined);
+                      }}
+                    >
+                      Move to Trash
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => setPendingDeleteQr(undefined)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </Modal>
       )}
     </section>

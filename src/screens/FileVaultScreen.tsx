@@ -11,6 +11,7 @@ import {
   LockKeyhole,
   Plus,
   QrCode,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../components/common/Button";
@@ -56,9 +57,11 @@ export function FileVaultScreen() {
     workspace,
     currentBusiness,
     selectedFileId,
+    setCurrentScreen,
     openFile,
     addFileMetadata,
     archiveFile,
+    moveFileToTrash,
     pinFileToBusinessKit,
     toggleFileVisibility,
     openCreateTask,
@@ -72,23 +75,29 @@ export function FileVaultScreen() {
   } = useAppState();
   const [activeFileId, setActiveFileId] = useState(selectedFileId);
   const [activeFilter, setActiveFilter] = useState<FileVaultFilter>("All");
+  const [pendingDeleteFile, setPendingDeleteFile] = useState<FileAsset>();
 
   useEffect(() => setActiveFileId(selectedFileId), [selectedFileId]);
 
   const activeFile = workspace.files.find((file) => file.id === activeFileId);
   const summary = useMemo(
     () => ({
-      total: workspace.files.filter((file) => !file.archived).length,
+      total: workspace.files.filter((file) => !file.archived && !file.trashed).length,
       generated: workspace.files.filter(
-        (file) => !file.archived && hasGeneratedFileContent(file),
+        (file) => !file.archived && !file.trashed && hasGeneratedFileContent(file),
       ).length,
       metadataOnly: workspace.files.filter(
-        (file) => !file.archived && file.metadataOnly && !hasGeneratedFileContent(file),
+        (file) =>
+          !file.archived &&
+          !file.trashed &&
+          file.metadataOnly &&
+          !hasGeneratedFileContent(file),
       ).length,
       customerVisible: workspace.files.filter(
-        (file) => !file.archived && file.visibility === "Customer",
+        (file) =>
+          !file.archived && !file.trashed && file.visibility === "Customer",
       ).length,
-      archived: workspace.files.filter((file) => file.archived).length,
+      archived: workspace.files.filter((file) => file.archived && !file.trashed).length,
     }),
     [workspace.files],
   );
@@ -96,9 +105,12 @@ export function FileVaultScreen() {
     () =>
       workspace.files.filter((file) => {
         if (activeFilter === "Archived") {
-          return getFileVaultCategories(file, workspace).includes("Archived");
+          return (
+            !file.trashed &&
+            getFileVaultCategories(file, workspace).includes("Archived")
+          );
         }
-        if (file.archived) return false;
+        if (file.archived || file.trashed) return false;
         return getFileVaultCategories(file, workspace).includes(activeFilter);
       }),
     [activeFilter, workspace],
@@ -202,6 +214,13 @@ export function FileVaultScreen() {
             }}
           />
         </label>
+        <Button
+          variant="outline"
+          icon={<Trash2 size={18} />}
+          onClick={() => setCurrentScreen("trash")}
+        >
+          Trash
+        </Button>
       </div>
 
       <div className="library-filters section" aria-label="File Vault filters">
@@ -495,6 +514,48 @@ export function FileVaultScreen() {
                 }}
               >
                 Archive
+              </Button>
+              <Button
+                variant="danger"
+                icon={<Trash2 size={18} />}
+                onClick={() => {
+                  setPendingDeleteFile(activeFile);
+                  setActiveFileId(undefined);
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {pendingDeleteFile && (
+        <Modal
+          title="Delete this File Vault file?"
+          onClose={() => setPendingDeleteFile(undefined)}
+        >
+          <div className="stack">
+            <p className="section-copy">
+              This will move the File Vault file to Trash. Linked QR codes or
+              creations will remain saved unless you delete them separately.
+            </p>
+            <div className="modal-actions">
+              <Button
+                variant="danger"
+                icon={<Trash2 size={18} />}
+                onClick={() => {
+                  moveFileToTrash(pendingDeleteFile.id, { from: "File Vault" });
+                  setPendingDeleteFile(undefined);
+                }}
+              >
+                Move File to Trash
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setPendingDeleteFile(undefined)}
+              >
+                Cancel
               </Button>
             </div>
           </div>

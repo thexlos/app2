@@ -2,7 +2,7 @@
 
 ## Status
 
-Completed locally for the focused QR detail cleanup, save timing, overwrite protection, duplicate prevention, and share/send flow correction.
+Completed locally for the focused QR detail cleanup, save timing, overwrite protection, duplicate prevention, share/send flow correction, and QR delete/trash restore flow.
 
 ## Scope guardrails followed
 
@@ -12,6 +12,7 @@ Completed locally for the focused QR detail cleanup, save timing, overwrite prot
 - Recovery drafts remain in place.
 - QR viewer/detail mode remains in place.
 - Duplicate protection remains in place.
+- Archive and Trash remain separate states.
 - Text, email, and customer-send actions stay honest mock/device-prepared flows. The app does not claim anything was sent by Start Here Helper.
 
 ## QR Detail mobile/tablet cleanup
@@ -99,6 +100,22 @@ Completed locally for the focused QR detail cleanup, save timing, overwrite prot
 - Download, Share / Send, Save Copy to File Vault, SVG/PDF downloads, and archive actions remain in QR Detail.
 - QR Detail remains the action hub after a QR is saved.
 
+## Delete, Trash, Restore, and Permanent Delete
+
+- Added Delete as Move to Trash.
+- Archive and Trash are separate.
+- QR Detail now has Delete while keeping Archive.
+- Trash screen added with the title “Trash” and subtitle “Restore deleted items or permanently delete them.”
+- Trash supports Restore and Permanently Delete.
+- Permanent delete only happens from Trash with the confirmation “Permanently delete this?” / “This cannot be undone.”
+- QR delete moves the QRCodeRecord and linked WorkshopItem to Trash.
+- Linked File Vault copies can be kept or moved to Trash when deleting QR.
+- File Vault delete moves only the selected File Vault file to Trash and keeps linked QR/creation records saved.
+- My Creations delete moves creations to Trash; QR creations use the same QR delete choices.
+- My Business Kit hides trashed QR codes and can open the same QR delete choices from QR cards.
+- Recovery draft Discard remains separate from Delete and does not create Trash records.
+- Active My Creations, My Business Kit QR, File Vault, QR Detail, and duplicate-protection paths ignore trashed items.
+
 ## Duplicate protection retained
 
 - Recovery Drafts update the same active-work draft instead of creating a new draft on every keystroke.
@@ -133,6 +150,15 @@ Completed locally for the focused QR detail cleanup, save timing, overwrite prot
 - Share / Send first modal only shows option buttons.
 - Customer, custom recipient, text, and email controls appear only in focused share flows.
 - Share / Send does not claim SMS/email was sent.
+- QR Detail shows Delete and Archive.
+- Delete QR without File Vault copies moves the QR and linked WorkshopItem to Trash.
+- Delete QR with File Vault copies can keep File Vault files active.
+- Delete QR with File Vault copies can also move linked File Vault files to Trash.
+- File Vault delete moves only the file to Trash and keeps the linked QR active.
+- Restore brings a trashed QR and linked creation back to active lists.
+- Permanent delete requires the Trash confirmation and Cancel keeps the item.
+- Archived items and trashed items stay separated.
+- Recovery draft Discard does not create a Trash item and does not affect saved QR records.
 
 ## Validation result
 
@@ -149,11 +175,11 @@ Tests passed:
 
 ```text
 9 test files passed
-60 tests passed
+69 tests passed
 ```
 
 Commit message:
 
 ```text
-Clean up QR vault modal and share flow
+Add QR trash delete restore flow
 ```

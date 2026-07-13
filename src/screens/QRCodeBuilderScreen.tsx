@@ -62,19 +62,26 @@ export function QRCodeBuilderScreen() {
   const contract = getBuilderContract("Create QR Code")!;
   const savedLinks = businessSavedLinks[currentBusinessId];
   const selectedWorkshopItem = selectedWorkshopItemId
-    ? workspace.workshopItems.find((item) => item.id === selectedWorkshopItemId)
+    ? workspace.workshopItems.find(
+        (item) => item.id === selectedWorkshopItemId && !item.trashed,
+      )
     : undefined;
   const selectedQr =
     (selectedQrId
-      ? workspace.qrCodes.find((item) => item.id === selectedQrId)
+      ? workspace.qrCodes.find((item) => item.id === selectedQrId && !item.trashed)
       : undefined) ??
     (selectedWorkshopItem?.qrCodeIds[0]
-      ? workspace.qrCodes.find((item) => item.id === selectedWorkshopItem.qrCodeIds[0])
+      ? workspace.qrCodes.find(
+          (item) => item.id === selectedWorkshopItem.qrCodeIds[0] && !item.trashed,
+        )
       : undefined);
   const sourceFile =
     selectedFileId && selectedQr
       ? workspace.files.find(
-          (file) => file.id === selectedFileId && file.qrCodeId === selectedQr.id,
+          (file) =>
+            file.id === selectedFileId &&
+            file.qrCodeId === selectedQr.id &&
+            !file.trashed,
         )
       : undefined;
   const sourceFileId = sourceFile?.id ?? selectedFileId;
@@ -241,8 +248,12 @@ export function QRCodeBuilderScreen() {
       name.trim().replace(/\s+-\s+Version\s+\d+$/i, "") || "QR Code";
     const existingNames = new Set(
       [
-        ...workspace.qrCodes.map((item) => item.name),
-        ...workspace.workshopItems.map((item) => item.title),
+        ...workspace.qrCodes
+          .filter((item) => !item.trashed)
+          .map((item) => item.name),
+        ...workspace.workshopItems
+          .filter((item) => !item.trashed)
+          .map((item) => item.title),
       ].map((value) => value.trim().toLowerCase()),
     );
     let version = 2;
@@ -544,8 +555,12 @@ export function QRCodeBuilderScreen() {
   const saveAsNewCopy = async () => {
     const normalized = copyName.trim().toLowerCase();
     const exists = [
-      ...workspace.qrCodes.map((item) => item.name),
-      ...workspace.workshopItems.map((item) => item.title),
+      ...workspace.qrCodes
+        .filter((item) => !item.trashed)
+        .map((item) => item.name),
+      ...workspace.workshopItems
+        .filter((item) => !item.trashed)
+        .map((item) => item.title),
     ].some((name) => name.trim().toLowerCase() === normalized);
     if (!copyName.trim() || exists) {
       setCopyNameError(
