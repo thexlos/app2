@@ -20,8 +20,19 @@ import { useMemo, useState } from "react";
 import { Button } from "../components/common/Button";
 import { Modal } from "../components/common/Modal";
 import { DetailHeader } from "../components/common/ScreenHeader";
+import {
+  downloadQrPng,
+  downloadQrSvg,
+  generateQrDataUrl,
+  generateQrSvg,
+  sanitizeQrFileName,
+} from "../services/qr/qrGenerator";
 import { useAppState } from "../state/AppState";
-import type { BusinessAsset, ItemServiceBankItem } from "../types/models";
+import type {
+  BusinessAsset,
+  ItemServiceBankItem,
+  QRCodeRecord,
+} from "../types/models";
 
 export function MyBusinessKitScreen() {
   const {
@@ -31,6 +42,8 @@ export function MyBusinessKitScreen() {
     openCreateTask,
     openTemplate,
     openAsset,
+    addFileMetadata,
+    createQrCode,
     saveItemBankItem,
     deleteItemBankItem,
     updateBusinessKitCategories,
@@ -95,7 +108,7 @@ export function MyBusinessKitScreen() {
         title: item.name,
         type: "QR code",
         where: "QR Codes",
-        action: () => openCreateTask("Create QR Code"),
+        action: () => openQrBuilder(item),
       })),
     ].filter((item) =>
       `${item.title} ${item.type} ${item.where}`
@@ -103,10 +116,70 @@ export function MyBusinessKitScreen() {
         .includes(normalized),
     );
   }, [query, workspace]);
+  const openQrBuilder = (qr: QRCodeRecord) => {
+    openCreateTask("Create QR Code", {
+      qrCodeId: qr.id,
+      workshopItemId: qr.workshopItemId,
+    });
+    setCurrentScreen("create-builder");
+  };
   const copyLink = async (value?: string) => {
     if (!value) return;
     await navigator.clipboard?.writeText(value);
     setMessage("Link copied.");
+  };
+  const downloadQr = async (qr: QRCodeRecord, format: "png" | "svg") => {
+    const payload = qr.payload ?? qr.url;
+    if (!payload) {
+      setMessage("This QR needs a saved payload before it can be downloaded.");
+      return;
+    }
+    const baseName = sanitizeQrFileName(qr.name);
+    const svg =
+      qr.svg ??
+      (await generateQrSvg(payload, {
+        foregroundColor: qr.foregroundColor,
+        backgroundColor: qr.backgroundColor,
+        errorCorrectionLevel: qr.errorCorrectionLevel,
+      }));
+    const dataUrl =
+      qr.dataUrl ??
+      (await generateQrDataUrl(payload, {
+        foregroundColor: qr.foregroundColor,
+        backgroundColor: qr.backgroundColor,
+        errorCorrectionLevel: qr.errorCorrectionLevel,
+      }));
+    const fileId =
+      format === "svg"
+        ? addFileMetadata({
+            name: `${baseName}.svg`,
+            type: "image/svg+xml",
+            qrCodeId: qr.id,
+            workshopItemId: qr.workshopItemId,
+            source: "QR Generator",
+            generatedContent: svg,
+            metadataOnly: false,
+          })
+        : addFileMetadata({
+            name: `${baseName}.png`,
+            type: "image/png",
+            qrCodeId: qr.id,
+            workshopItemId: qr.workshopItemId,
+            source: "QR Generator",
+            dataUrl,
+            metadataOnly: false,
+          });
+    createQrCode({
+      ...qr,
+      status: qr.status === "Draft" ? "Draft" : "Ready",
+      payload,
+      svg,
+      dataUrl,
+      fileAssetIds: Array.from(new Set([fileId, ...(qr.fileAssetIds ?? [])])),
+    });
+    if (format === "svg") downloadQrSvg(`${baseName}.svg`, svg);
+    else downloadQrPng(`${baseName}.png`, dataUrl);
+    setMessage(`${qr.name} ${format.toUpperCase()} downloaded and saved to File Vault.`);
   };
   return (
     <section className="screen screen--detail business-home-kit">
@@ -288,7 +361,18 @@ export function MyBusinessKitScreen() {
                   <ExternalLink size={16} />
                   Test
                 </button>
-                <button onClick={() => openCreateTask("Create QR Code")}>
+                <button
+                  onClick={() => {
+                    openCreateTask("Create QR Code", {
+                      qrBuilderPrefill: {
+                        qrType: "Website / Link",
+                        destination: asset.url,
+                        qrName: `${asset.title} QR`,
+                      },
+                    });
+                    setCurrentScreen("create-builder");
+                  }}
+                >
                   <QrCode size={16} />
                   Create QR
                 </button>
@@ -318,24 +402,54 @@ export function MyBusinessKitScreen() {
         <div className="kit-qr-list">
           {workspace.qrCodes.map((qr) => (
             <article key={qr.id}>
+              {qr.svg && (
+                <span
+                  className="kit-qr-preview"
+                  dangerouslySetInnerHTML={{ __html: qr.svg }}
+                />
+              )}
               <div>
                 <strong>{qr.name}</strong>
                 <p>
-                  {qr.type} · {qr.scans} scans
+                  {qr.type} · {qr.status ?? "Ready"} · {qr.scans} scans
                 </p>
+                <small className="muted">
+                  {qr.payloadType === "vcard"
+                    ? "Contact card"
+                    : qr.url ?? qr.payload ?? "No payload saved yet"}
+                </small>
               </div>
               <Button
                 variant="outline"
-                onClick={() => {
-                  const asset = workspace.businessAssets.find(
-                    (item) => item.qrCodeId === qr.id,
-                  );
-                  asset
-                    ? openAsset(asset.id)
-                    : openCreateTask("Create QR Code");
-                }}
+                onClick={() => openQrBuilder(qr)}
               >
                 Open
+              </Button>
+              {qr.payloadType !== "vcard" && (qr.url || qr.payload) && (
+                <Button
+                  variant="ghost"
+                  onClick={() =>
+                    window.open(
+                      qr.url ?? qr.payload,
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                >
+                  Test
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                onClick={() => copyLink(qr.url ?? qr.payload)}
+              >
+                Copy
+              </Button>
+              <Button variant="ghost" onClick={() => void downloadQr(qr, "png")}>
+                PNG
+              </Button>
+              <Button variant="ghost" onClick={() => void downloadQr(qr, "svg")}>
+                SVG
               </Button>
             </article>
           ))}

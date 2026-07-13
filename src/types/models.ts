@@ -391,10 +391,24 @@ export interface QRCodeRecord {
   businessId: Id;
   name: string;
   type: string;
-  url: string;
+  url?: string;
   scans: number;
   label?: string;
-  status?: "Draft" | "Created";
+  status?: "Draft" | "Ready" | "Created";
+  payloadType?: "url" | "vcard" | "text";
+  payload?: string;
+  svg?: string;
+  dataUrl?: string;
+  foregroundColor?: string;
+  backgroundColor?: string;
+  errorCorrectionLevel?: "L" | "M" | "Q" | "H";
+  size?: number;
+  margin?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  createdFrom?: "Manual Builder" | "Guided Wizard" | "Quick Link" | "Help Request";
+  workshopItemId?: Id;
+  fileAssetIds?: Id[];
 }
 export interface Promo {
   id: Id;
@@ -440,6 +454,11 @@ export interface FileAsset {
   leadId?: Id;
   helpRequestId?: Id;
   workshopItemId?: Id;
+  qrCodeId?: Id;
+  source?: "QR Generator" | "Workshop Export" | "Upload" | "Help Request" | string;
+  dataUrl?: string;
+  generatedContent?: string;
+  metadataOnly?: boolean;
   url?: string;
   pinned?: boolean;
   archived?: boolean;
@@ -908,7 +927,10 @@ export type WorkshopCreatedFrom =
   | "Lead"
   | "Project"
   | "Guided Wizard"
-  | "Manual Builder";
+  | "Manual Builder"
+  | "QR Generator";
+export type BuilderDataValue = string | string[] | number | boolean | null;
+export type BuilderData = Record<string, BuilderDataValue>;
 export interface WorkshopActivity {
   id: Id;
   label: string;
@@ -921,15 +943,25 @@ export interface WorkshopItem {
   title: string;
   description: string;
   status: WorkshopItemStatus;
+  builderId?: string;
+  sourceTool?: string;
+  builderData?: BuilderData;
+  previewData?: BuilderData;
   createdAt: string;
   updatedAt: string;
   lastUsedAt?: string;
+  lastOpenedAt?: string;
   createdFrom: WorkshopCreatedFrom;
   sourceKitId?: Id;
   sourceTemplateId?: Id;
   relatedCustomerId?: Id;
   relatedProjectId?: Id;
   relatedCampaignId?: Id;
+  linkedCustomerIds?: Id[];
+  linkedLeadIds?: Id[];
+  linkedProjectIds?: Id[];
+  linkedEstimateIds?: Id[];
+  linkedInvoiceIds?: Id[];
   fileAssetIds: Id[];
   qrCodeIds: Id[];
   socialPostIds: Id[];
@@ -937,6 +969,15 @@ export interface WorkshopItem {
   tags: string[];
   previewImage?: string;
   exportFormats: string[];
+  exportHistory?: Array<{
+    id: Id;
+    format: string;
+    fileId?: Id;
+    createdAt: string;
+    label?: string;
+  }>;
+  version?: number;
+  templateSourceItemId?: Id;
   isTemplate: boolean;
   archived: boolean;
   activityHistory: WorkshopActivity[];

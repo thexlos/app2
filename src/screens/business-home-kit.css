@@ -300,6 +300,14 @@
   color: var(--color-muted);
   font-size: 0.75rem;
 }
+.kit-qr-preview,
+.kit-qr-preview svg {
+  display: block;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+}
 .asset-detail-preview {
   display: flex;
   align-items: center;

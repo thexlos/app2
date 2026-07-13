@@ -15,6 +15,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { DetailHeader } from "../components/common/ScreenHeader";
 import { StatusBadge } from "../components/common/StatusBadge";
+import { getBuilderDefinitionForItem } from "../lib/workshopPayloads";
 import { useAppState } from "../state/AppState";
 import type { WorkshopItem, WorkshopItemType } from "../types/models";
 
@@ -166,6 +167,7 @@ export function WorkshopLibraryScreen() {
         item.itemType,
         item.status,
         ...item.tags,
+        ...Object.values(item.builderData ?? {}).flat().map(String),
       ]
         .join(" ")
         .toLowerCase()
@@ -185,14 +187,18 @@ export function WorkshopLibraryScreen() {
   }, [workspace.workshopItems, filter, query, sort]);
 
   const openItem = (item: WorkshopItem) => {
-    const task = itemTask[item.itemType];
+    const definition = getBuilderDefinitionForItem(item);
+    const task = definition?.createTask ?? itemTask[item.itemType];
     if (!task) {
       setMessage(
-        "This template opens from the Money Templates area in the next step.",
+        "This creation cannot be restored yet because it does not have a builder assigned.",
       );
       return;
     }
-    openCreateTask(task);
+    openCreateTask(task, {
+      workshopItemId: item.id,
+      qrCodeId: item.qrCodeIds[0],
+    });
     setCurrentScreen("create-builder");
   };
 
@@ -201,8 +207,13 @@ export function WorkshopLibraryScreen() {
       openItem(item);
       return;
     }
-    if (["Duplicate", "Use Again"].includes(action)) {
+    if (action === "Duplicate") {
       duplicateWorkshopItem(item.id);
+      setMessage(`Duplicated “${item.title}” as a new draft.`);
+      return;
+    }
+    if (action === "Use Again") {
+      duplicateWorkshopItem(item.id, true);
       return;
     }
     if (action === "Archive") {
@@ -218,11 +229,11 @@ export function WorkshopLibraryScreen() {
       return;
     }
     if (action === "Add to Flyer") {
-      openCreateTask("Make a Flyer");
+      openCreateTask("Make a Flyer", { qrCodeId: item.qrCodeIds[0] });
       return;
     }
     if (action === "Add to Business Card") {
-      openCreateTask("Business Cards");
+      openCreateTask("Business Cards", { qrCodeId: item.qrCodeIds[0] });
       return;
     }
     if (/Download/.test(action)) {

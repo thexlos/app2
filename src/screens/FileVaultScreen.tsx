@@ -148,18 +148,52 @@ export function FileVaultScreen() {
             <strong>Visibility:</strong> {activeFile.visibility}
           </p>
           <div className="alert alert--info section">
-            This prototype stores file metadata only unless a real URL is shown.
-            Live file storage is not connected.
+            {activeFile.metadataOnly
+              ? "This prototype stores metadata for this file. Live file storage is not connected."
+              : "This generated file includes local preview/download content saved for this browser."}
           </div>
+          {activeFile.dataUrl && activeFile.type.startsWith("image/") && (
+            <img
+              alt={activeFile.name}
+              src={activeFile.dataUrl}
+              style={{ width: "100%", borderRadius: 16, border: "1px solid var(--border)" }}
+            />
+          )}
+          {activeFile.generatedContent && activeFile.type === "image/svg+xml" && (
+            <div
+              className="qr-placeholder"
+              dangerouslySetInnerHTML={{ __html: activeFile.generatedContent }}
+            />
+          )}
           <div className="stack">
             <Button
               variant="primary"
               wide
-              onClick={() =>
-                showNotice(
-                  "Download prepared in prototype mode. A storage provider is required for real file bytes.",
-                )
-              }
+              onClick={() => {
+                const href =
+                  activeFile.dataUrl ??
+                  (activeFile.generatedContent
+                    ? URL.createObjectURL(
+                        new Blob([activeFile.generatedContent], {
+                          type: activeFile.type,
+                        }),
+                      )
+                    : undefined);
+                if (!href) {
+                  showNotice(
+                    "Download prepared in prototype mode. A storage provider is required for real file bytes.",
+                  );
+                  return;
+                }
+                const anchor = document.createElement("a");
+                anchor.href = href;
+                anchor.download = activeFile.name;
+                document.body.append(anchor);
+                anchor.click();
+                anchor.remove();
+                if (href.startsWith("blob:")) URL.revokeObjectURL(href);
+                showNotice("Generated file downloaded.");
+              }}
             >
               Download
             </Button>

@@ -1,13 +1,18 @@
 import { CheckCircle2, CircleHelp, Eye, Save, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "../components/common/Button";
 import { DetailHeader } from "../components/common/ScreenHeader";
 import type {
   BuilderContract,
   BuilderFieldContract,
 } from "../config/builderContracts";
+import {
+  getBuilderDefinitionForTask,
+  getWorkshopItemTitle,
+  normalizeWorkshopItem,
+} from "../lib/workshopPayloads";
 import { useAppState } from "../state/AppState";
-import type { WorkshopItemType } from "../types/models";
+import type { BuilderData, WorkshopItemType } from "../types/models";
 
 type FormValues = Record<string, string | string[]>;
 const builderItemTypes: Record<string, WorkshopItemType> = {
@@ -139,7 +144,7 @@ function ContractPreview({
   contract: BuilderContract;
   values: FormValues;
 }) {
-  const strings = Object.values(values).flat().filter(Boolean).slice(0, 5);
+  const rows = buildToolPreviewRows(contract.builderId, values);
   return (
     <aside
       className={`contract-preview contract-preview--${contract.builderId}`}
@@ -149,15 +154,128 @@ function ContractPreview({
         <Eye size={20} />
       </div>
       <div className="contract-preview__canvas">
-        <strong>{strings[0] || contract.builderName}</strong>
-        {strings.slice(1).map((value, index) => (
-          <p key={`${value}-${index}`}>{value}</p>
+        <strong>{rows[0]?.value || contract.builderName}</strong>
+        {rows.slice(1, 7).map((row) => (
+          <p key={row.label}>
+            <span className="muted small">{row.label}: </span>
+            {row.value}
+          </p>
         ))}
-        {strings.length === 0 && <p>{contract.emptyStateCopy}</p>}
+        {rows.length === 0 && <p>{contract.emptyStateCopy}</p>}
       </div>
       <small>Customer-facing preview · Internal settings stay hidden</small>
     </aside>
   );
+}
+
+function toData(values: FormValues): BuilderData {
+  return Object.fromEntries(
+    Object.entries(values).map(([key, value]) => [key, value]),
+  ) as BuilderData;
+}
+
+function toFormValue(
+  value: BuilderData[string] | string | string[] | undefined,
+  fallback: string | string[],
+) {
+  if (Array.isArray(value)) return value.map(String);
+  if (value === null || value === undefined) return fallback;
+  return String(value);
+}
+
+function readText(values: FormValues, key: string) {
+  const value = values[key];
+  return Array.isArray(value) ? value.join(", ") : String(value ?? "").trim();
+}
+
+function previewRow(label: string, value: string) {
+  return value ? { label, value } : undefined;
+}
+
+function buildToolPreviewRows(builderId: string, values: FormValues) {
+  const rowsByBuilder: Record<string, Array<{ label: string; value: string } | undefined>> = {
+    "social-post-builder": [
+      previewRow("Platform", readText(values, "platform")),
+      previewRow("Post type", readText(values, "postType")),
+      previewRow("Caption", readText(values, "caption")),
+      previewRow("Link", readText(values, "link")),
+      previewRow("Hashtags", readText(values, "hashtags")),
+      previewRow("Media", readText(values, "media")),
+    ],
+    "flyer-builder": [
+      previewRow("Headline", readText(values, "headline")),
+      previewRow("Message", readText(values, "message")),
+      previewRow("Offer", readText(values, "offer")),
+      previewRow("Date/time", [readText(values, "date"), readText(values, "time")].filter(Boolean).join(" ")),
+      previewRow("Phone/website", [readText(values, "phone"), readText(values, "website")].filter(Boolean).join(" • ")),
+      previewRow("CTA", readText(values, "cta")),
+      previewRow("QR label", readText(values, "qrCode")),
+    ],
+    "business-card-builder": [
+      previewRow("Card type", readText(values, "cardType")),
+      previewRow("Information", readText(values, "information")),
+      previewRow("QR option", readText(values, "qrOption")),
+      previewRow("Destination", readText(values, "destination")),
+      previewRow("Sides", readText(values, "sides")),
+    ],
+    "send-promotion-builder": [
+      previewRow("Recipient group", readText(values, "audience")),
+      previewRow("Title", readText(values, "title")),
+      previewRow("Message", readText(values, "message")),
+      previewRow("Offer/link", [readText(values, "offer"), readText(values, "link")].filter(Boolean).join(" • ")),
+      previewRow("Expiration", readText(values, "expiration")),
+    ],
+    "review-booster-builder": [
+      previewRow("Review link", readText(values, "reviewLink")),
+      previewRow("Message", readText(values, "reviewMessage")),
+      previewRow("QR", "QR placeholder can be added after save"),
+    ],
+    "lead-form-builder": [
+      previewRow("Form title", readText(values, "formTitle")),
+      previewRow("Fields requested", readText(values, "fields")),
+      previewRow("Confirmation", readText(values, "thankYou")),
+    ],
+    "menu-price-sheet-builder": [
+      previewRow("Title", readText(values, "title")),
+      previewRow("Categories", readText(values, "categories")),
+      previewRow("Items/services", readText(values, "items")),
+      previewRow("Prices", readText(values, "prices")),
+    ],
+    "sign-door-hanger-builder": [
+      previewRow("Sign type", readText(values, "signType")),
+      previewRow("Headline", readText(values, "headline")),
+      previewRow("CTA", readText(values, "cta")),
+      previewRow("Phone/QR", [readText(values, "phone"), readText(values, "qrCode")].filter(Boolean).join(" • ")),
+      previewRow("Print note", "Print-safe check happens before export"),
+    ],
+    "event-promo-builder": [
+      previewRow("Event", readText(values, "eventTitle")),
+      previewRow("Date/time", [readText(values, "date"), readText(values, "time")].filter(Boolean).join(" ")),
+      previewRow("Location", readText(values, "location")),
+      previewRow("Offer/CTA", [readText(values, "price"), readText(values, "contact")].filter(Boolean).join(" • ")),
+    ],
+    "fix-something-flow": [
+      previewRow("Uploaded file", readText(values, "file")),
+      previewRow("Issue", readText(values, "fixType")),
+      previewRow("Notes", readText(values, "notes")),
+    ],
+    "canva-help-flow": [
+      previewRow("Canva link", readText(values, "canvaLink")),
+      previewRow("Screenshot", readText(values, "screenshot")),
+      previewRow("Requested changes", readText(values, "helpType")),
+      previewRow("Notes", readText(values, "notes")),
+    ],
+    "vistaprint-print-setup-flow": [
+      previewRow("Product type", readText(values, "printItem")),
+      previewRow("Uploaded file", readText(values, "file")),
+      previewRow("Print issue", readText(values, "issue")),
+      previewRow("Notes", readText(values, "notes")),
+    ],
+  };
+  return (rowsByBuilder[builderId] ?? []).filter(Boolean) as Array<{
+    label: string;
+    value: string;
+  }>;
 }
 
 export function ContractBuilderScreen({
@@ -173,7 +291,19 @@ export function ContractBuilderScreen({
     recordWorkshopAction,
     guidedDraft,
     clearGuidedDraft,
+    selectedWorkshopItemId,
+    selectedCreateTask,
+    workspace,
   } = useAppState();
+  const selectedWorkshopItem = selectedWorkshopItemId
+    ? workspace.workshopItems.find((item) => item.id === selectedWorkshopItemId)
+    : undefined;
+  const savedItem =
+    selectedWorkshopItem &&
+    (selectedWorkshopItem.builderId === contract.builderId ||
+      !selectedWorkshopItem.builderId)
+      ? normalizeWorkshopItem(selectedWorkshopItem)
+      : undefined;
   const guidedAnswers =
     guidedDraft?.builderId === contract.builderId
       ? guidedDraft.answers
@@ -183,17 +313,24 @@ export function ContractBuilderScreen({
       Object.fromEntries(
         contract.simpleModeFields.map((field) => [
           field.id,
-          guidedAnswers?.[field.id] ??
-            contract.sampleMockData[field.id] ??
-            (field.kind === "checkboxes" ? [] : ""),
+          toFormValue(
+            savedItem?.builderData?.[field.id] ??
+              guidedAnswers?.[field.id] ??
+              contract.sampleMockData[field.id],
+            field.kind === "checkboxes" ? [] : "",
+          ),
         ]),
       ),
-    [contract, guidedAnswers],
+    [contract, guidedAnswers, savedItem],
   );
   const [values, setValues] = useState<FormValues>(initialValues);
   const [created, setCreated] = useState(false);
   const [message, setMessage] = useState("");
-  const [savedItemId, setSavedItemId] = useState("");
+  const [savedItemId, setSavedItemId] = useState(savedItem?.id ?? "");
+  useEffect(() => {
+    setValues(initialValues);
+    setSavedItemId(savedItem?.id ?? "");
+  }, [initialValues, savedItem?.id]);
   const missing = contract.requiredFields.filter((id) => {
     const value = values[id];
     return Array.isArray(value)
@@ -201,7 +338,47 @@ export function ContractBuilderScreen({
       : !String(value ?? "").trim();
   });
 
-  const runAction = (action: string) => {
+  const saveCurrentDraft = (status: "Draft" | "Ready" | "Needs Review") => {
+    const definition =
+      getBuilderDefinitionForTask(selectedCreateTask ?? contract.builderName) ??
+      getBuilderDefinitionForTask(contract.builderName);
+    const builderData = toData(values);
+    const title = getWorkshopItemTitle(
+      contract.builderId,
+      builderData,
+      contract.builderName,
+    );
+    const savedId = saveWorkshopItem({
+      id: savedItemId || savedItem?.id,
+      builderId: contract.builderId,
+      sourceTool:
+        definition?.sourceTool ?? selectedCreateTask ?? contract.builderName,
+      itemType:
+        definition?.itemType ??
+        builderItemTypes[contract.builderId] ??
+        "custom_template",
+      title,
+      description: contract.purpose,
+      status,
+      createdFrom: guidedAnswers ? "Guided Wizard" : "Manual Builder",
+      builderData,
+      previewData: Object.fromEntries(
+        buildToolPreviewRows(contract.builderId, values).map((row) => [
+          row.label,
+          row.value,
+        ]),
+      ) as BuilderData,
+      tags: [contract.builderName, "Workshop"],
+      exportFormats: contract.afterCreatedActions.filter((item) =>
+        /Download|PDF|PNG|JPG/i.test(item),
+      ),
+    });
+    setSavedItemId(savedId);
+    if (guidedAnswers) clearGuidedDraft();
+    return savedId;
+  };
+
+  const runAction = async (action: string) => {
     if (/Request|Start Here|Format It/i.test(action)) {
       openHelpRequest(contract.helpHandoffType);
       return;
@@ -226,38 +403,38 @@ export function ContractBuilderScreen({
       exportWorkshopItem(savedItemId, action);
       return;
     }
-    if (/Save|Check|Preview|Copy|Prepare|Walk Me/i.test(action)) {
-      if (!savedItemId) {
-        const preferredTitle = [
-          "headline",
-          "title",
-          "formTitle",
-          "eventTitle",
-          "caption",
-        ]
-          .map((key) => values[key])
-          .find((value) => typeof value === "string" && value.trim());
-        const savedId = saveWorkshopItem({
-          itemType: builderItemTypes[contract.builderId] ?? "custom_template",
-          title: String(preferredTitle || contract.builderName),
-          description: contract.purpose,
-          status: /Save Draft/i.test(action)
-            ? "Draft"
-            : contract.builderId === "fix-something-flow"
-              ? "Needs Review"
-              : "Ready",
-          createdFrom: guidedAnswers ? "Guided Wizard" : "Manual Builder",
-          tags: [contract.builderName, "Workshop"],
-          exportFormats: contract.afterCreatedActions.filter((item) =>
-            /Download|PDF|PNG|JPG/i.test(item),
-          ),
-        });
-        setSavedItemId(savedId);
-        if (guidedAnswers) clearGuidedDraft();
+    if (/Preview/i.test(action)) {
+      setCreated(false);
+      setMessage("Preview updated with the current unsaved fields.");
+      return;
+    }
+    if (/Copy Caption/i.test(action)) {
+      const caption = readText(values, "caption") || readText(values, "message");
+      if (!caption) {
+        setMessage("No caption text is available to copy yet.");
+        return;
       }
+      try {
+        await navigator.clipboard?.writeText(caption);
+        setMessage("Caption copied.");
+      } catch {
+        setMessage(`Copy this caption: ${caption}`);
+      }
+      return;
+    }
+    if (/Save|Check|Preview|Copy|Prepare|Walk Me/i.test(action)) {
+      saveCurrentDraft(
+        /Save Draft/i.test(action)
+          ? "Draft"
+          : contract.builderId === "fix-something-flow"
+            ? "Needs Review"
+            : "Ready",
+      );
       setCreated(true);
       setMessage(
-        `Saved to My Creations. ${action} completed in mock mode; no external service was used.`,
+        /Save Draft/i.test(action)
+          ? "Draft saved to My Creations."
+          : `Saved to My Creations. ${action} completed in mock mode; no external service was used.`,
       );
       return;
     }
@@ -312,7 +489,7 @@ export function ContractBuilderScreen({
             }
             icon={index === 0 ? <Save size={18} /> : <Sparkles size={18} />}
             disabled={index === 0 && missing.length > 0}
-            onClick={() => runAction(action)}
+            onClick={() => void runAction(action)}
           >
             {action}
           </Button>
@@ -334,7 +511,7 @@ export function ContractBuilderScreen({
           <h2 className="section-heading">What do you want to do next?</h2>
           <div className="builder-next-actions">
             {contract.afterCreatedActions.map((action) => (
-              <button key={action} onClick={() => runAction(action)}>
+              <button key={action} onClick={() => void runAction(action)}>
                 {action}
               </button>
             ))}

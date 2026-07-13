@@ -4,8 +4,13 @@ import { DetailHeader } from "../components/common/ScreenHeader";
 import { useAppState } from "../state/AppState";
 
 export function SetupScreen() {
-  const { currentBusiness, workspace, setCurrentScreen, toggleSetupTask } =
-    useAppState();
+  const {
+    currentBusiness,
+    workspace,
+    setCurrentScreen,
+    toggleSetupTask,
+    resetDemoData,
+  } = useAppState();
   return (
     <section className="screen screen--detail">
       <DetailHeader title="Business setup" backTo="home" />
@@ -74,6 +79,21 @@ export function SetupScreen() {
           onClick={() => setCurrentScreen("home")}
         >
           Skip for now
+        </Button>
+        <Button
+          variant="ghost"
+          wide
+          onClick={() => {
+            if (
+              window.confirm(
+                "Reset demo data? This clears local prototype changes in this browser.",
+              )
+            ) {
+              resetDemoData();
+            }
+          }}
+        >
+          Reset demo data
         </Button>
       </div>
     </section>

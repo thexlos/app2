@@ -1,6 +1,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -11,7 +12,22 @@ import { initialWorkspaces } from "../data/mock/workspaces";
 import { createEstimateVersion } from "../lib/protectedRecords";
 import { validateInvoiceAgainstAcceptedScope } from "../lib/acceptedEstimateBilling";
 import { resolveActivityTarget } from "../lib/flowRouting";
+import {
+  createWorkshopItemFromBuilder,
+  duplicateWorkshopItemPayload,
+  getBuilderDefinitionForItem,
+  getBuilderDefinitionForTask,
+  getCreateTaskForBuilderId,
+  normalizeWorkshopItem,
+  stripOneTimeDataForTemplate,
+} from "../lib/workshopPayloads";
+import {
+  clearStoredAppState,
+  loadStoredAppState,
+  saveStoredAppState,
+} from "../services/storage/appStorage";
 import type {
+  BuilderData,
   BusinessKit,
   BusinessWorkspaceData,
   CalendarEvent,
@@ -27,6 +43,8 @@ import type {
   QRCodeRecord,
   Template,
   WorkshopItem,
+  WorkshopItemStatus,
+  WorkshopItemType,
 } from "../types/models";
 
 export type MainTab = "home" | "customers" | "money" | "create" | "help";
@@ -94,6 +112,13 @@ interface AppStateValue {
   selectedAssetId?: string;
   selectedWorkshopItemId?: string;
   selectedFileId?: string;
+  selectedQrId?: string;
+  qrBuilderPrefill?: {
+    qrType?: string;
+    destination?: string;
+    qrName?: string;
+    shortLabel?: string;
+  };
   selectedCreateTask?: string;
   selectedHelpService?: string;
   selectedHelpRequestId?: string;
@@ -171,6 +196,11 @@ interface AppStateValue {
     projectId?: string;
     helpRequestId?: string;
     workshopItemId?: string;
+    qrCodeId?: string;
+    source?: string;
+    dataUrl?: string;
+    generatedContent?: string;
+    metadataOnly?: boolean;
     url?: string;
   }) => string;
   archiveFile: (fileId: string) => void;
@@ -225,16 +255,25 @@ interface AppStateValue {
       | "internalNotes"
     >,
   ) => string;
-  openCreateTask: (task: string) => void;
+  openCreateTask: (
+    task: string,
+    options?: {
+      workshopItemId?: string;
+      qrCodeId?: string;
+      qrBuilderPrefill?: AppStateValue["qrBuilderPrefill"];
+    },
+  ) => void;
   openGuidedBuilder: (task: string) => void;
   openHelpRequest: (service?: string) => void;
   openHelpRequestDetail: (requestId: string) => void;
   openHelpGuide: (guideKey: string) => void;
   createQrCode: (
-    record: Pick<QRCodeRecord, "name" | "type" | "url" | "label" | "status"> & {
-      createdFrom?: "Guided Wizard" | "Manual Builder";
-    },
-  ) => string;
+    record: Pick<QRCodeRecord, "name" | "type" | "label" | "status"> &
+      Partial<QRCodeRecord> & {
+        builderData?: BuilderData;
+        previewData?: BuilderData;
+      },
+  ) => { qrCodeId: string; workshopItemId: string };
   saveWorkshopItem: (
     item: Pick<
       WorkshopItem,
@@ -245,9 +284,10 @@ interface AppStateValue {
       | "createdFrom"
       | "tags"
       | "exportFormats"
-    >,
+    > &
+      Partial<WorkshopItem>,
   ) => string;
-  duplicateWorkshopItem: (itemId: string) => void;
+  duplicateWorkshopItem: (itemId: string, openCopy?: boolean) => string | undefined;
   archiveWorkshopItem: (itemId: string) => void;
   saveWorkshopItemAsTemplate: (itemId: string) => void;
   exportWorkshopItem: (itemId: string, format: string) => void;
@@ -319,10 +359,15 @@ interface AppStateValue {
     note: string,
   ) => boolean;
   recordPayment: (invoiceId: string, amount: number, method: string) => void;
+  resetDemoData: () => void;
   clearNotice: () => void;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
+
+function makeId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 function buildKitTemplates(
   kit: BusinessKit,
@@ -400,10 +445,13 @@ function buildKitTemplates(
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
+  const [storedInitialState] = useState(() => loadStoredAppState());
   const [currentBusinessId, setCurrentBusinessId] = useState(
-    businessProfiles[0].id,
+    storedInitialState?.activeBusinessProfileId ?? businessProfiles[0].id,
   );
-  const [workspaces, setWorkspaces] = useState(initialWorkspaces);
+  const [workspaces, setWorkspaces] = useState(
+    storedInitialState?.workspaces ?? initialWorkspaces,
+  );
   const [currentScreen, setCurrentScreen] = useState<Screen>("home");
   const [selectedEstimateId, setSelectedEstimateId] = useState<string>();
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>();
@@ -414,6 +462,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [selectedWorkshopItemId, setSelectedWorkshopItemId] =
     useState<string>();
   const [selectedFileId, setSelectedFileId] = useState<string>();
+  const [selectedQrId, setSelectedQrId] = useState<string>();
+  const [qrBuilderPrefill, setQrBuilderPrefill] =
+    useState<AppStateValue["qrBuilderPrefill"]>();
   const [selectedCreateTask, setSelectedCreateTask] = useState<string>();
   const [selectedHelpService, setSelectedHelpService] = useState<string>();
   const [selectedHelpRequestId, setSelectedHelpRequestId] = useState<string>();
@@ -425,11 +476,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [scheduleContext, setScheduleContext] =
     useState<AppStateValue["scheduleContext"]>();
   const unsavedSaverRef = useRef<(() => void) | undefined>(undefined);
+  const suppressNextStorageSaveRef = useRef(false);
 
   const currentBusiness = businessProfiles.find(
     (profile) => profile.id === currentBusinessId,
   )!;
   const workspace = workspaces[currentBusinessId];
+
+  useEffect(() => {
+    if (suppressNextStorageSaveRef.current) {
+      suppressNextStorageSaveRef.current = false;
+      return;
+    }
+    saveStoredAppState({
+      activeBusinessProfileId: currentBusinessId,
+      workspaces,
+    });
+  }, [currentBusinessId, workspaces]);
 
   const updateWorkspace = (
     updater: (value: BusinessWorkspaceData) => BusinessWorkspaceData,
@@ -450,6 +513,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setSelectedAssetId(undefined);
     setSelectedWorkshopItemId(undefined);
     setSelectedFileId(undefined);
+    setSelectedQrId(undefined);
+    setQrBuilderPrefill(undefined);
     setSelectedCreateTask(undefined);
     setSelectedHelpService(undefined);
     setSelectedHelpRequestId(undefined);
@@ -1033,7 +1098,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   };
 
   const addFileMetadata: AppStateValue["addFileMetadata"] = (file) => {
-    const id = `${currentBusinessId}-file-${Date.now()}`;
+    const id = makeId(`${currentBusinessId}-file`);
     const now = new Date().toISOString();
     updateWorkspace((value) => ({
       ...value,
@@ -1048,6 +1113,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           projectId: file.projectId,
           helpRequestId: file.helpRequestId,
           workshopItemId: file.workshopItemId,
+          qrCodeId: file.qrCodeId,
+          source: file.source ?? "Upload",
+          dataUrl: file.dataUrl,
+          generatedContent: file.generatedContent,
+          metadataOnly:
+            file.metadataOnly ?? (!file.dataUrl && !file.generatedContent),
           url: file.url,
           pinned: false,
           archived: false,
@@ -1208,10 +1279,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const openCreateTask = (task: string) => {
+  const openCreateTask: AppStateValue["openCreateTask"] = (
+    task,
+    options = {},
+  ) => {
     setSelectedCreateTask(task);
     setGuidedDraft(undefined);
-    setSelectedWorkshopItemId(undefined);
+    setSelectedWorkshopItemId(options.workshopItemId);
+    setSelectedQrId(options.qrCodeId);
+    setQrBuilderPrefill(options.qrBuilderPrefill);
     setCurrentScreen("create-mode");
   };
 
@@ -1236,159 +1312,267 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   };
 
   const createQrCode: AppStateValue["createQrCode"] = (record) => {
-    const createdId = `qr-${Date.now()}`;
-    const workshopId = `creation-${Date.now()}`;
-    updateWorkspace((value) => ({
-      ...value,
-      qrCodes: [
-        {
-          ...record,
-          id: createdId,
-          businessId: currentBusinessId,
-          scans: 0,
-        },
-        ...value.qrCodes,
-      ],
-      workshopItems: [
-        {
-          id: workshopId,
-          businessProfileId: currentBusinessId,
-          itemType: "qr_code",
-          title: record.name || "Untitled QR Draft",
-          description: record.label || record.url || "QR code draft",
-          status: record.status === "Draft" ? "Draft" : "Ready",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          lastUsedAt: "Just now",
-          createdFrom: record.createdFrom ?? "Manual Builder",
-          fileAssetIds: [],
-          qrCodeIds: [createdId],
-          socialPostIds: [],
-          tags: [record.type],
-          exportFormats: ["PNG", "PDF Sign"],
-          isTemplate: false,
-          archived: false,
-          activityHistory: [
-            {
-              id: `activity-${Date.now()}`,
-              label: record.status === "Draft" ? "Saved draft" : "Created item",
-              occurredAt: "Just now",
-            },
-          ],
-        },
-        ...value.workshopItems,
-      ],
-      activity: [
-        {
-          id: `${Date.now()}`,
-          businessId: currentBusinessId,
-          label:
-            record.status === "Draft"
-              ? "QR code draft saved"
-              : "QR code created",
-          detail: `${record.name} was saved to ${currentBusiness.name}.`,
-          occurredAt: "Just now",
-          tone: record.status === "Draft" ? "info" : "success",
-          type: record.status === "Draft" ? "qr.draft" : "qr.created",
-          relatedRecordType: "workshop_item",
-          relatedRecordId: workshopId,
-          deepLinkRoute: "workshop-library",
-        },
-        ...value.activity,
-      ],
-    }));
+    const now = new Date().toISOString();
+    const qrCodeId = record.id ?? selectedQrId ?? makeId("qr");
+    let workshopItemId =
+      record.workshopItemId ?? selectedWorkshopItemId ?? makeId("creation");
+    const readyStatus = record.status === "Draft" ? "Draft" : "Ready";
+    const payload = record.payload ?? record.url ?? "";
+    const builderData: BuilderData =
+      record.builderData ??
+      ({
+        qrType: record.type,
+        destination: record.url ?? payload,
+        qrName: record.name,
+        shortLabel: record.label ?? "",
+      } satisfies BuilderData);
+    const previewData: BuilderData =
+      record.previewData ??
+      ({
+        qrType: record.type,
+        destination: record.url ?? payload,
+        qrName: record.name,
+        shortLabel: record.label ?? "",
+      } satisfies BuilderData);
+    updateWorkspace((value) => {
+      const existingQr = value.qrCodes.find((item) => item.id === qrCodeId);
+      const linkedWorkshop =
+        value.workshopItems.find((item) => item.id === workshopItemId) ??
+        value.workshopItems.find((item) => item.qrCodeIds.includes(qrCodeId));
+      if (linkedWorkshop) workshopItemId = linkedWorkshop.id;
+      const qrRecord: QRCodeRecord = {
+        ...existingQr,
+        ...record,
+        id: qrCodeId,
+        businessId: currentBusinessId,
+        name: record.name || "Untitled QR Draft",
+        type: record.type || "Custom URL",
+        status: readyStatus,
+        payloadType: record.payloadType ?? (record.type === "Contact Card" ? "vcard" : "url"),
+        payload,
+        url: record.url,
+        scans: existingQr?.scans ?? record.scans ?? 0,
+        fileAssetIds: existingQr?.fileAssetIds ?? record.fileAssetIds ?? [],
+        createdAt: existingQr?.createdAt ?? now,
+        updatedAt: now,
+        createdFrom: record.createdFrom ?? existingQr?.createdFrom ?? "Manual Builder",
+        workshopItemId,
+      };
+      const workshop = linkedWorkshop
+        ? normalizeWorkshopItem({
+            ...linkedWorkshop,
+            title: qrRecord.name,
+            description: qrRecord.label ?? qrRecord.url ?? qrRecord.payload ?? "QR code draft",
+            status: readyStatus,
+            updatedAt: now,
+            lastUsedAt: "Just now",
+            builderId: "qr-code-builder",
+            sourceTool: "Create QR Code",
+            builderData,
+            previewData,
+            qrCodeIds: Array.from(new Set([qrCodeId, ...linkedWorkshop.qrCodeIds])),
+            tags: Array.from(new Set([qrRecord.type, ...linkedWorkshop.tags])),
+            exportFormats: ["PNG", "SVG", "PDF Sign"],
+            version: (linkedWorkshop.version ?? 1) + 1,
+            activityHistory: [
+              {
+                id: `activity-${Date.now()}`,
+                label: readyStatus === "Draft" ? "Updated draft" : "Created QR code",
+                occurredAt: "Just now",
+              },
+              ...linkedWorkshop.activityHistory,
+            ],
+          })
+        : createWorkshopItemFromBuilder({
+            id: workshopItemId,
+            businessProfileId: currentBusinessId,
+            builderId: "qr-code-builder",
+            sourceTool: "Create QR Code",
+            itemType: "qr_code",
+            title: qrRecord.name,
+            description: qrRecord.label ?? qrRecord.url ?? qrRecord.payload ?? "QR code draft",
+            status: readyStatus,
+            createdFrom:
+              record.createdFrom === "Guided Wizard"
+                ? "Guided Wizard"
+                : "Manual Builder",
+            builderData,
+            previewData,
+            tags: [qrRecord.type, "QR Code"],
+            exportFormats: ["PNG", "SVG", "PDF Sign"],
+            qrCodeIds: [qrCodeId],
+            activityLabel: readyStatus === "Draft" ? "Saved draft" : "Created QR code",
+          });
+      return {
+        ...value,
+        qrCodes: existingQr
+          ? value.qrCodes.map((item) => (item.id === qrCodeId ? qrRecord : item))
+          : [qrRecord, ...value.qrCodes],
+        workshopItems: linkedWorkshop
+          ? value.workshopItems.map((item) =>
+              item.id === workshopItemId ? workshop : item,
+            )
+          : [workshop, ...value.workshopItems],
+        activity: [
+          {
+            id: `${Date.now()}`,
+            businessId: currentBusinessId,
+            label:
+              readyStatus === "Draft" ? "QR code draft saved" : "QR code created",
+            detail: `${qrRecord.name} was saved to ${currentBusiness.name}.`,
+            occurredAt: "Just now",
+            tone: readyStatus === "Draft" ? "info" : "success",
+            type: readyStatus === "Draft" ? "qr.draft" : "qr.created",
+            relatedRecordType: "workshop_item",
+            relatedRecordId: workshopItemId,
+            deepLinkRoute: "workshop-library",
+          },
+          ...value.activity,
+        ],
+      };
+    });
+    setSelectedQrId(qrCodeId);
+    setSelectedWorkshopItemId(workshopItemId);
     setNotice(
       record.status === "Draft"
         ? "Draft saved to My Creations."
         : "Saved to My Creations.",
     );
-    return workshopId;
+    return { qrCodeId, workshopItemId };
   };
 
   const saveWorkshopItem: AppStateValue["saveWorkshopItem"] = (item) => {
-    const id = `creation-${Date.now()}`;
     const now = new Date().toISOString();
-    updateWorkspace((value) => ({
-      ...value,
-      workshopItems: [
-        {
-          ...item,
-          id,
-          businessProfileId: currentBusinessId,
-          createdAt: now,
-          updatedAt: now,
-          lastUsedAt: "Just now",
-          fileAssetIds: [],
-          qrCodeIds: [],
-          socialPostIds: [],
-          isTemplate: false,
-          archived: false,
-          activityHistory: [
-            {
-              id: `activity-${Date.now()}`,
-              label: item.status === "Draft" ? "Saved draft" : "Created item",
-              occurredAt: "Just now",
-            },
-          ],
-        },
-        ...value.workshopItems,
-      ],
-      activity: [
-        {
-          id: `${Date.now()}`,
-          businessId: currentBusinessId,
-          label:
-            item.status === "Draft"
-              ? "Workshop draft saved"
-              : "Workshop item created",
-          detail: `${item.title} was saved to My Creations.`,
-          occurredAt: "Just now",
-          tone: item.status === "Draft" ? "info" : "success",
-          type: "workshop.saved",
-          relatedRecordType: "workshop_item",
-          relatedRecordId: id,
-          deepLinkRoute: "workshop-library",
-        },
-        ...value.activity,
-      ],
-    }));
-    setNotice("Saved to My Creations.");
+    let id = item.id ?? selectedWorkshopItemId ?? makeId("creation");
+    updateWorkspace((value) => {
+      const existing = value.workshopItems.find((candidate) => candidate.id === id);
+      if (!existing && item.id) id = item.id;
+      const definition =
+        item.builderId || item.sourceTool
+          ? getBuilderDefinitionForItem({
+              builderId: item.builderId,
+              sourceTool: item.sourceTool,
+              itemType: item.itemType,
+            })
+          : getBuilderDefinitionForItem(item);
+      const builderId = item.builderId ?? definition?.builderId ?? "custom-template";
+      const sourceTool =
+        item.sourceTool ?? definition?.sourceTool ?? item.itemType.replaceAll("_", " ");
+      const activityLabel = existing ? "Updated draft" : item.status === "Draft" ? "Saved draft" : "Created item";
+      const savedItem = existing
+        ? normalizeWorkshopItem({
+            ...existing,
+            ...item,
+            id,
+            businessProfileId: currentBusinessId,
+            builderId,
+            sourceTool,
+            updatedAt: now,
+            lastUsedAt: "Just now",
+            builderData: item.builderData ?? existing.builderData ?? {},
+            previewData: item.previewData ?? existing.previewData ?? {},
+            fileAssetIds: item.fileAssetIds ?? existing.fileAssetIds,
+            qrCodeIds: item.qrCodeIds ?? existing.qrCodeIds,
+            socialPostIds: item.socialPostIds ?? existing.socialPostIds,
+            linkedCustomerIds: item.linkedCustomerIds ?? existing.linkedCustomerIds,
+            linkedLeadIds: item.linkedLeadIds ?? existing.linkedLeadIds,
+            linkedProjectIds: item.linkedProjectIds ?? existing.linkedProjectIds,
+            linkedEstimateIds: item.linkedEstimateIds ?? existing.linkedEstimateIds,
+            linkedInvoiceIds: item.linkedInvoiceIds ?? existing.linkedInvoiceIds,
+            exportHistory: item.exportHistory ?? existing.exportHistory,
+            version: (existing.version ?? 1) + 1,
+            activityHistory: [
+              {
+                id: `activity-${Date.now()}`,
+                label: activityLabel,
+                occurredAt: "Just now",
+              },
+              ...existing.activityHistory,
+            ],
+          })
+        : createWorkshopItemFromBuilder({
+            id,
+            businessProfileId: currentBusinessId,
+            builderId,
+            sourceTool,
+            itemType: item.itemType,
+            title: item.title,
+            description: item.description,
+            status: item.status,
+            createdFrom: item.createdFrom,
+            builderData: item.builderData ?? {},
+            previewData: item.previewData ?? item.builderData ?? {},
+            tags: item.tags,
+            exportFormats: item.exportFormats,
+            fileAssetIds: item.fileAssetIds,
+            qrCodeIds: item.qrCodeIds,
+            socialPostIds: item.socialPostIds,
+            linkedCustomerIds: item.linkedCustomerIds,
+            linkedLeadIds: item.linkedLeadIds,
+            linkedProjectIds: item.linkedProjectIds,
+            linkedEstimateIds: item.linkedEstimateIds,
+            linkedInvoiceIds: item.linkedInvoiceIds,
+            activityLabel,
+          });
+      return {
+        ...value,
+        workshopItems: existing
+          ? value.workshopItems.map((candidate) =>
+              candidate.id === id ? savedItem : candidate,
+            )
+          : [savedItem, ...value.workshopItems],
+        activity: [
+          {
+            id: `${Date.now()}`,
+            businessId: currentBusinessId,
+            label:
+              item.status === "Draft"
+                ? "Workshop draft saved"
+                : "Workshop item created",
+            detail: `${item.title} was saved to My Creations.`,
+            occurredAt: "Just now",
+            tone: item.status === "Draft" ? "info" : "success",
+            type: "workshop.saved",
+            relatedRecordType: "workshop_item",
+            relatedRecordId: id,
+            deepLinkRoute: "workshop-library",
+          },
+          ...value.activity,
+        ],
+      };
+    });
+    setSelectedWorkshopItemId(id);
+    setNotice("Draft saved to My Creations.");
     return id;
   };
 
   const duplicateWorkshopItem: AppStateValue["duplicateWorkshopItem"] = (
     itemId,
+    openCopy = false,
   ) => {
+    const newId = makeId("creation");
+    const source = workspace.workshopItems.find((item) => item.id === itemId);
+    if (!source) {
+      setNotice("This creation could not be found.");
+      return undefined;
+    }
+    const copiedItem = duplicateWorkshopItemPayload(source, newId);
     updateWorkspace((value) => {
-      const source = value.workshopItems.find((item) => item.id === itemId);
-      if (!source) return value;
-      const now = new Date().toISOString();
       return {
         ...value,
-        workshopItems: [
-          {
-            ...source,
-            id: `creation-${Date.now()}`,
-            title: `${source.title} Copy`,
-            status: "Draft",
-            createdAt: now,
-            updatedAt: now,
-            lastUsedAt: "Just now",
-            createdFrom: "Duplicate",
-            archived: false,
-            activityHistory: [
-              {
-                id: `activity-${Date.now()}`,
-                label: "Duplicated item",
-                occurredAt: "Just now",
-              },
-            ],
-          },
-          ...value.workshopItems,
-        ],
+        workshopItems: [copiedItem, ...value.workshopItems],
       };
     });
+    if (openCopy) {
+      setSelectedWorkshopItemId(newId);
+      const definition = getBuilderDefinitionForItem(copiedItem);
+      if (definition) {
+        setSelectedCreateTask(definition.createTask);
+        setCurrentScreen("create-builder");
+      }
+    }
     setNotice("A new draft copy was added to My Creations.");
+    return newId;
   };
 
   const archiveWorkshopItem: AppStateValue["archiveWorkshopItem"] = (
@@ -1399,7 +1583,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       workshopItems: value.workshopItems.map((item) =>
         item.id === itemId
           ? {
-              ...item,
+              ...normalizeWorkshopItem(item),
               archived: true,
               status: "Archived",
               updatedAt: new Date().toISOString(),
@@ -1426,25 +1610,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         );
         if (!item) return value;
         const templateName = `${item.title} Template`;
+        const templateItem = stripOneTimeDataForTemplate(item);
         return {
           ...value,
-          workshopItems: value.workshopItems.map((candidate) =>
-            candidate.id === itemId
-              ? {
-                  ...candidate,
-                  isTemplate: true,
-                  updatedAt: new Date().toISOString(),
-                  activityHistory: [
-                    {
-                      id: `activity-${Date.now()}`,
-                      label: "Saved as template",
-                      occurredAt: "Just now",
-                    },
-                    ...candidate.activityHistory,
-                  ],
-                }
-              : candidate,
-          ),
+          workshopItems: [templateItem, ...value.workshopItems],
           templates: [
             {
               id: `template-${Date.now()}`,
@@ -1463,12 +1632,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     itemId,
     format,
   ) => {
-    const fileId = `file-${Date.now()}`;
+    const fileId = makeId("file");
     updateWorkspace((value) => {
       const item = value.workshopItems.find(
         (candidate) => candidate.id === itemId,
       );
       if (!item) return value;
+      const normalizedItem = normalizeWorkshopItem(item);
       const extension = /pdf/i.test(format)
         ? "pdf"
         : /jpg/i.test(format)
@@ -1490,6 +1660,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
                 ? "application/pdf"
                 : `image/${extension === "jpg" ? "jpeg" : extension}`,
             workshopItemId: itemId,
+            qrCodeId: normalizedItem.qrCodeIds[0],
+            source: "Workshop Export",
+            metadataOnly: true,
             visibility: "Internal",
           },
           ...value.files,
@@ -1497,10 +1670,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         workshopItems: value.workshopItems.map((candidate) =>
           candidate.id === itemId
             ? {
-                ...candidate,
+                ...normalizeWorkshopItem(candidate),
                 status: "Downloaded",
                 updatedAt: new Date().toISOString(),
-                fileAssetIds: [fileId, ...candidate.fileAssetIds],
+                fileAssetIds: [fileId, ...normalizeWorkshopItem(candidate).fileAssetIds],
+                exportHistory: [
+                  {
+                    id: `export-${Date.now()}`,
+                    format,
+                    fileId,
+                    label: format,
+                    createdAt: new Date().toISOString(),
+                  },
+                  ...(normalizeWorkshopItem(candidate).exportHistory ?? []),
+                ],
                 activityHistory: [
                   {
                     id: `activity-${Date.now()}`,
@@ -2715,6 +2898,36 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const resetDemoData: AppStateValue["resetDemoData"] = () => {
+    suppressNextStorageSaveRef.current = true;
+    clearStoredAppState();
+    setWorkspaces(
+      JSON.parse(JSON.stringify(initialWorkspaces)) as Record<
+        string,
+        BusinessWorkspaceData
+      >,
+    );
+    setCurrentBusinessId(businessProfiles[0].id);
+    setSelectedEstimateId(undefined);
+    setSelectedInvoiceId(undefined);
+    setSelectedCustomerId(undefined);
+    setSelectedLeadId(undefined);
+    setSelectedTemplateId(undefined);
+    setSelectedAssetId(undefined);
+    setSelectedWorkshopItemId(undefined);
+    setSelectedFileId(undefined);
+    setSelectedQrId(undefined);
+    setQrBuilderPrefill(undefined);
+    setSelectedCreateTask(undefined);
+    setSelectedHelpService(undefined);
+    setSelectedHelpRequestId(undefined);
+    setSelectedGuideKey(undefined);
+    setScheduleContext(undefined);
+    setGuidedDraft(undefined);
+    setCurrentScreen("home");
+    setNotice("Demo data reset.");
+  };
+
   const value = useMemo<AppStateValue>(
     () => ({
       activeBusinessProfileId: currentBusinessId,
@@ -2731,6 +2944,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       selectedAssetId,
       selectedWorkshopItemId,
       selectedFileId,
+      selectedQrId,
+      qrBuilderPrefill,
       selectedCreateTask,
       selectedHelpService,
       selectedHelpRequestId,
@@ -2816,6 +3031,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       handleHelpRequestAction,
       respondToEstimate,
       recordPayment,
+      resetDemoData,
       clearNotice: () => setNotice(undefined),
     }),
     [
@@ -2831,6 +3047,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       selectedAssetId,
       selectedWorkshopItemId,
       selectedFileId,
+      selectedQrId,
+      qrBuilderPrefill,
       selectedCreateTask,
       selectedHelpService,
       selectedHelpRequestId,
