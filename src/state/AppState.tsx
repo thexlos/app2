@@ -18,6 +18,7 @@ import {
   getBuilderDefinitionForItem,
   getBuilderDefinitionForTask,
   getCreateTaskForBuilderId,
+  getWorkshopItemTitle,
   normalizeWorkshopItem,
   stripOneTimeDataForTemplate,
 } from "../lib/workshopPayloads";
@@ -26,6 +27,12 @@ import {
   loadStoredAppState,
   saveStoredAppState,
 } from "../services/storage/appStorage";
+import {
+  clearRecoveryDrafts,
+  hasMeaningfulBuilderData,
+  loadRecoveryDrafts,
+  saveRecoveryDrafts,
+} from "../services/storage/recoveryDraftStorage";
 import type {
   BuilderData,
   BusinessKit,
@@ -41,6 +48,7 @@ import type {
   ItemServiceBankItem,
   ProjectJob,
   QRCodeRecord,
+  RecoveryDraft,
   Template,
   WorkshopItem,
   WorkshopItemStatus,
@@ -123,8 +131,10 @@ interface AppStateValue {
   selectedHelpService?: string;
   selectedHelpRequestId?: string;
   selectedGuideKey?: string;
+  selectedRecoveryDraftId?: string;
   notice?: string;
   unsavedWorkLabel?: string;
+  recoveryDrafts: RecoveryDraft[];
   guidedDraft?: {
     builderId: string;
     answers: Record<string, string | string[]>;
@@ -142,6 +152,20 @@ interface AppStateValue {
   markUnsavedWork: (label: string, save?: () => void) => void;
   clearUnsavedWork: () => void;
   saveUnsavedWork: () => void;
+  saveRecoveryDraft: (draft: {
+    builderId: string;
+    sourceTool: string;
+    selectedCreateTask: string;
+    selectedWorkshopItemId?: string;
+    builderData: BuilderData;
+  }) => string | undefined;
+  continueRecoveryDraft: (draftId: string) => void;
+  saveRecoveryDraftAsCreation: (draftId: string) => string | undefined;
+  discardRecoveryDraft: (draftId: string) => void;
+  clearRecoveryDraftForBuilder: (
+    builderId: string,
+    selectedWorkshopItemId?: string,
+  ) => void;
   openEstimate: (estimateId: string) => void;
   openInvoice: (invoiceId: string) => void;
   openEstimateBuilder: (
@@ -470,8 +494,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [selectedHelpService, setSelectedHelpService] = useState<string>();
   const [selectedHelpRequestId, setSelectedHelpRequestId] = useState<string>();
   const [selectedGuideKey, setSelectedGuideKey] = useState<string>();
+  const [selectedRecoveryDraftId, setSelectedRecoveryDraftId] =
+    useState<string>();
   const [notice, setNotice] = useState<string>();
   const [unsavedWorkLabel, setUnsavedWorkLabel] = useState<string>();
+  const [recoveryDrafts, setRecoveryDrafts] = useState(loadRecoveryDrafts);
   const [guidedDraft, setGuidedDraft] =
     useState<AppStateValue["guidedDraft"]>();
   const [scheduleContext, setScheduleContext] =
@@ -495,6 +522,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     });
   }, [currentBusinessId, workspaces]);
 
+  useEffect(() => {
+    saveRecoveryDrafts(recoveryDrafts);
+  }, [recoveryDrafts]);
+
   const updateWorkspace = (
     updater: (value: BusinessWorkspaceData) => BusinessWorkspaceData,
   ) => {
@@ -502,6 +533,89 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       ...current,
       [currentBusinessId]: updater(current[currentBusinessId]),
     }));
+  };
+
+  const clearRecoveryDraftForBuilder: AppStateValue["clearRecoveryDraftForBuilder"] =
+    (builderId, selectedWorkshopItemId) => {
+      setRecoveryDrafts((current) =>
+        current.filter((draft) => {
+          if (draft.businessProfileId !== currentBusinessId) return true;
+          if (selectedRecoveryDraftId && draft.id === selectedRecoveryDraftId)
+            return false;
+          if (draft.builderId !== builderId) return true;
+          if (selectedWorkshopItemId) {
+            return (
+              Boolean(draft.selectedWorkshopItemId) &&
+              draft.selectedWorkshopItemId !== selectedWorkshopItemId
+            );
+          }
+          return false;
+        }),
+      );
+      setSelectedRecoveryDraftId(undefined);
+    };
+
+  const saveRecoveryDraft: AppStateValue["saveRecoveryDraft"] = (draft) => {
+    if (!hasMeaningfulBuilderData(draft.builderData)) {
+      clearRecoveryDraftForBuilder(
+        draft.builderId,
+        draft.selectedWorkshopItemId,
+      );
+      return undefined;
+    }
+    const safeTask = draft.selectedCreateTask
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    const id =
+      selectedRecoveryDraftId ??
+      `${currentBusinessId}-recovery-${draft.builderId}-${draft.selectedWorkshopItemId ?? safeTask}`;
+    const savedDraft: RecoveryDraft = {
+      id,
+      businessProfileId: currentBusinessId,
+      builderId: draft.builderId,
+      sourceTool: draft.sourceTool,
+      selectedCreateTask: draft.selectedCreateTask,
+      selectedWorkshopItemId: draft.selectedWorkshopItemId,
+      builderData: draft.builderData,
+      updatedAt: new Date().toISOString(),
+      status: "Recoverable Draft",
+    };
+    setRecoveryDrafts((current) => [
+      savedDraft,
+      ...current.filter((item) => item.id !== id),
+    ]);
+    return id;
+  };
+
+  const continueRecoveryDraft: AppStateValue["continueRecoveryDraft"] = (
+    draftId,
+  ) => {
+    const draft = recoveryDrafts.find(
+      (item) => item.id === draftId && item.businessProfileId === currentBusinessId,
+    );
+    if (!draft) {
+      setNotice("This recovery draft could not be found.");
+      return;
+    }
+    setSelectedRecoveryDraftId(draft.id);
+    setSelectedCreateTask(
+      draft.selectedCreateTask || getCreateTaskForBuilderId(draft.builderId),
+    );
+    setSelectedWorkshopItemId(draft.selectedWorkshopItemId);
+    setSelectedQrId(undefined);
+    setQrBuilderPrefill(undefined);
+    setGuidedDraft(undefined);
+    setCurrentScreen("create-builder");
+    setNotice("Recovered draft opened.");
+  };
+
+  const discardRecoveryDraft: AppStateValue["discardRecoveryDraft"] = (
+    draftId,
+  ) => {
+    setRecoveryDrafts((current) => current.filter((draft) => draft.id !== draftId));
+    if (selectedRecoveryDraftId === draftId) setSelectedRecoveryDraftId(undefined);
+    setNotice("Recovered draft discarded. No saved creation was deleted.");
   };
 
   const switchBusiness = (businessId: string) => {
@@ -520,6 +634,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setSelectedHelpService(undefined);
     setSelectedHelpRequestId(undefined);
     setSelectedGuideKey(undefined);
+    setSelectedRecoveryDraftId(undefined);
     setScheduleContext(undefined);
     setGuidedDraft(undefined);
     setCurrentScreen("home");
@@ -1316,6 +1431,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setSelectedWorkshopItemId(options.workshopItemId);
     setSelectedQrId(options.qrCodeId);
     setQrBuilderPrefill(options.qrBuilderPrefill);
+    setSelectedRecoveryDraftId(undefined);
     setCurrentScreen("create-mode");
   };
 
@@ -1380,7 +1496,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         payload,
         url: record.url,
         scans: existingQr?.scans ?? record.scans ?? 0,
-        fileAssetIds: existingQr?.fileAssetIds ?? record.fileAssetIds ?? [],
+        fileAssetIds: record.fileAssetIds ?? existingQr?.fileAssetIds ?? [],
         createdAt: existingQr?.createdAt ?? now,
         updatedAt: now,
         createdFrom: record.createdFrom ?? existingQr?.createdFrom ?? "Manual Builder",
@@ -1398,6 +1514,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             sourceTool: "Create QR Code",
             builderData,
             previewData,
+            fileAssetIds: record.fileAssetIds ?? linkedWorkshop.fileAssetIds,
             qrCodeIds: Array.from(new Set([qrCodeId, ...linkedWorkshop.qrCodeIds])),
             tags: Array.from(new Set([qrRecord.type, ...linkedWorkshop.tags])),
             exportFormats: ["PNG", "SVG", "PDF Sign"],
@@ -1428,6 +1545,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             previewData,
             tags: [qrRecord.type, "QR Code"],
             exportFormats: ["PNG", "SVG", "PDF Sign"],
+            fileAssetIds: record.fileAssetIds ?? [],
             qrCodeIds: [qrCodeId],
             activityLabel: readyStatus === "Draft" ? "Saved draft" : "Created QR code",
           });
@@ -1461,10 +1579,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     });
     setSelectedQrId(qrCodeId);
     setSelectedWorkshopItemId(workshopItemId);
+    clearRecoveryDraftForBuilder("qr-code-builder", workshopItemId);
     setNotice(
       record.status === "Draft"
         ? "Draft saved to My Creations."
-        : "Saved to My Creations.",
+        : "QR code saved to My Creations.",
     );
     return { qrCodeId, workshopItemId };
   };
@@ -1472,17 +1591,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const saveWorkshopItem: AppStateValue["saveWorkshopItem"] = (item) => {
     const now = new Date().toISOString();
     let id = item.id ?? selectedWorkshopItemId ?? makeId("creation");
+    const recoveryDefinition =
+      item.builderId || item.sourceTool
+        ? getBuilderDefinitionForItem({
+            builderId: item.builderId,
+            sourceTool: item.sourceTool,
+            itemType: item.itemType,
+          })
+        : getBuilderDefinitionForItem(item);
+    const recoveryBuilderId =
+      item.builderId ?? recoveryDefinition?.builderId ?? "custom-template";
     updateWorkspace((value) => {
       const existing = value.workshopItems.find((candidate) => candidate.id === id);
       if (!existing && item.id) id = item.id;
-      const definition =
-        item.builderId || item.sourceTool
-          ? getBuilderDefinitionForItem({
-              builderId: item.builderId,
-              sourceTool: item.sourceTool,
-              itemType: item.itemType,
-            })
-          : getBuilderDefinitionForItem(item);
+      const definition = recoveryDefinition;
       const builderId = item.builderId ?? definition?.builderId ?? "custom-template";
       const sourceTool =
         item.sourceTool ?? definition?.sourceTool ?? item.itemType.replaceAll("_", " ");
@@ -1571,8 +1693,53 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     });
     setSelectedWorkshopItemId(id);
     setNotice("Draft saved to My Creations.");
+    clearRecoveryDraftForBuilder(recoveryBuilderId, id);
     return id;
   };
+
+  const saveRecoveryDraftAsCreation: AppStateValue["saveRecoveryDraftAsCreation"] =
+    (draftId) => {
+      const draft = recoveryDrafts.find(
+        (item) =>
+          item.id === draftId && item.businessProfileId === currentBusinessId,
+      );
+      if (!draft) {
+        setNotice("This recovery draft could not be found.");
+        return undefined;
+      }
+      const definition =
+        getBuilderDefinitionForTask(draft.selectedCreateTask) ??
+        getBuilderDefinitionForItem({
+          builderId: draft.builderId,
+          sourceTool: draft.sourceTool,
+          itemType: "custom_template",
+        });
+      const title = getWorkshopItemTitle(
+        draft.builderId,
+        draft.builderData,
+        draft.sourceTool,
+      );
+      const savedId = saveWorkshopItem({
+        id: draft.selectedWorkshopItemId,
+        builderId: draft.builderId,
+        sourceTool: definition?.sourceTool ?? draft.sourceTool,
+        itemType: definition?.itemType ?? "custom_template",
+        title,
+        description: "Recovered draft saved to My Creations.",
+        status: "Draft",
+        createdFrom: "Manual Builder",
+        builderData: draft.builderData,
+        previewData: draft.builderData,
+        tags: [draft.sourceTool, "Recovered Draft"],
+        exportFormats: [],
+      });
+      setRecoveryDrafts((current) =>
+        current.filter((item) => item.id !== draftId),
+      );
+      if (selectedRecoveryDraftId === draftId) setSelectedRecoveryDraftId(undefined);
+      setNotice("Draft saved to My Creations.");
+      return savedId;
+    };
 
   const duplicateWorkshopItem: AppStateValue["duplicateWorkshopItem"] = (
     itemId,
@@ -2952,8 +3119,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setSelectedHelpService(undefined);
     setSelectedHelpRequestId(undefined);
     setSelectedGuideKey(undefined);
+    setSelectedRecoveryDraftId(undefined);
     setScheduleContext(undefined);
     setGuidedDraft(undefined);
+    setRecoveryDrafts([]);
+    clearRecoveryDrafts();
     setCurrentScreen("home");
     setNotice("Demo data reset.");
   };
@@ -2980,8 +3150,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       selectedHelpService,
       selectedHelpRequestId,
       selectedGuideKey,
+      selectedRecoveryDraftId,
       notice,
       unsavedWorkLabel,
+      recoveryDrafts,
       guidedDraft,
       scheduleContext,
       setCurrentScreen,
@@ -2999,6 +3171,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setUnsavedWorkLabel(undefined);
         unsavedSaverRef.current = undefined;
       },
+      saveRecoveryDraft,
+      continueRecoveryDraft,
+      saveRecoveryDraftAsCreation,
+      discardRecoveryDraft,
+      clearRecoveryDraftForBuilder,
       openEstimate,
       openInvoice,
       openEstimateBuilder,
@@ -3084,8 +3261,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       selectedHelpService,
       selectedHelpRequestId,
       selectedGuideKey,
+      selectedRecoveryDraftId,
       notice,
       unsavedWorkLabel,
+      recoveryDrafts,
       guidedDraft,
       scheduleContext,
     ],

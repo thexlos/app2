@@ -65,12 +65,15 @@ export function QRCodeBuilderScreen() {
     currentBusinessId,
     workspace,
     createQrCode,
-    saveWorkshopItem,
     addFileMetadata,
     openCreateTask,
     openHelpRequest,
     setCurrentScreen,
     recordWorkshopAction,
+    saveRecoveryDraft,
+    clearRecoveryDraftForBuilder,
+    selectedRecoveryDraftId,
+    recoveryDrafts,
     guidedDraft,
     clearGuidedDraft,
     selectedWorkshopItemId,
@@ -93,8 +96,17 @@ export function QRCodeBuilderScreen() {
     guidedDraft?.builderId === "qr-code-builder"
       ? guidedDraft.answers
       : undefined;
+  const recoveryDraft =
+    selectedRecoveryDraftId
+      ? recoveryDrafts.find(
+          (draft) =>
+            draft.id === selectedRecoveryDraftId &&
+            draft.builderId === "qr-code-builder",
+        )
+      : undefined;
   const savedBuilderData = selectedWorkshopItem?.builderData;
   const initialQrType =
+    (recoveryDraft?.builderData.qrType as QrType | undefined) ??
     (savedBuilderData?.qrType as QrType | undefined) ??
     (selectedQr?.type as QrType | undefined) ??
     (qrBuilderPrefill?.qrType as QrType | undefined) ??
@@ -102,7 +114,8 @@ export function QRCodeBuilderScreen() {
     "";
   const initialDestination =
     String(
-      savedBuilderData?.destination ??
+      recoveryDraft?.builderData.destination ??
+        savedBuilderData?.destination ??
         selectedQr?.url ??
         (selectedQr?.payloadType === "url" ? selectedQr.payload : "") ??
         qrBuilderPrefill?.destination ??
@@ -114,7 +127,8 @@ export function QRCodeBuilderScreen() {
   const [leadFormId, setLeadFormId] = useState("");
   const [qrName, setQrName] = useState(
     String(
-      savedBuilderData?.qrName ??
+      recoveryDraft?.builderData.qrName ??
+        savedBuilderData?.qrName ??
         selectedQr?.name ??
         qrBuilderPrefill?.qrName ??
         guided?.qrName ??
@@ -123,7 +137,8 @@ export function QRCodeBuilderScreen() {
   );
   const [shortLabel, setShortLabel] = useState(
     String(
-      savedBuilderData?.shortLabel ??
+      recoveryDraft?.builderData.shortLabel ??
+        savedBuilderData?.shortLabel ??
         selectedQr?.label ??
         qrBuilderPrefill?.shortLabel ??
         guided?.shortLabel ??
@@ -131,13 +146,13 @@ export function QRCodeBuilderScreen() {
     ),
   );
   const [contact, setContact] = useState({
-    contactName: String(savedBuilderData?.contactName ?? ""),
-    businessName: String(savedBuilderData?.businessName ?? currentBusiness.name),
-    phone: String(savedBuilderData?.phone ?? currentBusiness.phone),
-    email: String(savedBuilderData?.email ?? currentBusiness.email),
-    website: String(savedBuilderData?.website ?? savedLinks.website),
-    address: String(savedBuilderData?.address ?? ""),
-    notes: String(savedBuilderData?.notes ?? ""),
+    contactName: String(recoveryDraft?.builderData.contactName ?? savedBuilderData?.contactName ?? ""),
+    businessName: String(recoveryDraft?.builderData.businessName ?? savedBuilderData?.businessName ?? currentBusiness.name),
+    phone: String(recoveryDraft?.builderData.phone ?? savedBuilderData?.phone ?? currentBusiness.phone),
+    email: String(recoveryDraft?.builderData.email ?? savedBuilderData?.email ?? currentBusiness.email),
+    website: String(recoveryDraft?.builderData.website ?? savedBuilderData?.website ?? savedLinks.website),
+    address: String(recoveryDraft?.builderData.address ?? savedBuilderData?.address ?? ""),
+    notes: String(recoveryDraft?.builderData.notes ?? savedBuilderData?.notes ?? ""),
   });
   const [tested, setTested] = useState<"idle" | "valid" | "invalid">("idle");
   const [created, setCreated] = useState(false);
@@ -146,11 +161,20 @@ export function QRCodeBuilderScreen() {
   const [actionMessage, setActionMessage] = useState("");
   const [previewSvg, setPreviewSvg] = useState(selectedQr?.svg ?? "");
   const [previewDataUrl, setPreviewDataUrl] = useState(selectedQr?.dataUrl ?? "");
+  const [hasUserEdited, setHasUserEdited] = useState(false);
+  const [pendingVaultCopy, setPendingVaultCopy] = useState<{
+    context: "created" | "download";
+    fileName: string;
+    type: string;
+    dataUrl?: string;
+    generatedContent?: string;
+    qrDataUrl?: string;
+    svg?: string;
+  }>();
   const [advanced, setAdvanced] = useState({
     qrColor: selectedQr?.foregroundColor ?? "#101c3b",
     backgroundColor: selectedQr?.backgroundColor ?? "#ffffff",
     addLogo: false,
-    saveToVault: false,
     exportSize: "1024 × 1024 PNG",
     errorCorrectionLevel: (selectedQr?.errorCorrectionLevel ?? "M") as
       | "L"
@@ -164,7 +188,8 @@ export function QRCodeBuilderScreen() {
     setDestination(initialDestination);
     setQrName(
       String(
-        savedBuilderData?.qrName ??
+          recoveryDraft?.builderData.qrName ??
+          savedBuilderData?.qrName ??
           selectedQr?.name ??
           qrBuilderPrefill?.qrName ??
           guided?.qrName ??
@@ -173,7 +198,8 @@ export function QRCodeBuilderScreen() {
     );
     setShortLabel(
       String(
-        savedBuilderData?.shortLabel ??
+          recoveryDraft?.builderData.shortLabel ??
+          savedBuilderData?.shortLabel ??
           selectedQr?.label ??
           qrBuilderPrefill?.shortLabel ??
           guided?.shortLabel ??
@@ -184,11 +210,14 @@ export function QRCodeBuilderScreen() {
     setSavedQrId(selectedQr?.id ?? "");
     setPreviewSvg(selectedQr?.svg ?? "");
     setPreviewDataUrl(selectedQr?.dataUrl ?? "");
+    setHasUserEdited(false);
+    setPendingVaultCopy(undefined);
   }, [
     guided,
     initialDestination,
     initialQrType,
     qrBuilderPrefill,
+    recoveryDraft,
     savedBuilderData,
     selectedQr,
     selectedWorkshopItem?.id,
@@ -265,6 +294,8 @@ export function QRCodeBuilderScreen() {
     setQrType(value);
     setCreated(false);
     setTested("idle");
+    setHasUserEdited(true);
+    setPendingVaultCopy(undefined);
     setActionMessage("");
     if (value === "Contact Card") setDestination("");
   };
@@ -273,6 +304,7 @@ export function QRCodeBuilderScreen() {
     setLeadFormId(id);
     const form = workspace.leadForms.find((item) => item.id === id);
     setDestination(form ? `${window.location.origin}${form.publicPath}` : "");
+    setHasUserEdited(true);
     setTested("idle");
   };
 
@@ -306,6 +338,51 @@ export function QRCodeBuilderScreen() {
     backgroundColor: advanced.backgroundColor,
     errorCorrectionLevel: advanced.errorCorrectionLevel,
   });
+
+  const hasMeaningfulQrInput = Boolean(
+    qrType ||
+      destination.trim() ||
+      qrName.trim() ||
+      shortLabel.trim() ||
+      contact.contactName.trim() ||
+      (contact.businessName.trim() &&
+        contact.businessName.trim() !== currentBusiness.name.trim()) ||
+      (contact.phone.trim() &&
+        contact.phone.trim() !== currentBusiness.phone.trim()) ||
+      (contact.email.trim() &&
+        contact.email.trim() !== currentBusiness.email.trim()) ||
+      (contact.website.trim() &&
+        contact.website.trim() !== savedLinks.website.trim()) ||
+      contact.address.trim() ||
+      contact.notes.trim(),
+  );
+
+  useEffect(() => {
+    if (!hasUserEdited || !hasMeaningfulQrInput) return;
+    const timeout = window.setTimeout(() => {
+      saveRecoveryDraft({
+        builderId: "qr-code-builder",
+        sourceTool: "Create QR Code",
+        selectedCreateTask: "Create QR Code",
+        selectedWorkshopItemId: savedItemId || selectedWorkshopItem?.id,
+        builderData: buildBuilderData(),
+      });
+    }, 1000);
+    return () => window.clearTimeout(timeout);
+  }, [
+    advanced.backgroundColor,
+    advanced.errorCorrectionLevel,
+    advanced.qrColor,
+    contact,
+    destination,
+    hasMeaningfulQrInput,
+    hasUserEdited,
+    qrName,
+    qrType,
+    savedItemId,
+    selectedWorkshopItem?.id,
+    shortLabel,
+  ]);
 
   const save = async (status: "Draft" | "Ready") => {
     if (!qrName.trim()) {
@@ -371,19 +448,72 @@ export function QRCodeBuilderScreen() {
       },
     });
     if (guided) clearGuidedDraft();
+    clearRecoveryDraftForBuilder("qr-code-builder", saved.workshopItemId);
     setSavedItemId(saved.workshopItemId);
     setSavedQrId(saved.qrCodeId);
     if (svg) setPreviewSvg(svg);
     if (dataUrl) setPreviewDataUrl(dataUrl);
     if (status === "Ready") {
       setCreated(true);
-      setActionMessage(
-        "Your QR code was created, generated, and saved to this business profile.",
-      );
+      setPendingVaultCopy({
+        context: "created",
+        fileName: `${sanitizeQrFileName(qrName)}.png`,
+        type: "image/png",
+        dataUrl,
+        qrDataUrl: dataUrl,
+        svg,
+      });
+      setActionMessage("QR code generated and saved to My Creations.");
     } else
       setActionMessage(
         "Draft saved. You can finish the destination and name later.",
       );
+  };
+
+  const savePendingCopyToFileVault = () => {
+    if (!pendingVaultCopy) return;
+    const fileId = addFileMetadata({
+      name: pendingVaultCopy.fileName,
+      type: pendingVaultCopy.type,
+      workshopItemId: savedItemId || selectedWorkshopItem?.id,
+      qrCodeId: savedQrId || selectedQr?.id,
+      source: "QR Generator",
+      dataUrl: pendingVaultCopy.dataUrl,
+      generatedContent: pendingVaultCopy.generatedContent,
+      metadataOnly: false,
+    });
+    const payloadResult = buildQrPayload({ qrType, destination, contact });
+    if (savedQrId || selectedQr?.id) {
+      createQrCode({
+        id: savedQrId || selectedQr?.id,
+        workshopItemId: savedItemId || selectedWorkshopItem?.id,
+        name: qrName.trim() || "Untitled QR Draft",
+        type: qrType || "Custom URL",
+        label: shortLabel.trim() || undefined,
+        status: "Ready",
+        payloadType: payloadResult.payloadType,
+        payload: payloadResult.payload,
+        url: payloadResult.normalizedUrl,
+        svg: pendingVaultCopy.svg ?? previewSvg,
+        dataUrl: pendingVaultCopy.qrDataUrl ?? previewDataUrl,
+        foregroundColor: advanced.qrColor,
+        backgroundColor: advanced.backgroundColor,
+        errorCorrectionLevel: advanced.errorCorrectionLevel,
+        fileAssetIds: Array.from(
+          new Set([fileId, ...(selectedQr?.fileAssetIds ?? [])]),
+        ),
+        createdFrom: guided ? "Guided Wizard" : "Manual Builder",
+        builderData: buildBuilderData(),
+        previewData: {
+          qrName,
+          qrType,
+          destination: previewDestination,
+          shortLabel,
+        },
+      });
+    }
+    setPendingVaultCopy(undefined);
+    setActionMessage("Saved a copy to File Vault.");
   };
 
   const createDownload = async (format: "png" | "svg" | "pdf") => {
@@ -428,75 +558,16 @@ export function QRCodeBuilderScreen() {
     } else {
       downloadDataUrl(fileName, dataUrl);
     }
-    const fileId = advanced.saveToVault
-      ? addFileMetadata({
-          name: fileName,
-          type,
-          workshopItemId: savedItemId || selectedWorkshopItem?.id,
-          qrCodeId: savedQrId || selectedQr?.id,
-          source: "QR Generator",
-          dataUrl: format === "svg" ? undefined : fileDataUrl,
-          generatedContent,
-          metadataOnly: false,
-        })
-      : undefined;
-    if ((savedQrId || selectedQr?.id) && fileId) {
-      createQrCode({
-        id: savedQrId || selectedQr?.id,
-        workshopItemId: savedItemId || selectedWorkshopItem?.id,
-        name: qrName.trim() || "Untitled QR Draft",
-        type: qrType || "Custom URL",
-        label: shortLabel.trim() || undefined,
-        status: "Ready",
-        payloadType: payloadResult.payloadType,
-        payload: payloadResult.payload,
-        url: payloadResult.normalizedUrl,
-        svg,
-        dataUrl,
-        foregroundColor: advanced.qrColor,
-        backgroundColor: advanced.backgroundColor,
-        errorCorrectionLevel: advanced.errorCorrectionLevel,
-        fileAssetIds: Array.from(
-          new Set([fileId, ...(selectedQr?.fileAssetIds ?? [])]),
-        ),
-        createdFrom: guided ? "Guided Wizard" : "Manual Builder",
-        builderData: buildBuilderData(),
-        previewData: {
-          qrName,
-          qrType,
-          destination: previewDestination,
-          shortLabel,
-        },
-      });
-    }
-    if ((savedItemId || selectedWorkshopItem?.id) && fileId) {
-      saveWorkshopItem({
-        ...(selectedWorkshopItem ?? {
-          itemType: "qr_code",
-          title: qrName,
-          description: shortLabel || previewDestination,
-          status: "Ready",
-          createdFrom: "Manual Builder",
-          tags: [qrType || "QR Code"],
-          exportFormats: ["PNG", "SVG", "PDF Sign"],
-        }),
-        id: savedItemId || selectedWorkshopItem?.id,
-        fileAssetIds: Array.from(
-          new Set([fileId, ...(selectedWorkshopItem?.fileAssetIds ?? [])]),
-        ),
-        qrCodeIds: Array.from(
-          new Set([
-            savedQrId || selectedQr?.id || "",
-            ...(selectedWorkshopItem?.qrCodeIds ?? []),
-          ].filter(Boolean)),
-        ),
-      });
-    }
-    setActionMessage(
-      advanced.saveToVault
-        ? `${fileName} downloaded to your device and saved to File Vault.`
-        : `${fileName} downloaded to your device.`,
-    );
+    setPendingVaultCopy({
+      context: "download",
+      fileName,
+      type,
+      dataUrl: format === "svg" ? undefined : fileDataUrl,
+      generatedContent,
+      qrDataUrl: dataUrl,
+      svg,
+    });
+    setActionMessage("Downloaded to your device.");
   };
 
   const runNextAction = async (label: string) => {
@@ -601,12 +672,13 @@ export function QRCodeBuilderScreen() {
                     id="contact-name"
                     className="input"
                     value={contact.contactName}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      setHasUserEdited(true);
                       setContact({
                         ...contact,
                         contactName: event.target.value,
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
                 <div className="field">
@@ -615,12 +687,13 @@ export function QRCodeBuilderScreen() {
                     id="contact-business"
                     className="input"
                     value={contact.businessName}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      setHasUserEdited(true);
                       setContact({
                         ...contact,
                         businessName: event.target.value,
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
                 <div className="field">
@@ -629,9 +702,10 @@ export function QRCodeBuilderScreen() {
                     id="contact-phone"
                     className="input"
                     value={contact.phone}
-                    onChange={(event) =>
-                      setContact({ ...contact, phone: event.target.value })
-                    }
+                    onChange={(event) => {
+                      setHasUserEdited(true);
+                      setContact({ ...contact, phone: event.target.value });
+                    }}
                   />
                 </div>
                 <div className="field">
@@ -641,9 +715,10 @@ export function QRCodeBuilderScreen() {
                     type="email"
                     className="input"
                     value={contact.email}
-                    onChange={(event) =>
-                      setContact({ ...contact, email: event.target.value })
-                    }
+                    onChange={(event) => {
+                      setHasUserEdited(true);
+                      setContact({ ...contact, email: event.target.value });
+                    }}
                   />
                 </div>
                 <div className="field">
@@ -652,9 +727,10 @@ export function QRCodeBuilderScreen() {
                     id="contact-website"
                     className="input"
                     value={contact.website}
-                    onChange={(event) =>
-                      setContact({ ...contact, website: event.target.value })
-                    }
+                    onChange={(event) => {
+                      setHasUserEdited(true);
+                      setContact({ ...contact, website: event.target.value });
+                    }}
                   />
                 </div>
                 <div className="field">
@@ -663,9 +739,10 @@ export function QRCodeBuilderScreen() {
                     id="contact-address"
                     className="input"
                     value={contact.address}
-                    onChange={(event) =>
-                      setContact({ ...contact, address: event.target.value })
-                    }
+                    onChange={(event) => {
+                      setHasUserEdited(true);
+                      setContact({ ...contact, address: event.target.value });
+                    }}
                   />
                 </div>
                 <div className="field">
@@ -674,9 +751,10 @@ export function QRCodeBuilderScreen() {
                     id="contact-notes"
                     className="input"
                     value={contact.notes}
-                    onChange={(event) =>
-                      setContact({ ...contact, notes: event.target.value })
-                    }
+                    onChange={(event) => {
+                      setHasUserEdited(true);
+                      setContact({ ...contact, notes: event.target.value });
+                    }}
                   />
                 </div>
               </div>
@@ -718,6 +796,8 @@ export function QRCodeBuilderScreen() {
                     value={destination}
                     onChange={(event) => {
                       setDestination(event.target.value);
+                      setHasUserEdited(true);
+                      setPendingVaultCopy(undefined);
                       setTested("idle");
                       setCreated(false);
                     }}
@@ -733,6 +813,8 @@ export function QRCodeBuilderScreen() {
                     className="saved-link-button"
                     onClick={() => {
                       setDestination(savedLinks[savedLinkKey]);
+                      setHasUserEdited(true);
+                      setPendingVaultCopy(undefined);
                       setTested("idle");
                     }}
                   >
@@ -762,6 +844,8 @@ export function QRCodeBuilderScreen() {
                 value={qrName}
                 onChange={(event) => {
                   setQrName(event.target.value);
+                  setHasUserEdited(true);
+                  setPendingVaultCopy(undefined);
                   setCreated(false);
                 }}
                 placeholder="Example: Free Quote QR, Menu QR, Review QR"
@@ -776,7 +860,11 @@ export function QRCodeBuilderScreen() {
                 id="qr-label"
                 className="input"
                 value={shortLabel}
-                onChange={(event) => setShortLabel(event.target.value)}
+                onChange={(event) => {
+                  setShortLabel(event.target.value);
+                  setHasUserEdited(true);
+                  setPendingVaultCopy(undefined);
+                }}
                 placeholder="Example: Scan to book, Scan for menu, Leave us a review"
               />
               <small className="field-help">
@@ -825,24 +913,6 @@ export function QRCodeBuilderScreen() {
                   Show logo/initials in preview only
                   <small className="field-help">
                     Logo embedding in exported QR files is not connected yet.
-                  </small>
-                </span>
-              </label>
-              <label className="check-row">
-                <input
-                  type="checkbox"
-                  checked={advanced.saveToVault}
-                  onChange={(event) =>
-                    setAdvanced({
-                      ...advanced,
-                      saveToVault: event.target.checked,
-                    })
-                  }
-                />{" "}
-                <span>
-                  Also save a copy to File Vault
-                  <small className="field-help">
-                    Downloads still save to your device first.
                   </small>
                 </span>
               </label>
@@ -977,6 +1047,42 @@ export function QRCodeBuilderScreen() {
             <strong>{actionMessage}</strong>
           </div>
         </div>
+      )}
+      {pendingVaultCopy && (
+        <section className="card panel section stack" aria-live="polite">
+          <div>
+            <h2 className="section-heading">
+              {pendingVaultCopy.context === "created"
+                ? "Save a copy to File Vault?"
+                : "Also save this downloaded file to File Vault?"}
+            </h2>
+            <p className="section-copy">
+              QR code saved to My Creations. File Vault only keeps chosen
+              files, exports, or references.
+            </p>
+          </div>
+          <div className="row wrap">
+            <Button
+              variant="primary"
+              onClick={savePendingCopyToFileVault}
+            >
+              {pendingVaultCopy.context === "created"
+                ? "Yes, save copy"
+                : "Save Copy to File Vault"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPendingVaultCopy(undefined);
+                setActionMessage("No File Vault copy was saved.");
+              }}
+            >
+              {pendingVaultCopy.context === "created"
+                ? "No, not now"
+                : "No thanks"}
+            </Button>
+          </div>
+        </section>
       )}
 
       {created && (

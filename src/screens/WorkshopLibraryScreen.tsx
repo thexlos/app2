@@ -15,7 +15,10 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { DetailHeader } from "../components/common/ScreenHeader";
 import { StatusBadge } from "../components/common/StatusBadge";
-import { getBuilderDefinitionForItem } from "../lib/workshopPayloads";
+import {
+  getBuilderDefinitionForItem,
+  getWorkshopItemTitle,
+} from "../lib/workshopPayloads";
 import { useAppState } from "../state/AppState";
 import type { WorkshopItem, WorkshopItemType } from "../types/models";
 
@@ -136,12 +139,29 @@ export function WorkshopLibraryScreen() {
     saveWorkshopItemAsTemplate,
     exportWorkshopItem,
     recordWorkshopAction,
+    recoveryDrafts,
+    currentBusinessId,
+    continueRecoveryDraft,
+    saveRecoveryDraftAsCreation,
+    discardRecoveryDraft,
     selectedWorkshopItemId,
   } = useAppState();
   const [filter, setFilter] = useState<(typeof filters)[number]>("All");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("Recently updated");
   const [message, setMessage] = useState("");
+  const [pendingExport, setPendingExport] = useState<{
+    itemId: string;
+    title: string;
+    action: string;
+  }>();
+  const activeRecoveryDrafts = useMemo(
+    () =>
+      recoveryDrafts
+        .filter((draft) => draft.businessProfileId === currentBusinessId)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    [currentBusinessId, recoveryDrafts],
+  );
   useEffect(() => {
     if (!selectedWorkshopItemId) return;
     const selected = workspace.workshopItems.find(
@@ -237,7 +257,10 @@ export function WorkshopLibraryScreen() {
       return;
     }
     if (/Download/.test(action)) {
-      exportWorkshopItem(item.id, action);
+      setPendingExport({ itemId: item.id, title: item.title, action });
+      setMessage(
+        `${action} is prepared in mock mode. No File Vault copy was saved.`,
+      );
       return;
     }
     if (action === "Post to Social") {
@@ -305,6 +328,93 @@ export function WorkshopLibraryScreen() {
           <ExternalLink size={19} />
           <strong>{message}</strong>
         </div>
+      )}
+      {pendingExport && (
+        <section className="card panel section stack" aria-live="polite">
+          <div>
+            <h2 className="section-heading">Save this export to File Vault?</h2>
+            <p className="section-copy">
+              My Creations keeps “{pendingExport.title}” editable. File Vault
+              only keeps a chosen file or export reference.
+            </p>
+          </div>
+          <div className="row wrap">
+            <button
+              className="btn btn--primary"
+              onClick={() => {
+                exportWorkshopItem(pendingExport.itemId, pendingExport.action);
+                setPendingExport(undefined);
+                setMessage("Saved a copy to File Vault.");
+              }}
+            >
+              Save Copy to File Vault
+            </button>
+            <button
+              className="btn btn--outline"
+              onClick={() => {
+                setPendingExport(undefined);
+                setMessage("No File Vault copy was saved.");
+              }}
+            >
+              No thanks
+            </button>
+          </div>
+        </section>
+      )}
+      {activeRecoveryDrafts.length > 0 && (
+        <section className="section">
+          <div>
+            <h2 className="section-heading">Recovered Drafts</h2>
+            <p className="section-copy">
+              These are auto-saved recovery drafts. They are not File Vault
+              files and they are not official exports.
+            </p>
+          </div>
+          <div className="creation-card-grid">
+            {activeRecoveryDrafts.map((draft) => (
+              <article className="creation-card" key={draft.id}>
+                <div className="creation-card__preview">
+                  <Sparkles size={28} />
+                  <StatusBadge tone="warning">Recoverable Draft</StatusBadge>
+                </div>
+                <div className="creation-card__body">
+                  <h2>
+                    {getWorkshopItemTitle(
+                      draft.builderId,
+                      draft.builderData,
+                      draft.sourceTool,
+                    ) || `Untitled ${draft.sourceTool} Draft`}
+                  </h2>
+                  <p>{draft.sourceTool}</p>
+                  <div className="creation-meta">
+                    <span>
+                      Last edited {new Date(draft.updatedAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="creation-quick-actions">
+                    <button onClick={() => continueRecoveryDraft(draft.id)}>
+                      <ExternalLink size={16} />
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => {
+                        saveRecoveryDraftAsCreation(draft.id);
+                        setMessage("Draft saved to My Creations.");
+                      }}
+                    >
+                      <Download size={16} />
+                      Save as My Creation
+                    </button>
+                    <button onClick={() => discardRecoveryDraft(draft.id)}>
+                      <Archive size={16} />
+                      Discard
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       )}
       {items.length === 0 ? (
         <div className="library-empty section">

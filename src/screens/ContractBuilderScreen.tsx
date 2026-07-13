@@ -289,6 +289,10 @@ export function ContractBuilderScreen({
     saveWorkshopItem,
     exportWorkshopItem,
     recordWorkshopAction,
+    saveRecoveryDraft,
+    clearRecoveryDraftForBuilder,
+    selectedRecoveryDraftId,
+    recoveryDrafts,
     guidedDraft,
     clearGuidedDraft,
     selectedWorkshopItemId,
@@ -308,27 +312,66 @@ export function ContractBuilderScreen({
     guidedDraft?.builderId === contract.builderId
       ? guidedDraft.answers
       : undefined;
+  const recoveryDraft =
+    selectedRecoveryDraftId
+      ? recoveryDrafts.find(
+          (draft) =>
+            draft.id === selectedRecoveryDraftId &&
+            draft.builderId === contract.builderId,
+        )
+      : undefined;
   const initialValues = useMemo(
     () =>
       Object.fromEntries(
         contract.simpleModeFields.map((field) => [
           field.id,
           toFormValue(
-            savedItem?.builderData?.[field.id] ?? guidedAnswers?.[field.id],
+            recoveryDraft?.builderData[field.id] ??
+              savedItem?.builderData?.[field.id] ??
+              guidedAnswers?.[field.id],
             field.kind === "checkboxes" ? [] : "",
           ),
         ]),
       ),
-    [contract, guidedAnswers, savedItem],
+    [contract, guidedAnswers, recoveryDraft, savedItem],
   );
   const [values, setValues] = useState<FormValues>(initialValues);
   const [created, setCreated] = useState(false);
   const [message, setMessage] = useState("");
   const [savedItemId, setSavedItemId] = useState(savedItem?.id ?? "");
+  const [hasUserEdited, setHasUserEdited] = useState(false);
+  const [pendingExport, setPendingExport] = useState<{
+    itemId: string;
+    action: string;
+  }>();
   useEffect(() => {
     setValues(initialValues);
     setSavedItemId(savedItem?.id ?? "");
+    setHasUserEdited(false);
   }, [initialValues, savedItem?.id]);
+
+  useEffect(() => {
+    if (!hasUserEdited) return;
+    const timeout = window.setTimeout(() => {
+      saveRecoveryDraft({
+        builderId: contract.builderId,
+        sourceTool: selectedCreateTask ?? contract.builderName,
+        selectedCreateTask: selectedCreateTask ?? contract.builderName,
+        selectedWorkshopItemId: savedItemId || savedItem?.id,
+        builderData: toData(values),
+      });
+    }, 1000);
+    return () => window.clearTimeout(timeout);
+  }, [
+    contract.builderId,
+    contract.builderName,
+    hasUserEdited,
+    savedItem?.id,
+    savedItemId,
+    selectedCreateTask,
+    values,
+  ]);
+
   const loadExample = () => {
     setValues(
       Object.fromEntries(
@@ -342,6 +385,7 @@ export function ContractBuilderScreen({
       ),
     );
     setCreated(false);
+    setHasUserEdited(true);
     setMessage(
       "Example content loaded. Replace it with this business's real details before saving.",
     );
@@ -390,6 +434,7 @@ export function ContractBuilderScreen({
     });
     setSavedItemId(savedId);
     if (guidedAnswers) clearGuidedDraft();
+    clearRecoveryDraftForBuilder(contract.builderId, savedItem?.id || savedId);
     return savedId;
   };
 
@@ -415,11 +460,15 @@ export function ContractBuilderScreen({
       return;
     }
     if (/Download|PDF Print|PNG|JPG/i.test(action) && savedItemId) {
-      exportWorkshopItem(savedItemId, action);
+      setPendingExport({ itemId: savedItemId, action });
+      setMessage(
+        `${action} is prepared in mock mode. No File Vault copy was saved.`,
+      );
       return;
     }
     if (/Preview/i.test(action)) {
       setCreated(false);
+      setPendingExport(undefined);
       setMessage("Preview updated with the current unsaved fields.");
       return;
     }
@@ -446,6 +495,7 @@ export function ContractBuilderScreen({
             : "Ready",
       );
       setCreated(true);
+      setPendingExport(undefined);
       setMessage(
         /Save Draft/i.test(action)
           ? "Draft saved to My Creations."
@@ -483,6 +533,8 @@ export function ContractBuilderScreen({
                 onChange={(value) => {
                   setValues((current) => ({ ...current, [field.id]: value }));
                   setCreated(false);
+                  setHasUserEdited(true);
+                  setPendingExport(undefined);
                 }}
               />
             ))}
@@ -525,6 +577,38 @@ export function ContractBuilderScreen({
           <CheckCircle2 size={20} />
           <strong>{message}</strong>
         </div>
+      )}
+      {pendingExport && (
+        <section className="card panel section stack" aria-live="polite">
+          <div>
+            <h2 className="section-heading">Save this export to File Vault?</h2>
+            <p className="section-copy">
+              My Creations keeps the editable project. File Vault only keeps a
+              chosen file or export reference.
+            </p>
+          </div>
+          <div className="row wrap">
+            <Button
+              variant="primary"
+              onClick={() => {
+                exportWorkshopItem(pendingExport.itemId, pendingExport.action);
+                setPendingExport(undefined);
+                setMessage("Saved a copy to File Vault.");
+              }}
+            >
+              Save Copy to File Vault
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPendingExport(undefined);
+                setMessage("No File Vault copy was saved.");
+              }}
+            >
+              No thanks
+            </Button>
+          </div>
+        </section>
       )}
       {created && contract.afterCreatedActions.length > 0 && (
         <section className="section">

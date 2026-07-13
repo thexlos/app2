@@ -1,7 +1,8 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getBuilderContract } from "../src/config/builderContracts";
 import { ContractBuilderScreen } from "../src/screens/ContractBuilderScreen";
+import { QRCodeBuilderScreen } from "../src/screens/QRCodeBuilderScreen";
 import {
   canDownloadFileAsset,
   getFileVaultCategories,
@@ -19,6 +20,7 @@ import {
   STORAGE_VERSION_KEY,
   WORKSPACES_KEY,
 } from "../src/services/storage/appStorage";
+import { RECOVERY_DRAFTS_KEY } from "../src/services/storage/recoveryDraftStorage";
 import {
   buildQrPayload,
   downloadDataUrl,
@@ -47,6 +49,10 @@ function renderState() {
 beforeEach(() => {
   cleanup();
   window.localStorage.clear();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("Phase 2/3 local persistence", () => {
@@ -273,6 +279,169 @@ describe("Phase 2/3 cleanup builder examples", () => {
   });
 });
 
+describe("Auto-save recovery drafts", () => {
+  it("auto-saves meaningful flyer input but not a blank opened builder", async () => {
+    const contract = getBuilderContract("Make a Flyer")!;
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <ContractBuilderScreen contract={contract} />
+      </AppStateProvider>,
+    );
+    await new Promise((resolve) => window.setTimeout(resolve, 1200));
+    expect(latest!.recoveryDrafts).toHaveLength(0);
+    expect(JSON.parse(window.localStorage.getItem(RECOVERY_DRAFTS_KEY) ?? "[]")).toHaveLength(0);
+    cleanup();
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <ContractBuilderScreen contract={contract} />
+      </AppStateProvider>,
+    );
+    const startingFiles = latest!.workspace.files.length;
+    fireEvent.change(screen.getByLabelText("Flyer title / headline"), {
+      target: { value: "Recovery Headline" },
+    });
+    fireEvent.change(screen.getByLabelText("Main message"), {
+      target: { value: "Recovery message" },
+    });
+    await waitFor(
+      () =>
+        expect(latest!.recoveryDrafts[0]?.builderData.headline).toBe(
+          "Recovery Headline",
+        ),
+      { timeout: 1800 },
+    );
+    expect(window.localStorage.getItem(RECOVERY_DRAFTS_KEY)).toContain(
+      "Recovery Headline",
+    );
+    expect(latest!.workspace.files).toHaveLength(startingFiles);
+  });
+
+  it("survives provider remount, can continue, discard, and convert to My Creations", async () => {
+    const first = renderState();
+    act(() => {
+      first.state().saveRecoveryDraft({
+        builderId: "flyer-builder",
+        sourceTool: "Make a Flyer",
+        selectedCreateTask: "Make a Flyer",
+        builderData: {
+          headline: "Recovered Flyer",
+          message: "Recovered body copy",
+        },
+      });
+    });
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    expect(window.localStorage.getItem(RECOVERY_DRAFTS_KEY)).toContain(
+      "Recovered Flyer",
+    );
+    first.unmount();
+
+    const second = renderState();
+    expect(second.state().recoveryDrafts[0]?.builderData.headline).toBe(
+      "Recovered Flyer",
+    );
+    const draftId = second.state().recoveryDrafts[0].id;
+    act(() => second.state().continueRecoveryDraft(draftId));
+    expect(second.state().currentScreen).toBe("create-builder");
+    expect(second.state().selectedRecoveryDraftId).toBe(draftId);
+
+    act(() => second.state().discardRecoveryDraft(draftId));
+    expect(second.state().recoveryDrafts).toHaveLength(0);
+
+    act(() => {
+      second.state().saveRecoveryDraft({
+        builderId: "flyer-builder",
+        sourceTool: "Make a Flyer",
+        selectedCreateTask: "Make a Flyer",
+        builderData: { headline: "Convert Me" },
+      });
+    });
+    const convertId = second.state().recoveryDrafts[0].id;
+    act(() => {
+      second.state().saveRecoveryDraftAsCreation(convertId);
+    });
+    expect(
+      second.state().workspace.workshopItems.some((item) => item.title === "Convert Me"),
+    ).toBe(true);
+    expect(second.state().recoveryDrafts).toHaveLength(0);
+  });
+
+  it("manual Save Draft clears the related recovery draft", () => {
+    const view = renderState();
+    act(() => {
+      view.state().saveRecoveryDraft({
+        builderId: "flyer-builder",
+        sourceTool: "Make a Flyer",
+        selectedCreateTask: "Make a Flyer",
+        builderData: { headline: "Manual Save Clears Me" },
+      });
+    });
+    expect(view.state().recoveryDrafts).toHaveLength(1);
+    act(() => {
+      view.state().saveWorkshopItem({
+        itemType: "flyer",
+        title: "Manual Save Clears Me",
+        description: "Manual draft",
+        status: "Draft",
+        createdFrom: "Manual Builder",
+        builderId: "flyer-builder",
+        sourceTool: "Make a Flyer",
+        builderData: { headline: "Manual Save Clears Me" },
+        tags: ["flyer"],
+        exportFormats: ["PNG"],
+      });
+    });
+    expect(view.state().recoveryDrafts).toHaveLength(0);
+  });
+
+  it("restores QR recovery draft fields without creating File Vault files", async () => {
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+    render(
+      <AppStateProvider>
+        <Probe />
+        <QRCodeBuilderScreen />
+      </AppStateProvider>,
+    );
+    const startingFiles = latest!.workspace.files.length;
+    act(() => {
+      latest!.saveRecoveryDraft({
+        builderId: "qr-code-builder",
+        sourceTool: "Create QR Code",
+        selectedCreateTask: "Create QR Code",
+        builderData: {
+          qrType: "Website / Link",
+          destination: "https://example.com/quote",
+          qrName: "Recovered QR",
+          shortLabel: "Scan for quote",
+        },
+      });
+    });
+    const draftId = latest!.recoveryDrafts[0].id;
+    act(() => latest!.continueRecoveryDraft(draftId));
+
+    expect((screen.getByLabelText("Destination link") as HTMLInputElement).value).toBe(
+      "https://example.com/quote",
+    );
+    expect((screen.getByLabelText("QR code name") as HTMLInputElement).value).toBe(
+      "Recovered QR",
+    );
+    expect(JSON.parse(window.localStorage.getItem(RECOVERY_DRAFTS_KEY) ?? "[]")).toHaveLength(1);
+    expect(latest!.workspace.files).toHaveLength(startingFiles);
+  });
+});
+
 describe("Phase 2/3 real QR generator", () => {
   it("validates URL and contact-card QR inputs", () => {
     expect(
@@ -307,6 +476,7 @@ describe("Phase 2/3 real QR generator", () => {
     const view = renderState();
     let workshopItemId = "";
     let qrCodeId = "";
+    const startingFiles = view.state().workspace.files.length;
     act(() => {
       const saved = view.state().createQrCode({
         name: "File Metadata QR",
@@ -319,6 +489,9 @@ describe("Phase 2/3 real QR generator", () => {
       });
       workshopItemId = saved.workshopItemId;
       qrCodeId = saved.qrCodeId;
+    });
+    expect(view.state().workspace.files).toHaveLength(startingFiles);
+    act(() => {
       view.state().addFileMetadata({
         name: "file-metadata-qr.svg",
         type: "image/svg+xml",

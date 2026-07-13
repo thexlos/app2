@@ -105,7 +105,6 @@ export const builderContracts: BuilderContract[] = [
       "QR color",
       "Background color",
       "Show logo/initials in preview only",
-      "Also save a copy to File Vault",
       "Add to customer/project",
       "Add to campaign/promo",
       "Track scans later placeholder",

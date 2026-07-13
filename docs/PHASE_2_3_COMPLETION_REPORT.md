@@ -186,7 +186,7 @@ Passed:
 npm test
 ```
 
-Result: 9 test files passed, 42 tests passed.
+Result: 9 test files passed, 46 tests passed.
 
 ## Known limitations
 

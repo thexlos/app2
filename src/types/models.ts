@@ -936,6 +936,17 @@ export interface WorkshopActivity {
   label: string;
   occurredAt: string;
 }
+export interface RecoveryDraft {
+  id: Id;
+  businessProfileId: Id;
+  builderId: string;
+  sourceTool: string;
+  selectedCreateTask: string;
+  selectedWorkshopItemId?: Id;
+  builderData: BuilderData;
+  updatedAt: string;
+  status: "Recoverable Draft";
+}
 export interface WorkshopItem {
   id: Id;
   businessProfileId: Id;
