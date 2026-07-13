@@ -20,13 +20,6 @@ import { useMemo, useState } from "react";
 import { Button } from "../components/common/Button";
 import { Modal } from "../components/common/Modal";
 import { DetailHeader } from "../components/common/ScreenHeader";
-import {
-  downloadDataUrl,
-  downloadSvgFile,
-  generateQrDataUrl,
-  generateQrSvg,
-  sanitizeQrFileName,
-} from "../services/qr/qrGenerator";
 import { useAppState } from "../state/AppState";
 import type {
   BusinessAsset,
@@ -42,8 +35,10 @@ export function MyBusinessKitScreen() {
     openCreateTask,
     openTemplate,
     openAsset,
-    addFileMetadata,
-    createQrCode,
+    openQrDetail,
+    openQrEditor,
+    downloadQrToDevice,
+    createQrFileVaultCopy,
     saveItemBankItem,
     deleteItemBankItem,
     updateBusinessKitCategories,
@@ -52,6 +47,10 @@ export function MyBusinessKitScreen() {
   const [query, setQuery] = useState("");
   const [selectedAsset, setSelectedAsset] = useState<BusinessAsset>();
   const [message, setMessage] = useState("");
+  const [pendingVaultCopy, setPendingVaultCopy] = useState<{
+    qrCodeId: string;
+    format: "png" | "svg" | "pdf";
+  }>();
   const [selectedBankItem, setSelectedBankItem] =
     useState<ItemServiceBankItem>();
   const [categoryDraft, setCategoryDraft] = useState<string[]>();
@@ -108,7 +107,7 @@ export function MyBusinessKitScreen() {
         title: item.name,
         type: "QR code",
         where: "QR Codes",
-        action: () => openQrBuilder(item),
+        action: () => openQrDetail(item.id, item.workshopItemId),
       })),
     ].filter((item) =>
       `${item.title} ${item.type} ${item.where}`
@@ -116,76 +115,19 @@ export function MyBusinessKitScreen() {
         .includes(normalized),
     );
   }, [query, workspace]);
-  const openQrBuilder = (qr: QRCodeRecord) => {
-    openCreateTask("Create QR Code", {
-      qrCodeId: qr.id,
-      workshopItemId: qr.workshopItemId,
-    });
-    setCurrentScreen("create-builder");
-  };
   const copyLink = async (value?: string) => {
     if (!value) return;
     await navigator.clipboard?.writeText(value);
     setMessage("Link copied.");
   };
-  const ensureQrFiles = async (qr: QRCodeRecord) => {
-    const payload = qr.payload ?? qr.url;
-    if (!payload) {
-      setMessage("This QR needs a saved payload before it can be downloaded.");
-      return undefined;
-    }
-    const svg =
-      qr.svg ??
-      (await generateQrSvg(payload, {
-        foregroundColor: qr.foregroundColor,
-        backgroundColor: qr.backgroundColor,
-        errorCorrectionLevel: qr.errorCorrectionLevel,
-      }));
-    const dataUrl =
-      qr.dataUrl ??
-      (await generateQrDataUrl(payload, {
-        foregroundColor: qr.foregroundColor,
-        backgroundColor: qr.backgroundColor,
-        errorCorrectionLevel: qr.errorCorrectionLevel,
-      }));
-    createQrCode({
-      ...qr,
-      status: qr.status === "Draft" ? "Draft" : "Ready",
-      payload,
-      svg,
-      dataUrl,
-    });
-    return { payload, svg, dataUrl };
-  };
-  const downloadQr = async (qr: QRCodeRecord, format: "png" | "svg") => {
-    const generated = await ensureQrFiles(qr);
-    if (!generated) return;
-    const baseName = sanitizeQrFileName(qr.name);
-    if (format === "svg") downloadSvgFile(`${baseName}.svg`, generated.svg);
-    else downloadDataUrl(`${baseName}.png`, generated.dataUrl);
-    setMessage(`${qr.name} ${format.toUpperCase()} downloaded to your device.`);
+  const downloadQr = async (qr: QRCodeRecord) => {
+    const result = await downloadQrToDevice(qr.id, "png");
+    setMessage(result.message);
+    if (result.fileName) setPendingVaultCopy({ qrCodeId: qr.id, format: "png" });
   };
   const saveQrFileVaultCopy = async (qr: QRCodeRecord) => {
-    const generated = await ensureQrFiles(qr);
-    if (!generated) return;
-    const baseName = sanitizeQrFileName(qr.name);
-    const fileId = addFileMetadata({
-      name: `${baseName}.svg`,
-      type: "image/svg+xml",
-      qrCodeId: qr.id,
-      workshopItemId: qr.workshopItemId,
-      source: "QR Generator",
-      generatedContent: generated.svg,
-      metadataOnly: false,
-    });
-    createQrCode({
-      ...qr,
-      payload: generated.payload,
-      svg: generated.svg,
-      dataUrl: generated.dataUrl,
-      fileAssetIds: Array.from(new Set([fileId, ...(qr.fileAssetIds ?? [])])),
-    });
-    setMessage(`${qr.name} SVG copy saved to File Vault.`);
+    const result = await createQrFileVaultCopy(qr.id, "png");
+    setMessage(result.message);
   };
   return (
     <section className="screen screen--detail business-home-kit">
@@ -226,6 +168,37 @@ export function MyBusinessKitScreen() {
         <div className="alert alert--info section">
           <strong>{message}</strong>
         </div>
+      )}
+      {pendingVaultCopy && (
+        <section className="business-kit-card section">
+          <h2>Save this downloaded file to File Vault?</h2>
+          <p>File Vault keeps a copy or reference inside this app.</p>
+          <div className="row wrap">
+            <Button
+              variant="primary"
+              onClick={() => {
+                void createQrFileVaultCopy(
+                  pendingVaultCopy.qrCodeId,
+                  pendingVaultCopy.format,
+                ).then((result) => {
+                  setPendingVaultCopy(undefined);
+                  setMessage(result.message);
+                });
+              }}
+            >
+              Save Copy to File Vault
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPendingVaultCopy(undefined);
+                setMessage("No File Vault copy was saved.");
+              }}
+            >
+              No thanks
+            </Button>
+          </div>
+        </section>
       )}
       {query && (
         <section className="business-kit-card section">
@@ -405,12 +378,28 @@ export function MyBusinessKitScreen() {
             <p>
               Saved destinations and reusable QR files for this business.
               Downloads save to your device; File Vault copies are separate.
+              Saved QR codes open in view mode first. Use Edit only when you
+              want to change the QR.
             </p>
           </div>
         </header>
         <div className="kit-qr-list">
           {workspace.qrCodes.map((qr) => (
-            <article key={qr.id}>
+            <article
+              key={qr.id}
+              role="button"
+              tabIndex={0}
+              onClick={(event) => {
+                if ((event.target as HTMLElement).closest("button,a")) return;
+                openQrDetail(qr.id, qr.workshopItemId);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openQrDetail(qr.id, qr.workshopItemId);
+                }
+              }}
+            >
               {qr.svg && (
                 <span
                   className="kit-qr-preview"
@@ -430,9 +419,27 @@ export function MyBusinessKitScreen() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => openQrBuilder(qr)}
+                onClick={() => openQrDetail(qr.id, qr.workshopItemId)}
               >
-                Open
+                View
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => void downloadQr(qr)}
+              >
+                Download
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => openQrDetail(qr.id, qr.workshopItemId)}
+              >
+                Share / Send
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => openQrEditor(qr.id, qr.workshopItemId)}
+              >
+                Edit
               </Button>
               {qr.payloadType !== "vcard" && (qr.url || qr.payload) && (
                 <Button
@@ -453,12 +460,6 @@ export function MyBusinessKitScreen() {
                 onClick={() => copyLink(qr.url ?? qr.payload)}
               >
                 Copy
-              </Button>
-              <Button variant="ghost" onClick={() => void downloadQr(qr, "png")}>
-                PNG
-              </Button>
-              <Button variant="ghost" onClick={() => void downloadQr(qr, "svg")}>
-                SVG
               </Button>
               <Button
                 variant="ghost"

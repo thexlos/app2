@@ -10,6 +10,7 @@ import {
   Link2,
   LockKeyhole,
   Plus,
+  QrCode,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../components/common/Button";
@@ -62,6 +63,9 @@ export function FileVaultScreen() {
     toggleFileVisibility,
     openCreateTask,
     openWorkshopItem,
+    openQrDetail,
+    openQrEditor,
+    downloadQrToDevice,
     openHelpRequest,
     openSchedule,
     showNotice,
@@ -100,8 +104,20 @@ export function FileVaultScreen() {
     [activeFilter, workspace],
   );
 
-  const handleDownload = (file: FileAsset) => {
+  const handleDownload = async (file: FileAsset) => {
     if (!downloadFileAsset(file)) {
+      if (file.qrCodeId) {
+        const qr = workspace.qrCodes.find((item) => item.id === file.qrCodeId);
+        if (qr?.payload || qr?.url) {
+          const result = await downloadQrToDevice(file.qrCodeId, "png");
+          showNotice(result.message);
+          return;
+        }
+        showNotice(
+          "This File Vault item does not have downloadable QR content yet.",
+        );
+        return;
+      }
       showNotice(
         "This File Vault record is metadata-only. A storage provider is required before it can download real file bytes.",
       );
@@ -113,10 +129,7 @@ export function FileVaultScreen() {
   const handleUseInCreate = (file: FileAsset) => {
     setActiveFileId(undefined);
     if (file.qrCodeId) {
-      openCreateTask("Create QR Code", {
-        qrCodeId: file.qrCodeId,
-        workshopItemId: file.workshopItemId,
-      });
+      openQrDetail(file.qrCodeId, file.workshopItemId);
       return;
     }
     if (file.workshopItemId) {
@@ -382,10 +395,34 @@ export function FileVaultScreen() {
               <Button
                 variant="primary"
                 icon={<Download size={18} />}
-                onClick={() => handleDownload(activeFile)}
+                onClick={() => void handleDownload(activeFile)}
               >
                 Download to Device
               </Button>
+              {activeFile.qrCodeId && (
+                <Button
+                  variant="outline"
+                  icon={<QrCode size={18} />}
+                  onClick={() => {
+                    setActiveFileId(undefined);
+                    openQrDetail(activeFile.qrCodeId!, activeFile.workshopItemId);
+                  }}
+                >
+                  Open QR
+                </Button>
+              )}
+              {activeFile.qrCodeId && (
+                <Button
+                  variant="outline"
+                  icon={<FileImage size={18} />}
+                  onClick={() => {
+                    setActiveFileId(undefined);
+                    openQrEditor(activeFile.qrCodeId!, activeFile.workshopItemId);
+                  }}
+                >
+                  Edit QR
+                </Button>
+              )}
               {activeFile.url && (
                 <Button
                   variant="outline"
@@ -414,7 +451,7 @@ export function FileVaultScreen() {
                 icon={<FileImage size={18} />}
                 onClick={() => handleUseInCreate(activeFile)}
               >
-                Use in Create
+                {activeFile.qrCodeId ? "Open QR Viewer" : "Use in Create"}
               </Button>
               <Button
                 variant="outline"

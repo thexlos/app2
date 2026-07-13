@@ -28,6 +28,14 @@ import {
   saveStoredAppState,
 } from "../services/storage/appStorage";
 import {
+  createQrPdfSign,
+  downloadDataUrl,
+  downloadSvgFile,
+  generateQrDataUrl,
+  generateQrSvg,
+  sanitizeQrFileName,
+} from "../services/qr/qrGenerator";
+import {
   clearRecoveryDrafts,
   hasMeaningfulBuilderData,
   loadRecoveryDrafts,
@@ -80,6 +88,7 @@ export type Screen =
   | "setup"
   | "file-vault"
   | "workshop-library"
+  | "qr-detail"
   | "create-mode"
   | "create-builder"
   | "create-wizard"
@@ -157,6 +166,7 @@ interface AppStateValue {
     sourceTool: string;
     selectedCreateTask: string;
     selectedWorkshopItemId?: string;
+    selectedQrId?: string;
     builderData: BuilderData;
   }) => string | undefined;
   continueRecoveryDraft: (draftId: string) => void;
@@ -206,6 +216,8 @@ interface AppStateValue {
   openAsset: (assetId: string) => void;
   openWorkshopItem: (itemId: string) => void;
   openFile: (fileId: string) => void;
+  openQrDetail: (qrCodeId: string, workshopItemId?: string) => void;
+  openQrEditor: (qrCodeId: string, workshopItemId?: string) => void;
   toggleAssetPin: (assetId: string) => void;
   archiveBusinessAsset: (assetId: string) => void;
   showNotice: (message: string) => void;
@@ -299,6 +311,14 @@ interface AppStateValue {
         previewData?: BuilderData;
       },
   ) => { qrCodeId: string; workshopItemId: string };
+  createQrFileVaultCopy: (
+    qrCodeId: string,
+    format?: "png" | "svg" | "pdf",
+  ) => Promise<{ fileId?: string; message: string }>;
+  downloadQrToDevice: (
+    qrCodeId: string,
+    format?: "png" | "svg" | "pdf",
+  ) => Promise<{ message: string; fileName?: string; format: "png" | "svg" | "pdf" }>;
   saveWorkshopItem: (
     item: Pick<
       WorkshopItem,
@@ -392,6 +412,50 @@ const AppStateContext = createContext<AppStateValue | null>(null);
 
 function makeId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function normalizeComparable(value?: string) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function stableBuilderDataKey(value?: BuilderData) {
+  if (!value) return "{}";
+  return JSON.stringify(
+    Object.keys(value)
+      .sort()
+      .reduce<BuilderData>((result, key) => {
+        result[key] = value[key];
+        return result;
+      }, {}),
+  );
+}
+
+function getQrPayload(record: Partial<QRCodeRecord>) {
+  return record.payload ?? record.url ?? "";
+}
+
+function getFileExtension(format: string) {
+  if (/pdf/i.test(format)) return "pdf";
+  if (/svg/i.test(format)) return "svg";
+  if (/jpe?g/i.test(format)) return "jpg";
+  return "png";
+}
+
+function getFileMimeType(extension: string) {
+  if (extension === "pdf") return "application/pdf";
+  if (extension === "svg") return "image/svg+xml";
+  if (extension === "jpg") return "image/jpeg";
+  return "image/png";
+}
+
+function normalizeFileBaseName(name: string) {
+  return (
+    name
+      .toLowerCase()
+      .replace(/\.[a-z0-9]+$/i, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "export"
+  );
 }
 
 function buildKitTemplates(
@@ -569,7 +633,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       .replace(/^-|-$/g, "");
     const id =
       selectedRecoveryDraftId ??
-      `${currentBusinessId}-recovery-${draft.builderId}-${draft.selectedWorkshopItemId ?? safeTask}`;
+      `${currentBusinessId}-recovery-${draft.builderId}-${
+        draft.selectedWorkshopItemId ?? draft.selectedQrId ?? safeTask
+      }`;
     const savedDraft: RecoveryDraft = {
       id,
       businessProfileId: currentBusinessId,
@@ -577,6 +643,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       sourceTool: draft.sourceTool,
       selectedCreateTask: draft.selectedCreateTask,
       selectedWorkshopItemId: draft.selectedWorkshopItemId,
+      selectedQrId: draft.selectedQrId,
       builderData: draft.builderData,
       updatedAt: new Date().toISOString(),
       status: "Recoverable Draft",
@@ -603,7 +670,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       draft.selectedCreateTask || getCreateTaskForBuilderId(draft.builderId),
     );
     setSelectedWorkshopItemId(draft.selectedWorkshopItemId);
-    setSelectedQrId(undefined);
+    setSelectedQrId(draft.selectedQrId);
     setQrBuilderPrefill(undefined);
     setGuidedDraft(undefined);
     setCurrentScreen("create-builder");
@@ -1085,7 +1152,38 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setCurrentScreen("asset-detail");
   };
 
+  const openQrDetail: AppStateValue["openQrDetail"] = (
+    qrCodeId,
+    workshopItemId,
+  ) => {
+    const qr = workspace.qrCodes.find((item) => item.id === qrCodeId);
+    setSelectedQrId(qrCodeId);
+    setSelectedWorkshopItemId(workshopItemId ?? qr?.workshopItemId);
+    setSelectedCreateTask(undefined);
+    setQrBuilderPrefill(undefined);
+    setSelectedRecoveryDraftId(undefined);
+    setCurrentScreen("qr-detail");
+  };
+
+  const openQrEditor: AppStateValue["openQrEditor"] = (
+    qrCodeId,
+    workshopItemId,
+  ) => {
+    const qr = workspace.qrCodes.find((item) => item.id === qrCodeId);
+    setSelectedQrId(qrCodeId);
+    setSelectedWorkshopItemId(workshopItemId ?? qr?.workshopItemId);
+    setSelectedCreateTask("Create QR Code");
+    setQrBuilderPrefill(undefined);
+    setSelectedRecoveryDraftId(undefined);
+    setCurrentScreen("create-builder");
+  };
+
   const openWorkshopItem = (itemId: string) => {
+    const item = workspace.workshopItems.find((candidate) => candidate.id === itemId);
+    if (item?.itemType === "qr_code" && item.qrCodeIds[0]) {
+      openQrDetail(item.qrCodeIds[0], item.id);
+      return;
+    }
     setSelectedWorkshopItemId(itemId);
     setCurrentScreen("workshop-library");
   };
@@ -1214,6 +1312,56 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   };
 
   const addFileMetadata: AppStateValue["addFileMetadata"] = (file) => {
+    const source = file.source ?? "Upload";
+    const type = file.type ?? "application/octet-stream";
+    const name = file.name.trim() || "untitled-file.mock";
+    const hasGeneratedContent = Boolean(file.dataUrl || file.generatedContent);
+    const existingFile = workspace.files.find(
+      (candidate) =>
+        !candidate.archived &&
+        candidate.businessId === currentBusinessId &&
+        normalizeComparable(candidate.source ?? "Upload") ===
+          normalizeComparable(source) &&
+        normalizeComparable(candidate.name) === normalizeComparable(name) &&
+        normalizeComparable(candidate.type) === normalizeComparable(type) &&
+        (candidate.qrCodeId ?? "") === (file.qrCodeId ?? "") &&
+        (candidate.workshopItemId ?? "") === (file.workshopItemId ?? "") &&
+        (candidate.customerId ?? "") === (file.customerId ?? "") &&
+        (candidate.leadId ?? "") === (file.leadId ?? "") &&
+        (candidate.projectId ?? "") === (file.projectId ?? "") &&
+        (candidate.helpRequestId ?? "") === (file.helpRequestId ?? "") &&
+        (candidate.url ?? "") === (file.url ?? "") &&
+        ((file.generatedContent &&
+          candidate.generatedContent === file.generatedContent) ||
+          (file.dataUrl && candidate.dataUrl === file.dataUrl) ||
+          candidate.metadataOnly ||
+          file.metadataOnly ||
+          (!file.generatedContent && !file.dataUrl)),
+    );
+    if (existingFile) {
+      if (existingFile.metadataOnly && hasGeneratedContent) {
+        updateWorkspace((value) => ({
+          ...value,
+          files: value.files.map((candidate) =>
+            candidate.id === existingFile.id
+              ? {
+                  ...candidate,
+                  dataUrl: file.dataUrl ?? candidate.dataUrl,
+                  generatedContent:
+                    file.generatedContent ?? candidate.generatedContent,
+                  metadataOnly: false,
+                }
+              : candidate,
+          ),
+        }));
+        setSelectedFileId(existingFile.id);
+        setNotice("File Vault copy updated with generated content.");
+        return existingFile.id;
+      }
+      setSelectedFileId(existingFile.id);
+      setNotice("This file is already saved in File Vault.");
+      return existingFile.id;
+    }
     const id = makeId(`${currentBusinessId}-file`);
     const now = new Date().toISOString();
     updateWorkspace((value) => ({
@@ -1222,15 +1370,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         {
           id,
           businessId: currentBusinessId,
-          name: file.name.trim() || "untitled-file.mock",
-          type: file.type ?? "application/octet-stream",
+          name,
+          type,
           customerId: file.customerId,
           leadId: file.leadId,
           projectId: file.projectId,
           helpRequestId: file.helpRequestId,
           workshopItemId: file.workshopItemId,
           qrCodeId: file.qrCodeId,
-          source: file.source ?? "Upload",
+          source,
           dataUrl: file.dataUrl,
           generatedContent: file.generatedContent,
           metadataOnly:
@@ -1457,11 +1605,39 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const createQrCode: AppStateValue["createQrCode"] = (record) => {
     const now = new Date().toISOString();
-    const qrCodeId = record.id ?? selectedQrId ?? makeId("qr");
+    const explicitQrId = record.id ?? selectedQrId;
+    const requestedWorkshopItemId = record.workshopItemId ?? selectedWorkshopItemId;
+    const payload = getQrPayload(record);
+    const payloadType =
+      record.payloadType ?? (record.type === "Contact Card" ? "vcard" : "url");
+    const linkedQrId = requestedWorkshopItemId
+      ? workspace.workshopItems.find((item) => item.id === requestedWorkshopItemId)
+          ?.qrCodeIds[0]
+      : undefined;
+    const matchingQr =
+      explicitQrId || linkedQrId
+        ? undefined
+        : workspace.qrCodes.find(
+            (item) =>
+              item.businessId === currentBusinessId &&
+              normalizeComparable(item.name) ===
+                normalizeComparable(record.name) &&
+              normalizeComparable(item.type) ===
+                normalizeComparable(record.type) &&
+              normalizeComparable(getQrPayload(item)) ===
+                normalizeComparable(payload) &&
+              (item.payloadType ??
+                (item.type === "Contact Card" ? "vcard" : "url")) ===
+                payloadType,
+          );
+    const duplicateQrUpdated = Boolean(matchingQr);
+    let qrCodeId = explicitQrId ?? linkedQrId ?? matchingQr?.id ?? makeId("qr");
     let workshopItemId =
-      record.workshopItemId ?? selectedWorkshopItemId ?? makeId("creation");
+      record.workshopItemId ??
+      selectedWorkshopItemId ??
+      matchingQr?.workshopItemId ??
+      makeId("creation");
     const readyStatus = record.status === "Draft" ? "Draft" : "Ready";
-    const payload = record.payload ?? record.url ?? "";
     const builderData: BuilderData =
       record.builderData ??
       ({
@@ -1581,16 +1757,274 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setSelectedWorkshopItemId(workshopItemId);
     clearRecoveryDraftForBuilder("qr-code-builder", workshopItemId);
     setNotice(
-      record.status === "Draft"
+      duplicateQrUpdated
+        ? "This QR already exists. The saved QR was updated."
+        : record.status === "Draft"
         ? "Draft saved to My Creations."
         : "QR code saved to My Creations.",
     );
     return { qrCodeId, workshopItemId };
   };
 
+  const prepareQrGeneratedFile = async (
+    qr: QRCodeRecord,
+    format: "png" | "svg" | "pdf" = "png",
+  ) => {
+    const payload = getQrPayload(qr);
+    if (!payload) return undefined;
+    const svg =
+      qr.svg ??
+      (await generateQrSvg(payload, {
+        foregroundColor: qr.foregroundColor,
+        backgroundColor: qr.backgroundColor,
+        errorCorrectionLevel: qr.errorCorrectionLevel,
+        size: 320,
+      }));
+    const dataUrl =
+      qr.dataUrl ??
+      (await generateQrDataUrl(payload, {
+        foregroundColor: qr.foregroundColor,
+        backgroundColor: qr.backgroundColor,
+        errorCorrectionLevel: qr.errorCorrectionLevel,
+        size: 1024,
+      }));
+    const baseName = sanitizeQrFileName(qr.name);
+    if (format === "svg") {
+      return {
+        payload,
+        svg,
+        dataUrl,
+        fileName: `${baseName}.svg`,
+        type: "image/svg+xml",
+        generatedContent: svg,
+        fileDataUrl: undefined,
+      };
+    }
+    if (format === "pdf") {
+      const fileDataUrl = await createQrPdfSign({
+        title: qr.name,
+        label: qr.label ?? qr.name,
+        dataUrl,
+      });
+      return {
+        payload,
+        svg,
+        dataUrl,
+        fileName: `${baseName}-sign.pdf`,
+        type: "application/pdf",
+        generatedContent: undefined,
+        fileDataUrl,
+      };
+    }
+    return {
+      payload,
+      svg,
+      dataUrl,
+      fileName: `${baseName}.png`,
+      type: "image/png",
+      generatedContent: undefined,
+      fileDataUrl: dataUrl,
+    };
+  };
+
+  const downloadQrToDevice: AppStateValue["downloadQrToDevice"] = async (
+    qrCodeId,
+    format = "png",
+  ) => {
+    const qr = workspace.qrCodes.find((item) => item.id === qrCodeId);
+    if (!qr) {
+      const message = "This QR code could not be found.";
+      setNotice(message);
+      return { message, format };
+    }
+    const generated = await prepareQrGeneratedFile(qr, format);
+    if (!generated) {
+      const message = "This File Vault item does not have downloadable QR content yet.";
+      setNotice(message);
+      return { message, format };
+    }
+    if (format === "svg") downloadSvgFile(generated.fileName, generated.svg);
+    else downloadDataUrl(generated.fileName, generated.fileDataUrl ?? generated.dataUrl);
+    updateWorkspace((value) => ({
+      ...value,
+      qrCodes: value.qrCodes.map((item) =>
+        item.id === qrCodeId
+          ? {
+              ...item,
+              payload: generated.payload,
+              svg: generated.svg,
+              dataUrl: generated.dataUrl,
+              updatedAt: new Date().toISOString(),
+            }
+          : item,
+      ),
+    }));
+    const message =
+      format === "pdf"
+        ? "PDF sign downloaded to your device."
+        : `${format.toUpperCase()} downloaded to your device.`;
+    setNotice(message);
+    return { message, fileName: generated.fileName, format };
+  };
+
+  const createQrFileVaultCopy: AppStateValue["createQrFileVaultCopy"] = async (
+    qrCodeId,
+    format = "png",
+  ) => {
+    const qr = workspace.qrCodes.find((item) => item.id === qrCodeId);
+    if (!qr) {
+      const message = "This QR code could not be found.";
+      setNotice(message);
+      return { message };
+    }
+    const generated = await prepareQrGeneratedFile(qr, format);
+    if (!generated) {
+      const message = "This File Vault item does not have downloadable QR content yet.";
+      setNotice(message);
+      return { message };
+    }
+    const existingFileBefore = workspace.files.find(
+      (file) =>
+        !file.archived &&
+        file.businessId === currentBusinessId &&
+        normalizeComparable(file.source ?? "Upload") ===
+          normalizeComparable("QR Generator") &&
+        normalizeComparable(file.name) ===
+          normalizeComparable(generated.fileName) &&
+        normalizeComparable(file.type) === normalizeComparable(generated.type) &&
+        (file.qrCodeId ?? "") === qrCodeId &&
+        (file.workshopItemId ?? "") === (qr.workshopItemId ?? "") &&
+        ((generated.generatedContent &&
+          file.generatedContent === generated.generatedContent) ||
+          (generated.fileDataUrl && file.dataUrl === generated.fileDataUrl) ||
+          file.metadataOnly),
+    );
+    const willUpdateMetadataOnly = Boolean(
+      existingFileBefore?.metadataOnly &&
+        (generated.fileDataUrl || generated.generatedContent),
+    );
+    let fileId = "";
+    const message = existingFileBefore
+      ? willUpdateMetadataOnly
+        ? "File Vault copy updated with generated content."
+        : "This QR file is already saved in File Vault."
+      : "Saved a copy to File Vault.";
+    const now = new Date().toISOString();
+    updateWorkspace((value) => {
+      const currentQr = value.qrCodes.find((item) => item.id === qrCodeId) ?? qr;
+      const workshopItemId = currentQr.workshopItemId ?? qr.workshopItemId;
+      const existingFile =
+        (existingFileBefore
+          ? value.files.find((file) => file.id === existingFileBefore.id)
+          : undefined) ??
+        value.files.find(
+          (file) =>
+            !file.archived &&
+            file.businessId === currentBusinessId &&
+            normalizeComparable(file.source ?? "Upload") ===
+              normalizeComparable("QR Generator") &&
+            normalizeComparable(file.name) ===
+              normalizeComparable(generated.fileName) &&
+            normalizeComparable(file.type) === normalizeComparable(generated.type) &&
+            (file.qrCodeId ?? "") === qrCodeId &&
+            (file.workshopItemId ?? "") === (workshopItemId ?? "") &&
+            ((generated.generatedContent &&
+              file.generatedContent === generated.generatedContent) ||
+              (generated.fileDataUrl && file.dataUrl === generated.fileDataUrl) ||
+              file.metadataOnly),
+        );
+      fileId = existingFile?.id ?? makeId(`${currentBusinessId}-file`);
+      const files = existingFile
+        ? value.files.map((file) => {
+            if (file.id !== existingFile.id) return file;
+            if (
+              file.metadataOnly &&
+              (generated.fileDataUrl || generated.generatedContent)
+            ) {
+              return {
+                ...file,
+                dataUrl: generated.fileDataUrl ?? file.dataUrl,
+                generatedContent:
+                  generated.generatedContent ?? file.generatedContent,
+                metadataOnly: false,
+              };
+            }
+            return file;
+          })
+        : [
+            {
+              id: fileId,
+              businessId: currentBusinessId,
+              name: generated.fileName,
+              type: generated.type,
+              workshopItemId,
+              qrCodeId,
+              source: "QR Generator",
+              dataUrl: generated.fileDataUrl,
+              generatedContent: generated.generatedContent,
+              metadataOnly: false,
+              pinned: false,
+              archived: false,
+              createdAt: now,
+              visibility: "Internal" as const,
+            },
+            ...value.files,
+          ];
+      return {
+        ...value,
+        files,
+        qrCodes: value.qrCodes.map((item) =>
+          item.id === qrCodeId
+            ? {
+                ...item,
+                payload: generated.payload,
+                svg: generated.svg,
+                dataUrl: generated.dataUrl,
+                fileAssetIds: Array.from(
+                  new Set([fileId, ...(item.fileAssetIds ?? [])]),
+                ),
+                updatedAt: now,
+              }
+            : item,
+        ),
+        workshopItems: value.workshopItems.map((item) =>
+          item.id === workshopItemId
+            ? {
+                ...normalizeWorkshopItem(item),
+                fileAssetIds: Array.from(new Set([fileId, ...item.fileAssetIds])),
+                qrCodeIds: Array.from(new Set([qrCodeId, ...item.qrCodeIds])),
+                updatedAt: now,
+              }
+            : item,
+        ),
+        activity: existingFile
+          ? value.activity
+          : [
+              {
+                id: `${Date.now()}`,
+                businessId: currentBusinessId,
+                label: "QR file copy saved",
+                detail: `${generated.fileName} saved to File Vault.`,
+                occurredAt: "Just now",
+                tone: "info",
+                type: "file.created",
+                relatedRecordType: "file",
+                relatedRecordId: fileId,
+                deepLinkRoute: "file-vault",
+              },
+              ...value.activity,
+            ],
+      };
+    });
+    if (fileId) setSelectedFileId(fileId);
+    setNotice(message);
+    return { fileId, message };
+  };
+
   const saveWorkshopItem: AppStateValue["saveWorkshopItem"] = (item) => {
     const now = new Date().toISOString();
     let id = item.id ?? selectedWorkshopItemId ?? makeId("creation");
+    let updatedExistingWorkshopItem = false;
     const recoveryDefinition =
       item.builderId || item.sourceTool
         ? getBuilderDefinitionForItem({
@@ -1602,12 +2036,28 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const recoveryBuilderId =
       item.builderId ?? recoveryDefinition?.builderId ?? "custom-template";
     updateWorkspace((value) => {
-      const existing = value.workshopItems.find((candidate) => candidate.id === id);
+      let existing = value.workshopItems.find((candidate) => candidate.id === id);
       if (!existing && item.id) id = item.id;
       const definition = recoveryDefinition;
       const builderId = item.builderId ?? definition?.builderId ?? "custom-template";
       const sourceTool =
         item.sourceTool ?? definition?.sourceTool ?? item.itemType.replaceAll("_", " ");
+      if (!existing && !item.id && !selectedWorkshopItemId) {
+        existing = value.workshopItems.find(
+          (candidate) =>
+            !candidate.archived &&
+            candidate.businessProfileId === currentBusinessId &&
+            candidate.itemType === item.itemType &&
+            normalizeComparable(candidate.title) ===
+              normalizeComparable(item.title) &&
+            normalizeComparable(candidate.builderId) ===
+              normalizeComparable(builderId) &&
+            stableBuilderDataKey(candidate.builderData) ===
+              stableBuilderDataKey(item.builderData),
+        );
+        if (existing) id = existing.id;
+      }
+      updatedExistingWorkshopItem = Boolean(existing);
       const activityLabel = existing ? "Updated draft" : item.status === "Draft" ? "Saved draft" : "Created item";
       const savedItem = existing
         ? normalizeWorkshopItem({
@@ -1692,7 +2142,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       };
     });
     setSelectedWorkshopItemId(id);
-    setNotice("Draft saved to My Creations.");
+    setNotice(
+      updatedExistingWorkshopItem
+        ? "Draft updated in My Creations."
+        : "Saved to My Creations.",
+    );
     clearRecoveryDraftForBuilder(recoveryBuilderId, id);
     return id;
   };
@@ -1827,64 +2281,86 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     itemId,
     format,
   ) => {
-    const fileId = makeId("file");
+    let fileId = "";
+    let resultMessage =
+      "Export metadata saved to File Vault. Real file generation is not connected for this creation yet.";
     updateWorkspace((value) => {
       const item = value.workshopItems.find(
         (candidate) => candidate.id === itemId,
       );
       if (!item) return value;
       const normalizedItem = normalizeWorkshopItem(item);
-      const extension = /pdf/i.test(format)
-        ? "pdf"
-        : /jpg/i.test(format)
-          ? "jpg"
-          : "png";
+      const extension = getFileExtension(format);
       const fileName = `${item.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "")}.${extension}`;
+        .replace(/^-|-$/g, "") || "creation-export"}.${extension}`;
+      const type = getFileMimeType(extension);
+      const existingFile = value.files.find(
+        (file) =>
+          !file.archived &&
+          file.businessId === currentBusinessId &&
+          normalizeComparable(file.source ?? "Upload") ===
+            normalizeComparable("Workshop Export") &&
+          normalizeComparable(file.name) === normalizeComparable(fileName) &&
+          normalizeComparable(file.type) === normalizeComparable(type) &&
+          (file.workshopItemId ?? "") === itemId &&
+          (file.qrCodeId ?? "") === (normalizedItem.qrCodeIds[0] ?? ""),
+      );
+      fileId = existingFile?.id ?? makeId("file");
+      if (existingFile) resultMessage = "This file is already saved in File Vault.";
+      const nextFiles = existingFile
+        ? value.files
+        : [
+            {
+              id: fileId,
+              businessId: currentBusinessId,
+              name: fileName,
+              type,
+              workshopItemId: itemId,
+              qrCodeId: normalizedItem.qrCodeIds[0],
+              source: "Workshop Export",
+              metadataOnly: true,
+              visibility: "Internal" as const,
+            },
+            ...value.files,
+          ];
       return {
         ...value,
-        files: [
-          {
-            id: fileId,
-            businessId: currentBusinessId,
-            name: fileName,
-            type:
-              extension === "pdf"
-                ? "application/pdf"
-                : `image/${extension === "jpg" ? "jpeg" : extension}`,
-            workshopItemId: itemId,
-            qrCodeId: normalizedItem.qrCodeIds[0],
-            source: "Workshop Export",
-            metadataOnly: true,
-            visibility: "Internal",
-          },
-          ...value.files,
-        ],
+        files: nextFiles,
         workshopItems: value.workshopItems.map((candidate) =>
           candidate.id === itemId
             ? {
                 ...normalizeWorkshopItem(candidate),
                 status: normalizeWorkshopItem(candidate).status,
                 updatedAt: new Date().toISOString(),
-                fileAssetIds: [fileId, ...normalizeWorkshopItem(candidate).fileAssetIds],
+                fileAssetIds: Array.from(
+                  new Set([fileId, ...normalizeWorkshopItem(candidate).fileAssetIds]),
+                ),
                 exportHistory: [
-                  {
-                    id: `export-${Date.now()}`,
-                    format,
-                    fileId,
-                    label: format,
-                    createdAt: new Date().toISOString(),
-                  },
+                  ...(existingFile
+                    ? []
+                    : [
+                        {
+                          id: `export-${Date.now()}`,
+                          format,
+                          fileId,
+                          label: format,
+                          createdAt: new Date().toISOString(),
+                        },
+                      ]),
                   ...(normalizeWorkshopItem(candidate).exportHistory ?? []),
                 ],
                 activityHistory: [
-                  {
-                    id: `activity-${Date.now()}`,
-                    label: `Prepared export metadata: ${format}`,
-                    occurredAt: "Just now",
-                  },
+                  ...(existingFile
+                    ? []
+                    : [
+                        {
+                          id: `activity-${Date.now()}`,
+                          label: `Prepared export metadata: ${format}`,
+                          occurredAt: "Just now",
+                        },
+                      ]),
                   ...candidate.activityHistory,
                 ],
               }
@@ -1892,9 +2368,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ),
       };
     });
-    setNotice(
-      "Export metadata saved to File Vault. Real file generation is not connected for this creation yet.",
-    );
+    setNotice(resultMessage);
   };
 
   const recordWorkshopAction: AppStateValue["recordWorkshopAction"] = (
@@ -3194,6 +3668,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       openAsset,
       openWorkshopItem,
       openFile,
+      openQrDetail,
+      openQrEditor,
       toggleAssetPin,
       archiveBusinessAsset,
       showNotice: setNotice,
@@ -3216,6 +3692,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       openHelpRequestDetail,
       openHelpGuide,
       createQrCode,
+      createQrFileVaultCopy,
+      downloadQrToDevice,
       saveWorkshopItem,
       duplicateWorkshopItem,
       archiveWorkshopItem,

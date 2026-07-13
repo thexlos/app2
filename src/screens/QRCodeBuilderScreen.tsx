@@ -65,7 +65,7 @@ export function QRCodeBuilderScreen() {
     currentBusinessId,
     workspace,
     createQrCode,
-    addFileMetadata,
+    createQrFileVaultCopy,
     openCreateTask,
     openHelpRequest,
     setCurrentScreen,
@@ -166,6 +166,7 @@ export function QRCodeBuilderScreen() {
     context: "created" | "download";
     fileName: string;
     type: string;
+    format: "png" | "svg" | "pdf";
     dataUrl?: string;
     generatedContent?: string;
     qrDataUrl?: string;
@@ -365,6 +366,7 @@ export function QRCodeBuilderScreen() {
         sourceTool: "Create QR Code",
         selectedCreateTask: "Create QR Code",
         selectedWorkshopItemId: savedItemId || selectedWorkshopItem?.id,
+        selectedQrId: savedQrId || selectedQrId,
         builderData: buildBuilderData(),
       });
     }, 1000);
@@ -380,6 +382,8 @@ export function QRCodeBuilderScreen() {
     qrName,
     qrType,
     savedItemId,
+    savedQrId,
+    selectedQrId,
     selectedWorkshopItem?.id,
     shortLabel,
   ]);
@@ -455,15 +459,16 @@ export function QRCodeBuilderScreen() {
     if (dataUrl) setPreviewDataUrl(dataUrl);
     if (status === "Ready") {
       setCreated(true);
-      setPendingVaultCopy({
+    setPendingVaultCopy({
         context: "created",
         fileName: `${sanitizeQrFileName(qrName)}.png`,
         type: "image/png",
+        format: "png",
         dataUrl,
         qrDataUrl: dataUrl,
         svg,
       });
-      setActionMessage("QR code generated and saved to My Creations.");
+      setActionMessage("QR code generated and saved. Saved to My Creations.");
     } else
       setActionMessage(
         "Draft saved. You can finish the destination and name later.",
@@ -472,48 +477,14 @@ export function QRCodeBuilderScreen() {
 
   const savePendingCopyToFileVault = () => {
     if (!pendingVaultCopy) return;
-    const fileId = addFileMetadata({
-      name: pendingVaultCopy.fileName,
-      type: pendingVaultCopy.type,
-      workshopItemId: savedItemId || selectedWorkshopItem?.id,
-      qrCodeId: savedQrId || selectedQr?.id,
-      source: "QR Generator",
-      dataUrl: pendingVaultCopy.dataUrl,
-      generatedContent: pendingVaultCopy.generatedContent,
-      metadataOnly: false,
-    });
-    const payloadResult = buildQrPayload({ qrType, destination, contact });
-    if (savedQrId || selectedQr?.id) {
-      createQrCode({
-        id: savedQrId || selectedQr?.id,
-        workshopItemId: savedItemId || selectedWorkshopItem?.id,
-        name: qrName.trim() || "Untitled QR Draft",
-        type: qrType || "Custom URL",
-        label: shortLabel.trim() || undefined,
-        status: "Ready",
-        payloadType: payloadResult.payloadType,
-        payload: payloadResult.payload,
-        url: payloadResult.normalizedUrl,
-        svg: pendingVaultCopy.svg ?? previewSvg,
-        dataUrl: pendingVaultCopy.qrDataUrl ?? previewDataUrl,
-        foregroundColor: advanced.qrColor,
-        backgroundColor: advanced.backgroundColor,
-        errorCorrectionLevel: advanced.errorCorrectionLevel,
-        fileAssetIds: Array.from(
-          new Set([fileId, ...(selectedQr?.fileAssetIds ?? [])]),
-        ),
-        createdFrom: guided ? "Guided Wizard" : "Manual Builder",
-        builderData: buildBuilderData(),
-        previewData: {
-          qrName,
-          qrType,
-          destination: previewDestination,
-          shortLabel,
-        },
-      });
-    }
-    setPendingVaultCopy(undefined);
-    setActionMessage("Saved a copy to File Vault.");
+    const qrCodeId = savedQrId || selectedQr?.id;
+    if (!qrCodeId) return;
+    void createQrFileVaultCopy(qrCodeId, pendingVaultCopy.format).then(
+      (result) => {
+        setPendingVaultCopy(undefined);
+        setActionMessage(result.message);
+      },
+    );
   };
 
   const createDownload = async (format: "png" | "svg" | "pdf") => {
@@ -562,12 +533,17 @@ export function QRCodeBuilderScreen() {
       context: "download",
       fileName,
       type,
+      format,
       dataUrl: format === "svg" ? undefined : fileDataUrl,
       generatedContent,
       qrDataUrl: dataUrl,
       svg,
     });
-    setActionMessage("Downloaded to your device.");
+    setActionMessage(
+      format === "pdf"
+        ? "PDF sign downloaded to your device."
+        : `${format.toUpperCase()} downloaded to your device.`,
+    );
   };
 
   const runNextAction = async (label: string) => {
@@ -1054,11 +1030,12 @@ export function QRCodeBuilderScreen() {
             <h2 className="section-heading">
               {pendingVaultCopy.context === "created"
                 ? "Save a copy to File Vault?"
-                : "Also save this downloaded file to File Vault?"}
+                : "Save this downloaded file to File Vault?"}
             </h2>
             <p className="section-copy">
-              QR code saved to My Creations. File Vault only keeps chosen
-              files, exports, or references.
+              {pendingVaultCopy.context === "created"
+                ? "My Creations keeps the editable QR. File Vault keeps chosen files and exports."
+                : "File Vault keeps a copy or reference inside this app."}
             </p>
           </div>
           <div className="row wrap">
@@ -1074,7 +1051,11 @@ export function QRCodeBuilderScreen() {
               variant="outline"
               onClick={() => {
                 setPendingVaultCopy(undefined);
-                setActionMessage("No File Vault copy was saved.");
+                setActionMessage(
+                  pendingVaultCopy.context === "created"
+                    ? "No File Vault copy was saved. Your QR is still saved in My Creations."
+                    : "No File Vault copy was saved.",
+                );
               }}
             >
               {pendingVaultCopy.context === "created"

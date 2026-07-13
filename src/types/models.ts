@@ -943,6 +943,7 @@ export interface RecoveryDraft {
   sourceTool: string;
   selectedCreateTask: string;
   selectedWorkshopItemId?: Id;
+  selectedQrId?: Id;
   builderData: BuilderData;
   updatedAt: string;
   status: "Recoverable Draft";

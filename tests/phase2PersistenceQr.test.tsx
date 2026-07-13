@@ -1,8 +1,10 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getBuilderContract } from "../src/config/builderContracts";
 import { ContractBuilderScreen } from "../src/screens/ContractBuilderScreen";
+import { QRCodeDetailScreen } from "../src/screens/QRCodeDetailScreen";
 import { QRCodeBuilderScreen } from "../src/screens/QRCodeBuilderScreen";
+import { WorkshopLibraryScreen } from "../src/screens/WorkshopLibraryScreen";
 import {
   canDownloadFileAsset,
   getFileVaultCategories,
@@ -560,5 +562,380 @@ describe("Phase 2/3 cleanup File Vault helpers", () => {
     expect(getLinkedRecordSummary(metadataOnlyFile, workspace)).toContain(
       "Creation:",
     );
+  });
+});
+
+describe("QR save flow cleanup and duplicate prevention", () => {
+  it("does not expose a hidden File Vault checkbox in QR More Options", () => {
+    render(
+      <AppStateProvider>
+        <QRCodeBuilderScreen />
+      </AppStateProvider>,
+    );
+
+    fireEvent.click(screen.getByText("More Options"));
+
+    expect(
+      screen.queryByText(/Also save a copy to File Vault/i),
+    ).toBeNull();
+    expect(screen.queryByText(/Also save copy to File Vault/i)).toBeNull();
+    expect(screen.queryByText(/Save copy checkbox/i)).toBeNull();
+  });
+
+  it("Create QR shows a visible File Vault choice and No does not create a file", async () => {
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <QRCodeBuilderScreen />
+      </AppStateProvider>,
+    );
+    const startingFiles = latest!.workspace.files.length;
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Website \/ Link/i }),
+    );
+    fireEvent.change(screen.getByLabelText("Destination link"), {
+      target: { value: "https://example.com/qr-create-choice" },
+    });
+    fireEvent.change(screen.getByLabelText("QR code name"), {
+      target: { value: "Visible Choice QR" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Create QR Code/i }));
+
+    await screen.findByText("Save a copy to File Vault?");
+    expect(screen.getByText(/QR code generated and saved/i).textContent).toContain(
+      "Saved to My Creations",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /No, not now/i }));
+
+    expect(latest!.workspace.files).toHaveLength(startingFiles);
+    expect(
+      screen.getByText(/No File Vault copy was saved/i).textContent,
+    ).toContain("My Creations");
+  });
+
+  it("QR download shows a File Vault follow-up without auto-saving a file", async () => {
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <QRCodeBuilderScreen />
+      </AppStateProvider>,
+    );
+    const startingFiles = latest!.workspace.files.length;
+    fireEvent.click(
+      screen.getByRole("button", { name: /Website \/ Link/i }),
+    );
+    fireEvent.change(screen.getByLabelText("Destination link"), {
+      target: { value: "https://example.com/qr-download-choice" },
+    });
+    fireEvent.change(screen.getByLabelText("QR code name"), {
+      target: { value: "Download Choice QR" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Create QR Code/i }));
+    await screen.findByText("Save a copy to File Vault?");
+    fireEvent.click(screen.getByRole("button", { name: /No, not now/i }));
+
+    fireEvent.click(await screen.findByRole("button", { name: /Download PNG/i }));
+
+    await screen.findByText("Save this downloaded file to File Vault?");
+    expect(screen.getByText("PNG downloaded to your device.")).toBeTruthy();
+    expect(click).toHaveBeenCalledOnce();
+
+    fireEvent.click(screen.getByRole("button", { name: /No thanks/i }));
+
+    expect(latest!.workspace.files).toHaveLength(startingFiles);
+    expect(screen.getByText("No File Vault copy was saved.")).toBeTruthy();
+    click.mockRestore();
+  });
+
+  it("My Creations opens saved QR in viewer mode and Edit opens the builder", () => {
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <WorkshopLibraryScreen />
+      </AppStateProvider>,
+    );
+    let qrCodeId = "";
+    let workshopItemId = "";
+    act(() => {
+      const saved = latest!.createQrCode({
+        name: "Viewer First QR",
+        type: "Website / Link",
+        status: "Ready",
+        payloadType: "url",
+        payload: "https://example.com/viewer-first",
+        url: "https://example.com/viewer-first",
+        createdFrom: "Manual Builder",
+      });
+      qrCodeId = saved.qrCodeId;
+      workshopItemId = saved.workshopItemId;
+    });
+
+    const card = screen.getByText("Viewer First QR").closest("article");
+    expect(card).not.toBeNull();
+    fireEvent.click(within(card!).getByRole("button", { name: "Open" }));
+
+    expect(latest!.currentScreen).toBe("qr-detail");
+    expect(latest!.selectedQrId).toBe(qrCodeId);
+
+    act(() => latest!.openQrEditor(qrCodeId, workshopItemId));
+    expect(latest!.currentScreen).toBe("create-builder");
+    expect(latest!.selectedCreateTask).toBe("Create QR Code");
+  });
+
+  it("updates one recovery draft for the same active work", () => {
+    const view = renderState();
+
+    act(() => {
+      view.state().saveRecoveryDraft({
+        builderId: "flyer-builder",
+        sourceTool: "Make a Flyer",
+        selectedCreateTask: "Make a Flyer",
+        builderData: { headline: "First headline" },
+      });
+    });
+    const firstId = view.state().recoveryDrafts[0].id;
+
+    act(() => {
+      view.state().saveRecoveryDraft({
+        builderId: "flyer-builder",
+        sourceTool: "Make a Flyer",
+        selectedCreateTask: "Make a Flyer",
+        builderData: { headline: "Updated headline" },
+      });
+    });
+
+    expect(view.state().recoveryDrafts).toHaveLength(1);
+    expect(view.state().recoveryDrafts[0].id).toBe(firstId);
+    expect(view.state().recoveryDrafts[0].builderData.headline).toBe(
+      "Updated headline",
+    );
+  });
+
+  it("creating the same QR twice updates the existing QR and linked creation", () => {
+    const view = renderState();
+    const payload = "https://example.com/no-duplicate-qr";
+
+    act(() => {
+      view.state().createQrCode({
+        name: "Duplicate Guard QR",
+        type: "Website / Link",
+        status: "Ready",
+        payloadType: "url",
+        payload,
+        url: payload,
+        createdFrom: "Manual Builder",
+      });
+    });
+    act(() => {
+      view.state().openCreateTask("Create QR Code");
+    });
+    act(() => {
+      view.state().createQrCode({
+        name: "Duplicate Guard QR",
+        type: "Website / Link",
+        status: "Ready",
+        payloadType: "url",
+        payload,
+        url: payload,
+        label: "Updated label",
+        createdFrom: "Manual Builder",
+      });
+    });
+
+    expect(
+      view
+        .state()
+        .workspace.qrCodes.filter((item) => item.name === "Duplicate Guard QR"),
+    ).toHaveLength(1);
+    expect(
+      view
+        .state()
+        .workspace.workshopItems.filter(
+          (item) => item.title === "Duplicate Guard QR" && item.itemType === "qr_code",
+        ),
+    ).toHaveLength(1);
+    expect(view.state().notice).toBe(
+      "This QR already exists. The saved QR was updated.",
+    );
+  });
+
+  it("Save Copy to File Vault twice does not duplicate QR files", async () => {
+    const view = renderState();
+    let qrCodeId = "";
+    await act(async () => {
+      const saved = view.state().createQrCode({
+        name: "Vault Duplicate QR",
+        type: "Website / Link",
+        status: "Ready",
+        payloadType: "url",
+        payload: "https://example.com/vault-duplicate",
+        url: "https://example.com/vault-duplicate",
+        createdFrom: "Manual Builder",
+      });
+      qrCodeId = saved.qrCodeId;
+    });
+
+    await act(async () => {
+      await view.state().createQrFileVaultCopy(qrCodeId, "png");
+    });
+    await act(async () => {
+      await view.state().createQrFileVaultCopy(qrCodeId, "png");
+    });
+
+    expect(
+      view
+        .state()
+        .workspace.files.filter(
+          (file) => file.qrCodeId === qrCodeId && file.source === "QR Generator",
+        ),
+    ).toHaveLength(1);
+    expect(view.state().notice).toBe(
+      "This QR file is already saved in File Vault.",
+    );
+  });
+
+  it("metadata-only File Vault copies update when generated content arrives", () => {
+    const view = renderState();
+    let firstFileId = "";
+
+    act(() => {
+      firstFileId = view.state().addFileMetadata({
+        name: "metadata-only-qr.svg",
+        type: "image/svg+xml",
+        qrCodeId: "qr-metadata-update",
+        source: "QR Generator",
+        metadataOnly: true,
+      });
+    });
+    act(() => {
+      const secondFileId = view.state().addFileMetadata({
+        name: "metadata-only-qr.svg",
+        type: "image/svg+xml",
+        qrCodeId: "qr-metadata-update",
+        source: "QR Generator",
+        generatedContent: "<svg>ready</svg>",
+        metadataOnly: false,
+      });
+      expect(secondFileId).toBe(firstFileId);
+    });
+
+    const matches = view
+      .state()
+      .workspace.files.filter((file) => file.name === "metadata-only-qr.svg");
+    expect(matches).toHaveLength(1);
+    expect(matches[0].metadataOnly).toBe(false);
+    expect(matches[0].generatedContent).toBe("<svg>ready</svg>");
+    expect(view.state().notice).toBe(
+      "File Vault copy updated with generated content.",
+    );
+  });
+
+  it("download can run repeatedly while File Vault copy still stays single", async () => {
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    const view = renderState();
+    let qrCodeId = "";
+
+    await act(async () => {
+      const saved = view.state().createQrCode({
+        name: "Repeated Download QR",
+        type: "Website / Link",
+        status: "Ready",
+        payloadType: "url",
+        payload: "https://example.com/repeated-download",
+        url: "https://example.com/repeated-download",
+        createdFrom: "Manual Builder",
+      });
+      qrCodeId = saved.qrCodeId;
+    });
+    await act(async () => {
+      await view.state().downloadQrToDevice(qrCodeId, "png");
+      await view.state().downloadQrToDevice(qrCodeId, "png");
+    });
+    await act(async () => {
+      await view.state().createQrFileVaultCopy(qrCodeId, "png");
+    });
+    await act(async () => {
+      await view.state().createQrFileVaultCopy(qrCodeId, "png");
+    });
+
+    expect(click).toHaveBeenCalledTimes(2);
+    expect(
+      view
+        .state()
+        .workspace.files.filter(
+          (file) => file.qrCodeId === qrCodeId && file.source === "QR Generator",
+        ),
+    ).toHaveLength(1);
+    click.mockRestore();
+  });
+
+  it("QR Detail share fallback is honest when navigator.share is unavailable", () => {
+    const originalShare = navigator.share;
+    Object.defineProperty(navigator, "share", {
+      value: undefined,
+      configurable: true,
+    });
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
+
+    render(
+      <AppStateProvider>
+        <Probe />
+        <QRCodeDetailScreen />
+      </AppStateProvider>,
+    );
+    act(() => {
+      const saved = latest!.createQrCode({
+        name: "Share Fallback QR",
+        type: "Website / Link",
+        status: "Ready",
+        payloadType: "url",
+        payload: "https://example.com/share-fallback",
+        url: "https://example.com/share-fallback",
+        createdFrom: "Manual Builder",
+      });
+      latest!.openQrDetail(saved.qrCodeId, saved.workshopItemId);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Share \/ Send/i }));
+
+    expect(screen.getByText("Share options")).toBeTruthy();
+    expect(
+      screen.getByText(/They do not send SMS, email, or social posts/i),
+    ).toBeTruthy();
+    expect(screen.queryByText(/SMS was sent/i)).toBeNull();
+
+    Object.defineProperty(navigator, "share", {
+      value: originalShare,
+      configurable: true,
+    });
   });
 });

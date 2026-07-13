@@ -75,12 +75,10 @@ function actionsFor(item: WorkshopItem) {
   if (item.itemType === "qr_code")
     return [
       "Open",
-      "Test Link",
-      "Download PNG",
-      "Download PDF Sign",
-      "Add to Flyer",
-      "Add to Business Card",
-      "Send to Customers",
+      "Download",
+      "Share / Send",
+      "Edit",
+      "Save Copy",
       "Archive",
     ];
   if (item.itemType === "flyer")
@@ -139,6 +137,10 @@ export function WorkshopLibraryScreen() {
     saveWorkshopItemAsTemplate,
     exportWorkshopItem,
     recordWorkshopAction,
+    openQrDetail,
+    openQrEditor,
+    downloadQrToDevice,
+    createQrFileVaultCopy,
     recoveryDrafts,
     currentBusinessId,
     continueRecoveryDraft,
@@ -154,6 +156,8 @@ export function WorkshopLibraryScreen() {
     itemId: string;
     title: string;
     action: string;
+    qrCodeId?: string;
+    format?: "png" | "svg" | "pdf";
   }>();
   const activeRecoveryDrafts = useMemo(
     () =>
@@ -207,6 +211,10 @@ export function WorkshopLibraryScreen() {
   }, [workspace.workshopItems, filter, query, sort]);
 
   const openItem = (item: WorkshopItem) => {
+    if (item.itemType === "qr_code" && item.qrCodeIds[0]) {
+      openQrDetail(item.qrCodeIds[0], item.id);
+      return;
+    }
     const definition = getBuilderDefinitionForItem(item);
     const task = definition?.createTask ?? itemTask[item.itemType];
     if (!task) {
@@ -223,6 +231,46 @@ export function WorkshopLibraryScreen() {
   };
 
   const runAction = (item: WorkshopItem, action: string) => {
+    if (item.itemType === "qr_code") {
+      const qrCodeId = item.qrCodeIds[0];
+      if (!qrCodeId) {
+        setMessage("This QR creation does not have a linked QR record yet.");
+        return;
+      }
+      if (action === "Open") {
+        openQrDetail(qrCodeId, item.id);
+        return;
+      }
+      if (action === "Edit") {
+        openQrEditor(qrCodeId, item.id);
+        return;
+      }
+      if (action === "Download") {
+        void downloadQrToDevice(qrCodeId, "png").then((result) => {
+          setMessage(result.message);
+          if (result.fileName) {
+            setPendingExport({
+              itemId: item.id,
+              title: item.title,
+              action: "QR Download",
+              qrCodeId,
+              format: "png",
+            });
+          }
+        });
+        return;
+      }
+      if (action === "Save Copy") {
+        void createQrFileVaultCopy(qrCodeId, "png").then((result) =>
+          setMessage(result.message),
+        );
+        return;
+      }
+      if (action === "Share / Send") {
+        openQrDetail(qrCodeId, item.id);
+        return;
+      }
+    }
     if (["Open", "Edit", "Continue Editing"].includes(action)) {
       openItem(item);
       return;
@@ -332,16 +380,31 @@ export function WorkshopLibraryScreen() {
       {pendingExport && (
         <section className="card panel section stack" aria-live="polite">
           <div>
-            <h2 className="section-heading">Save this export to File Vault?</h2>
+            <h2 className="section-heading">
+              {pendingExport.qrCodeId
+                ? "Save this downloaded file to File Vault?"
+                : "Save this export to File Vault?"}
+            </h2>
             <p className="section-copy">
-              My Creations keeps “{pendingExport.title}” editable. File Vault
-              only keeps a chosen file or export reference.
+              {pendingExport.qrCodeId
+                ? "File Vault keeps a copy or reference inside this app."
+                : `My Creations keeps “${pendingExport.title}” editable. File Vault only keeps a chosen file or export reference.`}
             </p>
           </div>
           <div className="row wrap">
             <button
               className="btn btn--primary"
               onClick={() => {
+                if (pendingExport.qrCodeId) {
+                  void createQrFileVaultCopy(
+                    pendingExport.qrCodeId,
+                    pendingExport.format ?? "png",
+                  ).then((result) => {
+                    setPendingExport(undefined);
+                    setMessage(result.message);
+                  });
+                  return;
+                }
                 exportWorkshopItem(pendingExport.itemId, pendingExport.action);
                 setPendingExport(undefined);
                 setMessage("Saved a copy to File Vault.");
