@@ -671,6 +671,106 @@ Step 6G is complete: the Home screen sizing/proportions were tightened and the b
   - Smart Suggestions remained the last Home content child
   - no forbidden extra Home sections appeared
 
+## Step 6H completed
+
+Step 6H is complete: the uploaded `armadesk_home_reference_packet_v1.zip` was used as the visual handoff for a section-crop pass, and the Home hero analytics visual was rebuilt as a reusable data-driven React/CSS/SVG component.
+
+## Step 6H reference packet used
+
+- Extracted and reviewed:
+  - `CODEX_HANDOFF.md`
+  - `layout_measurements.json`
+  - `12_reference_crop_contact_sheet.png`
+- Used the section crops as visual references:
+  - `02_header_reference.png`
+  - `03_business_control_bar_reference.png`
+  - `04_hero_card_reference.png`
+  - `05_stat_cards_reference.png`
+  - `06_quick_actions_reference.png`
+  - `07_upcoming_schedule_reference.png`
+  - `08_smart_suggestions_reference.png`
+  - `09_bottom_nav_reference.png`
+  - `10_hero_chart_visual_reference.png`
+- The reference PNGs were not pasted into the app UI.
+- The mockup’s StartHere text was not used; the app continues to use ArmaDesk branding.
+
+## Step 6H changes
+
+- Added `HomeHeroAnalyticsVisual`, a reusable component that receives the same visible stat-card values:
+  - `Estimates`
+  - `Invoices`
+  - `Customers`
+  - `Tasks`
+- The hero visual now:
+  - normalizes current stat values into glowing bar heights
+  - renders five data-derived bars using the four visible metrics plus an averaged momentum bar
+  - draws a generated SVG line through the bar tops
+  - renders a neon platform/ring stack under the bars
+  - renders a denser particle/starfield layer
+  - exposes data attributes for test verification
+- Replaced the fake `+23% vs last week` badge with a truthful current-state badge:
+  - `4 active`
+  - `current work`
+- Strengthened the reference-crop visual direction for:
+  - hero chart glow and platform depth
+  - stat card glow
+  - Quick Action card glow
+  - schedule card glow
+  - Smart Suggestions card glow
+- Preserved the existing Home order:
+  1. Header
+  2. Business control bar
+  3. Hero
+  4. Stat cards
+  5. Quick Actions
+  6. Upcoming Schedule
+  7. Smart Suggestions
+  8. Bottom nav
+
+## Step 6H intentionally not changed
+
+- No static screenshot UI was used.
+- No section crop was pasted as a flat UI image.
+- No iPhone shell, iOS status bar, dynamic island, or home indicator was added inside the app UI.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, routing, or business logic was changed.
+- No routes were removed.
+- No app functionality was deleted.
+- No Phase 4 work was started.
+
+## Step 6H validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Home tests now cover:
+  - ArmaDesk header
+  - connected business bar
+  - hero text
+  - data-driven hero analytics visual
+  - no fake `+23%` / `vs last week`
+  - four metric inputs
+  - five rendered hero chart bars
+  - stat cards: `Estimates`, `Invoices`, `Customers`, `Tasks`
+  - six Quick Actions only
+  - Upcoming Schedule
+  - Smart Suggestions
+  - no content below Smart Suggestions
+  - bottom nav: `Home`, `Customers`, `Create`, `Calendar`, `More`
+  - no `Money` / `Help` in visible primary nav
+  - no old setup banner/ring
+  - no `Start Here Helper` branding
+- In-app browser checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - no broken words
+  - hero visual reported four input metrics
+  - hero visual rendered five chart bars
+  - hero visual rendered 28 particles
+  - hero visual rendered four platform rings
+  - hero visual rendered a generated SVG path
+  - `+23%` and `vs last week` did not appear
+  - Smart Suggestions stayed above the bottom nav
+  - Smart Suggestions remained the last Home content child
+  - no forbidden extra Home sections appeared
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

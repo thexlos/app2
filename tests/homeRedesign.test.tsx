@@ -118,10 +118,16 @@ describe("Home redesign", () => {
     expect(screen.getByText("Thomas!")).toBeTruthy();
     expect(screen.getByText("Here’s what’s happening with your business today.")).toBeTruthy();
     expect(screen.getByRole("button", { name: /View Insights/i })).toBeTruthy();
-    expect(screen.getByText("+23%")).toBeTruthy();
-    expect(screen.getByText("vs last week")).toBeTruthy();
-    expect(container.querySelector("[data-testid='home-hero-analytics']")).toBeTruthy();
+    expect(screen.queryByText("+23%")).toBeNull();
+    expect(screen.queryByText("vs last week")).toBeNull();
+    expect(screen.getByText("4 active")).toBeTruthy();
+    expect(screen.getByText("current work")).toBeTruthy();
+    const analytics = container.querySelector("[data-testid='home-hero-analytics']");
+    expect(analytics).toBeTruthy();
+    expect(analytics?.getAttribute("data-metric-count")).toBe("4");
+    expect(analytics?.getAttribute("data-badge-value")).toBe("4 active");
     expect(container.querySelector(".home-hero-analytics__platform")).toBeTruthy();
+    expect(container.querySelectorAll(".home-hero-analytics__bar")).toHaveLength(5);
   });
 
   it("does not render the old oversized setup hero ring", () => {

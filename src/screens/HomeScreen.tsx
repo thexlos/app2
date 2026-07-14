@@ -15,6 +15,10 @@ import {
 } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { BusinessSwitcher } from "../components/common/BusinessSwitcher";
+import {
+  HomeHeroAnalyticsVisual,
+  type HeroAnalyticsMetric,
+} from "../components/home/HomeHeroAnalyticsVisual";
 import { appBrand } from "../config/brandAssets";
 import { useAppState } from "../state/AppState";
 import type { SmartSuggestion } from "../types/models";
@@ -27,6 +31,15 @@ const pendingChangeOrderStatuses = new Set([
   "Changes Requested",
   "Revised",
 ]);
+
+type HomeStat = {
+  label: HeroAnalyticsMetric["label"];
+  value: number;
+  trend: string;
+  icon: typeof FilePlus2;
+  tone: HeroAnalyticsMetric["tone"];
+  action: () => void;
+};
 
 export function HomeScreen() {
   const {
@@ -73,6 +86,13 @@ export function HomeScreen() {
   const activeSuggestions = workspace.suggestions.filter(
     (suggestion) => !suggestion.status || suggestion.status === "Active",
   );
+  const estimatesCount = workspace.estimates.length || waitingEstimates.length;
+  const invoicesCount = workspace.invoices.length || unpaidInvoices.length;
+  const customersCount = workspace.customers.length;
+  const tasksCount =
+    scheduledToday +
+      pendingChangeOrders.length +
+      activeSuggestions.length || scheduledEvents.length;
   const suggestionCards = [
     {
       id: "pending-estimates",
@@ -131,10 +151,10 @@ export function HomeScreen() {
     },
   ];
 
-  const stats = [
+  const stats: HomeStat[] = [
     {
       label: "Estimates",
-      value: String(workspace.estimates.length || waitingEstimates.length),
+      value: estimatesCount,
       trend: "↑ 3 today",
       icon: FilePlus2,
       tone: "blue",
@@ -145,7 +165,7 @@ export function HomeScreen() {
     },
     {
       label: "Invoices",
-      value: String(workspace.invoices.length || unpaidInvoices.length),
+      value: invoicesCount,
       trend: "↑ 2 paid",
       icon: ReceiptText,
       tone: "green",
@@ -156,7 +176,7 @@ export function HomeScreen() {
     },
     {
       label: "Customers",
-      value: String(workspace.customers.length),
+      value: customersCount,
       trend: "↑ 6 this week",
       icon: UserRoundPlus,
       tone: "purple",
@@ -164,15 +184,22 @@ export function HomeScreen() {
     },
     {
       label: "Tasks",
-      value: String(
-        scheduledToday + pendingChangeOrders.length + activeSuggestions.length || scheduledEvents.length,
-      ),
+      value: tasksCount,
       trend: "↑ 2 due today",
       icon: ClipboardCheck,
       tone: "orange",
       action: () => openSchedule(),
     },
   ];
+  const heroMetrics: HeroAnalyticsMetric[] = stats.map(({ label, value, tone }) => ({
+    label,
+    value,
+    tone,
+  }));
+  const heroBadge = {
+    value: `${tasksCount} active`,
+    label: "current work",
+  };
 
   const openSuggestion = (suggestion?: SmartSuggestion) => {
     if (!suggestion) {
@@ -281,46 +308,7 @@ export function HomeScreen() {
               View Insights <ArrowRight size={16} />
             </button>
           </div>
-          <div
-            className="home-hero-analytics"
-            aria-hidden="true"
-            data-testid="home-hero-analytics"
-          >
-            <span className="home-hero-analytics__badge">
-              <strong>+23%</strong>
-              <small>vs last week</small>
-            </span>
-            <div className="home-hero-analytics__particles" aria-hidden="true">
-              {Array.from({ length: 18 }).map((_, index) => (
-                <span key={index} />
-              ))}
-            </div>
-            <div className="home-hero-analytics__grid">
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="home-hero-analytics__bars">
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-            </div>
-            <div className="home-hero-analytics__platform" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </div>
-            <svg viewBox="0 0 120 70" role="presentation">
-              <path d="M8 58 C28 55 31 46 44 48 C57 50 62 34 73 34 C88 34 89 17 109 10" />
-              <circle cx="44" cy="48" r="3.8" />
-              <circle cx="73" cy="34" r="3.8" />
-              <circle cx="109" cy="10" r="3.8" />
-            </svg>
-          </div>
+          <HomeHeroAnalyticsVisual metrics={heroMetrics} badge={heroBadge} />
         </section>
 
         <section className="home-stats-section" aria-label="Business dashboard stats">
