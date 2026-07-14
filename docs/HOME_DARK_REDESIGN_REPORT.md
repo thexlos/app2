@@ -149,8 +149,70 @@ Step 4 is complete: the old oversized Home hero/setup treatment has been replace
   - 430px viewport: 142px
 - Functional check passed: `Review Today` routes to the existing calendar/schedule view.
 
+## Step 5 completed
+
+Step 5 is complete: the Home stats cards and Quick Actions cards now use the darker, tighter ArmaDesk dashboard treatment while preserving the existing data and routes. This step followed the attached Home reference image as the visual target for stats and Quick Actions only.
+
+## Step 5 changes
+
+- Added a compact `Today’s Snapshot` stats section header.
+- Redesigned the four existing Home stat cards as compact dashboard cards:
+  - dark glass background
+  - reference-style neon corner/accent highlight
+  - glowing icon chip at the top
+  - label/value/status hierarchy
+  - large value
+  - small status hint
+- Kept the same state-derived stat values and existing click behavior.
+- Redesigned the existing Quick Actions cards as compact futuristic action buttons:
+  - two-column phone grid
+  - editable Lucide icon chips
+  - action title
+  - short helper line
+  - small arrow affordance
+  - thin neon corner/glow accents
+  - 44px+ tap targets
+- Kept the existing Quick Actions list and routes.
+- Kept `Open Kit` as the only top shortcut label; the lower Business Kit promo still uses `Manage Kit`.
+
+## Step 5 icons and assets
+
+- Used existing Lucide/editable SVG icons only.
+- Added no new PNG, JPG, AI-generated, or stock artwork.
+- Did not replace or modify ArmaDesk logo assets.
+- Did not add hero artwork.
+
+## Step 5 intentionally not changed
+
+- Compact hero from Step 4 was not redesigned or rewritten.
+- Top header, business selector, Open Kit shortcut, and setup chip were not changed.
+- Smart Suggestions, Recent Activity, Recent Creations, schedule/upcoming content, Business Kit promo layout, and bottom navigation were not redesigned.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, money, help, routing, or business logic was changed.
+- No Phase 4 work was started.
+- No iPhone device shell was added inside the app UI.
+
+## Step 5 validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Home tests now cover:
+  - stats section rendering
+  - state-derived stat values
+  - stat card routing behavior
+  - Quick Actions routing behavior
+  - Step 3 Open Kit routing
+  - Step 4 compact hero rendering
+  - old setup ring/banner remaining absent
+  - old `Start Here Helper` app branding remaining absent
+- Phone-width browser checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - stats stayed in a clean two-column grid
+  - Quick Actions stayed in a clean two-column grid
+  - no text overflow or card overlap
+  - bottom nav did not cover content
+  - start of Quick Actions was visible after the stats
+
 ## Known follow-up steps
 
-- Step 5: stats and quick actions.
 - Step 6: schedule, suggestions, and recent content.
 - Step 7: final polish.

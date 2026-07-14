@@ -33,7 +33,7 @@ describe("Home redesign", () => {
   it("renders without crashing", () => {
     renderHome();
     expect(screen.getByText("ArmaDesk")).toBeTruthy();
-    expect(screen.getByText("Quick actions")).toBeTruthy();
+    expect(screen.getByText("Quick Actions")).toBeTruthy();
   });
 
   it("shows the ArmaDesk header with the brand logo image only", () => {
@@ -90,6 +90,36 @@ describe("Home redesign", () => {
       fireEvent.click(setupChip);
     });
     expect(view.state().currentScreen).toBe("setup");
+  });
+
+  it("renders the Today’s Snapshot stats with state-derived values", () => {
+    renderHome();
+    expect(screen.getByRole("heading", { name: "Today’s Snapshot" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Estimates waiting: 1" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Change order pending: 1" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Unpaid invoices: 2" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Outstanding: $4,850" })).toBeTruthy();
+  });
+
+  it("keeps the stats card routing behavior", () => {
+    const cases = [
+      ["Estimates waiting: 1", "estimate-detail"],
+      ["Change order pending: 1", "estimate-detail"],
+      ["Unpaid invoices: 2", "money"],
+      ["Outstanding: $4,850", "money"],
+    ] as const;
+
+    cases.forEach(([label, expectedScreen]) => {
+      cleanup();
+      window.localStorage.clear();
+      const view = renderHome();
+      act(() => {
+        fireEvent.click(screen.getByRole("button", { name: label }));
+      });
+      expect(view.state().currentScreen).toBe(expectedScreen);
+    });
   });
 
   it("routes all required quick actions", () => {

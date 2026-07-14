@@ -111,49 +111,57 @@ export function HomeScreen() {
   const quickActions = [
     {
       label: "Create Estimate",
+      helper: "Build and send",
       icon: FilePlus2,
       tone: "blue",
       action: () => openEstimateBuilder(),
     },
     {
       label: "Create Invoice",
+      helper: "Bill for work",
       icon: ReceiptText,
       tone: "purple",
       action: () => openInvoiceBuilder(),
     },
     {
       label: "Add Customer",
+      helper: "Save contact info",
       icon: UserRoundPlus,
       tone: "green",
       action: () => setCurrentScreen("add-customer"),
     },
     {
       label: "Calendar & Schedule",
+      helper: "Review appointments",
       icon: CalendarDays,
       tone: "orange",
       action: () => setCurrentScreen("calendar"),
     },
     {
       label: "Create QR Code",
+      helper: "Make scan tools",
       icon: QrCode,
       tone: "pink",
       action: () => openCreateTask("Create QR Code"),
     },
     {
       label: "My Creations",
+      helper: "Open saved work",
       icon: FolderOpen,
       tone: "cyan",
       action: () => setCurrentScreen("workshop-library"),
     },
     {
       label: "File Vault",
-      icon: FileCheck2,
+      helper: "Find saved files",
+      icon: FolderOpen,
       tone: "indigo",
       action: () => setCurrentScreen("file-vault"),
     },
     {
       label: "Business Kit",
-      icon: CheckCircle2,
+      helper: "Manage brand tools",
+      icon: Briefcase,
       tone: "violet",
       action: () => setCurrentScreen("my-business-kit"),
     },
@@ -163,6 +171,7 @@ export function HomeScreen() {
     {
       label: "Estimates waiting",
       value: String(waitingEstimates.length),
+      hint: "Ready for review",
       icon: FilePlus2,
       tone: "blue",
       action: () =>
@@ -173,6 +182,7 @@ export function HomeScreen() {
     {
       label: "Change order pending",
       value: String(pendingChangeOrders.length),
+      hint: "Needs approval",
       icon: AlertTriangle,
       tone: "orange",
       action: () =>
@@ -183,6 +193,7 @@ export function HomeScreen() {
     {
       label: "Unpaid invoices",
       value: String(unpaidInvoices.length),
+      hint: "Balance due",
       icon: ReceiptText,
       tone: "purple",
       action: () =>
@@ -193,6 +204,7 @@ export function HomeScreen() {
     {
       label: "Outstanding",
       value: outstandingMetric?.value ?? formatCurrency(outstandingTotal),
+      hint: "Open total",
       icon: CircleDollarSign,
       tone: "green",
       action: () => setCurrentScreen("money"),
@@ -370,20 +382,33 @@ export function HomeScreen() {
           </div>
         </section>
 
-        <section className="home-stat-grid" aria-label="Business dashboard stats">
-        {stats.map(({ label, value, icon: Icon, tone, action }) => (
-          <button
-            key={label}
-            className={`home-stat-card home-tone-${tone}`}
-            onClick={action}
-          >
-            <span className="home-chip">
-              <Icon size={18} />
-            </span>
-            <strong>{value}</strong>
-            <span>{label}</span>
-          </button>
-        ))}
+        <section className="home-stats-section" aria-labelledby="home-stats-title">
+          <div className="home-section-header home-section-header--compact">
+            <div>
+              <h2 id="home-stats-title">Today’s Snapshot</h2>
+              <p>Key work waiting for this business.</p>
+            </div>
+          </div>
+          <div className="home-stat-grid" aria-label="Business dashboard stats">
+            {stats.map(({ label, value, hint, icon: Icon, tone, action }) => (
+              <button
+                key={label}
+                className={`home-stat-card home-tone-${tone}`}
+                onClick={action}
+                aria-label={`${label}: ${value}`}
+              >
+                <span className="home-stat-card__topline">
+                  <span className="home-chip">
+                    <Icon size={17} />
+                  </span>
+                  <span className="home-stat-card__spark" aria-hidden="true" />
+                </span>
+                <span className="home-stat-card__label">{label}</span>
+                <strong>{value}</strong>
+                <span className="home-stat-card__hint">{hint}</span>
+              </button>
+            ))}
+          </div>
         </section>
 
         {attentionEstimate && (
@@ -404,27 +429,32 @@ export function HomeScreen() {
         </button>
         )}
 
-        <section className="home-panel">
+        <section className="home-panel home-quick-actions-panel">
         <div className="home-section-header">
           <div>
-            <h2>Quick actions</h2>
-            <p>Start the most common jobs.</p>
+            <h2>Quick Actions</h2>
+            <p>Jump into the work you use most.</p>
           </div>
           <Button variant="ghost" onClick={() => setCurrentScreen("create")}>
             View all
           </Button>
         </div>
         <div className="home-quick-grid">
-          {quickActions.map(({ label, icon: Icon, tone, action }) => (
+          {quickActions.map(({ label, helper, icon: Icon, tone, action }) => (
             <button
               key={label}
               className={`home-action-card home-tone-${tone}`}
               onClick={action}
+              aria-label={label}
             >
               <span className="home-chip">
-                <Icon size={20} />
+                <Icon size={18} />
               </span>
-              <strong>{label}</strong>
+              <span className="home-action-card__copy">
+                <strong>{label}</strong>
+                <small>{helper}</small>
+              </span>
+              <ArrowRight className="home-action-card__arrow" size={15} />
             </button>
           ))}
         </div>
