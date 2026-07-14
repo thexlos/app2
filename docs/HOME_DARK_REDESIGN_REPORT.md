@@ -357,6 +357,73 @@ Step 6B is complete: the Home middle layout has been corrected so the stats and 
   - `Needs attention` appeared below Quick Actions and before Upcoming Schedule
   - Upcoming Schedule and Smart Suggestions remained visible
 
+## Step 6C completed
+
+Step 6C is complete: the Home card layout has been hard-locked closer to the supplied mockup at normal phone widths.
+
+## Step 6C changes
+
+- Forced the Home stats grid to one row of four cards at normal phone widths.
+- Added a tiny-width fallback only below 340px so 390px, 402px, and 430px stay four-across.
+- Shortened visible stat labels to match the mockup proportions:
+  - `Estimates`
+  - `Changes`
+  - `Invoices`
+  - `Outstanding`
+- Kept the same state-derived stat values and existing stat click behavior.
+- Forced the primary Quick Actions grid to three columns by two rows at normal phone widths.
+- Kept the six requested primary Quick Actions only:
+  - `Create Estimate`
+  - `Create Invoice`
+  - `Add Customer`
+  - `Calendar`
+  - `QR Code`
+  - `Business Kit`
+- Fixed bad action-label word breaking by removing `overflow-wrap: anywhere` from the Quick Action labels and locking labels to:
+  - `word-break: normal`
+  - `overflow-wrap: normal`
+  - `hyphens: none`
+- Scoped the tighter Quick Actions header spacing to the Quick Actions section only.
+- Kept `Needs attention` below Quick Actions and before Upcoming Schedule.
+
+## Step 6C intentionally not changed
+
+- Header, business selector, Open Kit shortcut, setup chip, and hero were not redesigned.
+- Upcoming Schedule was not redesigned.
+- Smart Suggestions was not redesigned.
+- Bottom navigation was not redesigned.
+- Business Kit promo, Recent Activity, and Recent Creations were not redesigned.
+- `My Creations` and `File Vault` were not deleted from the app.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, money, help, routing, or business logic was changed.
+- No Phase 4 work was started.
+- No iPhone shell, iOS status bar, dynamic island, or home indicator was added inside the app UI.
+- No new artwork was added.
+
+## Step 6C validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Home tests now cover:
+  - stats render after the hero
+  - short visible stat labels
+  - existing stat routing behavior
+  - six primary Quick Actions
+  - `My Creations` and `File Vault` staying out of the primary Quick Actions grid
+  - `Needs attention` rendering below Quick Actions and before Upcoming Schedule
+  - Upcoming Schedule still renders
+  - Smart Suggestions still renders
+  - bottom navigation label/class structure
+  - old setup ring/banner remaining absent
+  - old `Start Here Helper` app branding remaining absent
+- In-app browser checks passed at 390px, 402px, and 430px:
+  - stat cards measured as 4 columns × 1 row
+  - Quick Actions measured as 3 columns × 2 rows
+  - no action label broke inside words
+  - no horizontal overflow
+  - `Needs attention` remained below Quick Actions
+  - Upcoming Schedule remained below `Needs attention`
+  - Smart Suggestions remained below Upcoming Schedule
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

@@ -109,21 +109,26 @@ describe("Home redesign", () => {
   });
 
   it("renders the stats with state-derived values directly under the hero", () => {
-    renderHome();
-    expect(screen.queryByText("Today’s Snapshot")).toBeNull();
-    expect(screen.getByRole("button", { name: "Estimates waiting: 1" })).toBeTruthy();
+    const { container } = renderHome();
+    const hero = container.querySelector(".home-hero");
+    const statsSection = container.querySelector(".home-stats-section");
+    expect(hero).toBeTruthy();
+    expect(statsSection).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: "Change order pending: 1" }),
+      hero!.compareDocumentPosition(statsSection!) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Unpaid invoices: 2" })).toBeTruthy();
+    expect(screen.queryByText("Today’s Snapshot")).toBeNull();
+    expect(screen.getByRole("button", { name: "Estimates: 1" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Changes: 1" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Invoices: 2" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Outstanding: $4,850" })).toBeTruthy();
   });
 
   it("keeps the stats card routing behavior", () => {
     const cases = [
-      ["Estimates waiting: 1", "estimate-detail"],
-      ["Change order pending: 1", "estimate-detail"],
-      ["Unpaid invoices: 2", "money"],
+      ["Estimates: 1", "estimate-detail"],
+      ["Changes: 1", "estimate-detail"],
+      ["Invoices: 2", "money"],
       ["Outstanding: $4,850", "money"],
     ] as const;
 
@@ -177,8 +182,20 @@ describe("Home redesign", () => {
 
   it("keeps Needs Attention visible and routes to the estimate review", () => {
     const view = renderHome();
+    const quickActions = view.container.querySelector(".home-quick-actions-panel");
     const attentionButton = screen.getByText("Needs attention").closest("button");
+    const schedulePanel = view.container.querySelector(".home-schedule-panel");
+    expect(quickActions).toBeTruthy();
     expect(attentionButton).toBeTruthy();
+    expect(schedulePanel).toBeTruthy();
+    expect(
+      quickActions!.compareDocumentPosition(attentionButton!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      attentionButton!.compareDocumentPosition(schedulePanel!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     act(() => {
       fireEvent.click(attentionButton!);
     });

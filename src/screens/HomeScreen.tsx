@@ -197,7 +197,7 @@ export function HomeScreen() {
 
   const stats = [
     {
-      label: "Estimates waiting",
+      label: "Estimates",
       value: String(waitingEstimates.length),
       hint: "Ready for review",
       icon: FilePlus2,
@@ -208,7 +208,7 @@ export function HomeScreen() {
           : setCurrentScreen("money"),
     },
     {
-      label: "Change order pending",
+      label: "Changes",
       value: String(pendingChangeOrders.length),
       hint: "Needs approval",
       icon: AlertTriangle,
@@ -219,7 +219,7 @@ export function HomeScreen() {
           : setCurrentScreen("money"),
     },
     {
-      label: "Unpaid invoices",
+      label: "Invoices",
       value: String(unpaidInvoices.length),
       hint: "Balance due",
       icon: ReceiptText,
