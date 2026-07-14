@@ -4,7 +4,15 @@ import { useAppState } from "../../state/AppState";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
 
-export function BusinessSwitcher({ className = "" }: { className?: string } = {}) {
+type BusinessSwitcherVariant = "default" | "compact";
+
+export function BusinessSwitcher({
+  className = "",
+  variant = "default",
+}: {
+  className?: string;
+  variant?: BusinessSwitcherVariant;
+} = {}) {
   const {
     currentBusiness,
     profiles,
@@ -34,22 +42,28 @@ export function BusinessSwitcher({ className = "" }: { className?: string } = {}
     if (pendingBusinessId) switchBusiness(pendingBusinessId);
     setPendingBusinessId(undefined);
   };
+  const isCompact = variant === "compact";
   return (
     <>
       <button
-        className={`card between business-switcher${className ? ` ${className}` : ""}`}
+        className={`card between business-switcher business-switcher--${variant}${className ? ` ${className}` : ""}`}
         onClick={() => setOpen(true)}
+        aria-label={`Switch business: ${currentBusiness.name}`}
       >
-        <span className="row">
+        <span className="row business-switcher__body">
           <span className="icon-box">
-            <Building2 size={21} />
+            <Building2 size={isCompact ? 17 : 21} />
           </span>
-          <span style={{ textAlign: "left" }}>
-            <strong style={{ display: "block" }}>{currentBusiness.name}</strong>
-            <span className="muted small">{currentBusiness.industry}</span>
+          <span className="business-switcher__text" style={{ textAlign: "left" }}>
+            <strong style={{ display: "block" }}>
+              {currentBusiness.name}
+            </strong>
+            {!isCompact && (
+              <span className="muted small">{currentBusiness.industry}</span>
+            )}
           </span>
         </span>
-        <ChevronDown size={20} />
+        <ChevronDown size={isCompact ? 16 : 20} />
       </button>
       {open && (
         <Modal title="Switch business" onClose={() => setOpen(false)}>

@@ -36,6 +36,45 @@ describe("Home redesign", () => {
     expect(screen.getByText("Quick actions")).toBeTruthy();
   });
 
+  it("shows the ArmaDesk header with the brand logo image only", () => {
+    renderHome();
+    const header = screen.getByLabelText("ArmaDesk home");
+    const logo = header.querySelector(".home-brand__logo");
+    expect(screen.getByText("ArmaDesk")).toBeTruthy();
+    expect(logo).toBeTruthy();
+    expect(logo?.getAttribute("src")).toContain("armadesk-logo-mark");
+    expect(screen.queryByText("Start Here Helper")).toBeNull();
+  });
+
+  it("shows the compact business selector", () => {
+    renderHome();
+    expect(
+      screen.getByRole("button", {
+        name: "Switch business: J Thomas Flooring",
+      }),
+    ).toBeTruthy();
+  });
+
+  it("routes the compact Open Kit action to My Business Kit", () => {
+    const view = renderHome();
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Open Kit" }));
+    });
+    expect(view.state().currentScreen).toBe("my-business-kit");
+  });
+
+  it("shows the compact setup chip below 100% and routes to setup", () => {
+    const view = renderHome();
+    const setupChip = screen.getByRole("button", {
+      name: `Open setup: Set Up ${defaultSetupPercent}% complete`,
+    });
+    expect(screen.getByText(`Set Up · ${defaultSetupPercent}%`)).toBeTruthy();
+    act(() => {
+      fireEvent.click(setupChip);
+    });
+    expect(view.state().currentScreen).toBe("setup");
+  });
+
   it("routes all required quick actions", () => {
     const cases = [
       ["Create Estimate", "estimate-builder"],
@@ -91,6 +130,15 @@ describe("Home redesign", () => {
     renderHome();
     expect(screen.queryByText(/Continue setup/i)).toBeNull();
     expect(screen.queryByText(/set up/i)).toBeNull();
+  });
+
+  it("shows setup complete in the compact setup chip at 100% setup", () => {
+    businessProfiles[0].setupPercent = 100;
+    renderHome();
+    expect(screen.getByText("Setup Complete")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Open setup: Setup Complete" }),
+    ).toBeTruthy();
   });
 
   it("shows the ready-state glance area at 100% setup", () => {

@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Bell,
+  Briefcase,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -291,7 +292,37 @@ export function HomeScreen() {
         </div>
         </header>
 
-        <BusinessSwitcher className="home-business-switcher" />
+        <div className="home-top-utility-row" aria-label="Home business shortcuts">
+          <BusinessSwitcher
+            className="home-business-switcher"
+            variant="compact"
+          />
+          <button
+            className="home-open-kit-button"
+            onClick={() => setCurrentScreen("my-business-kit")}
+          >
+            <Briefcase size={15} />
+            <span>Open Kit</span>
+          </button>
+          <button
+            className={`home-setup-chip${setupComplete ? " home-setup-chip--complete" : ""}`}
+            onClick={() => setCurrentScreen("setup")}
+            aria-label={
+              setupComplete
+                ? "Open setup: Setup Complete"
+                : `Open setup: Set Up ${setupPercent}% complete`
+            }
+          >
+            {setupComplete ? (
+              <>
+                <span>Setup Complete</span>
+                <CheckCircle2 size={13} />
+              </>
+            ) : (
+              <span>Set Up · {setupPercent}%</span>
+            )}
+          </button>
+        </div>
 
         <section className={`home-hero${setupComplete ? " home-hero--ready" : ""}`}>
         <div className="home-hero__copy">
@@ -419,7 +450,7 @@ export function HomeScreen() {
           <span>Your brand, templates, and creations—all in one place.</span>
         </span>
         <span className="home-kit-promo__button">
-          Open Kit <ArrowRight size={16} />
+          Manage Kit <ArrowRight size={16} />
         </span>
         </button>
 
