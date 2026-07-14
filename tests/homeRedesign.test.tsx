@@ -32,7 +32,7 @@ beforeEach(() => {
 describe("Home redesign", () => {
   it("renders without crashing", () => {
     renderHome();
-    expect(screen.getByText("Start Here")).toBeTruthy();
+    expect(screen.getByText("ArmaDesk")).toBeTruthy();
     expect(screen.getByText("Quick actions")).toBeTruthy();
   });
 

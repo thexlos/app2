@@ -843,7 +843,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             pendingExport: false,
             dirtyFields: [],
             possibleDuplicateIds: [],
-            syncHistory: ["Created in Start Here Helper"],
+            syncHistory: ["Created in ArmaDesk"],
           },
           createdAt: now,
           updatedAt: now,

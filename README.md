@@ -1,6 +1,6 @@
-# Start Here Helper
+# ArmaDesk
 
-Start Here Helper is a mobile-first workshop for small businesses: customers, estimates, invoices, progress billing, change orders, flyers, QR codes, posts, business kits, and practical help in one place.
+ArmaDesk is a mobile-first workshop for small businesses: customers, estimates, invoices, progress billing, change orders, flyers, QR codes, posts, business kits, and practical help in one place.
 
 > Make it once. Use it anywhere.
 

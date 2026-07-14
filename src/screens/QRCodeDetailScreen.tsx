@@ -32,7 +32,7 @@ function formatQrPayload(value?: string) {
 function buildShareMessage(name: string, destination?: string) {
   return destination
     ? `${name}: ${destination}`
-    : `${name}: QR code is ready to share from Start Here Helper.`;
+    : `${name}: QR code is ready to share from ArmaDesk.`;
 }
 
 export function QRCodeDetailScreen() {
@@ -177,7 +177,7 @@ export function QRCodeDetailScreen() {
       `${shareMessage}\n\nAttachments through email links are not reliable. Download the QR image and attach it manually if needed.`,
     );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    setActionMessage("Email app opened with a prepared message. No email was sent by Start Here Helper.");
+    setActionMessage("Email app opened with a prepared message. No email was sent by ArmaDesk.");
   };
 
   const prepareCustomerSend = () => {
@@ -235,7 +235,7 @@ export function QRCodeDetailScreen() {
         <div className="stack">
           <p className="section-copy">
             Text message, data, and carrier charges may apply. Messages are sent
-            from your device, not from Start Here Helper.
+            from your device, not from ArmaDesk.
           </p>
           <div className="modal-actions">
             <Button variant="primary" onClick={() => void openTextFromDevice()}>

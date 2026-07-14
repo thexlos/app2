@@ -773,7 +773,7 @@ const guide = (
     {
       id: `${guideKey}-next`,
       title: "Next step",
-      body: "Use the related actions below to continue inside Start Here Helper.",
+      body: "Use the related actions below to continue inside ArmaDesk.",
     },
   ],
   relatedActions,

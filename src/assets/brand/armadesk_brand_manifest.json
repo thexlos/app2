@@ -1,0 +1,18 @@
+{
+  "brand": "ArmaDesk",
+  "source_concept": "futuristic_cyberpunk_shield_emblem.png",
+  "files": {
+    "reference_dark_bg": "assets/brand/armadesk-logo-reference-dark-bg.png",
+    "mark_transparent": "assets/brand/armadesk-logo-mark-transparent.png",
+    "mark_2048": "assets/brand/armadesk-logo-mark-transparent-2048.png",
+    "mark_1024": "assets/brand/armadesk-logo-mark-transparent-1024.png",
+    "mark_512": "assets/brand/armadesk-logo-mark-transparent-512.png",
+    "app_icon": "assets/brand/armadesk-app-icon.png",
+    "app_icon_1024": "assets/brand/armadesk-app-icon-1024.png",
+    "full_logo_transparent": "assets/brand/armadesk-logo-full-transparent.png",
+    "full_logo_dark_bg": "assets/brand/armadesk-logo-full-dark-bg.png",
+    "header_logo": "assets/brand/armadesk-header-logo-transparent.png",
+    "splash_logo": "assets/brand/armadesk-splash-logo-dark.png"
+  },
+  "note": "Raster PNG logo pack from the selected concept. For final app-store/legal launch, rebuild the selected mark as vector artwork, but these PNGs are suitable for Figma mockups and current app implementation."
+}

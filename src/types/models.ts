@@ -1256,7 +1256,7 @@ export type SyncStatus =
   | "Keep In App Only";
 export interface SyncMetadata {
   sourceSystem:
-    | "Start Here Helper"
+    | "ArmaDesk"
     | "QuickBooks"
     | "Excel"
     | "CSV"

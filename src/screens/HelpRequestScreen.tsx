@@ -361,7 +361,7 @@ export function HelpRequestScreen() {
             <strong>Helper Access</strong>
             <p>
               Use files, screenshots, share links, and project access inside
-              Start Here Helper. Never share account passwords.
+              ArmaDesk. Never share account passwords.
             </p>
           </div>
         </div>

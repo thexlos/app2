@@ -13,7 +13,7 @@ Completed locally for the focused QR detail cleanup, save timing, overwrite prot
 - QR viewer/detail mode remains in place.
 - Duplicate protection remains in place.
 - Archive and Trash remain separate states.
-- Text, email, and customer-send actions stay honest mock/device-prepared flows. The app does not claim anything was sent by Start Here Helper.
+- Text, email, and customer-send actions stay honest mock/device-prepared flows. The app does not claim anything was sent by ArmaDesk.
 
 ## QR Detail mobile/tablet cleanup
 
@@ -89,7 +89,7 @@ Completed locally for the focused QR detail cleanup, save timing, overwrite prot
   - Download QR image
   - Create promo with this QR
 - The Saved customer selector, custom recipient input, and prepared message fields were moved out of the first modal and into focused share flows after the user chooses an option.
-- Text flow includes the carrier/data note and does not claim Start Here Helper sent the text.
+- Text flow includes the carrier/data note and does not claim ArmaDesk sent the text.
 - Email flow opens/prepares a device email and does not claim the email was sent.
 - Saved customer and custom recipient flows are mock/prepared flows only.
 

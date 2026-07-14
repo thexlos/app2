@@ -1,4 +1,5 @@
 import { ArrowLeft, Bell, UserRound } from "lucide-react";
+import { appBrand } from "../../config/brandAssets";
 import { useAppState } from "../../state/AppState";
 
 export function BrandHeader() {
@@ -6,7 +7,7 @@ export function BrandHeader() {
     <header className="between" style={{ minHeight: 48 }}>
       <div className="row">
         <div
-          className="icon-box"
+          className="icon-box brand-header__logo"
           style={{
             borderRadius: 14,
             color: "white",
@@ -14,9 +15,9 @@ export function BrandHeader() {
             fontWeight: 850,
           }}
         >
-          SH
+          <img src={appBrand.headerLogoMark} alt="" />
         </div>
-        <strong>Start Here Helper</strong>
+        <strong>{appBrand.productName}</strong>
       </div>
       <div className="row" aria-label="Account controls">
         <Bell size={21} />

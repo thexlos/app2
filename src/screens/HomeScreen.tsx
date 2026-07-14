@@ -20,9 +20,9 @@ import {
 import { Button } from "../components/common/Button";
 import { BusinessSwitcher } from "../components/common/BusinessSwitcher";
 import { StatusBadge } from "../components/common/StatusBadge";
+import { appBrand } from "../config/brandAssets";
 import { useAppState } from "../state/AppState";
 import type { ActivityLogItem, SmartSuggestion } from "../types/models";
-import appLogo from "../assets/home/app_logo_sh.png";
 import setupRocket from "../assets/home/setup_rocket_illustration.png";
 import businessKitIllustration from "../assets/home/business_kit_illustration.png";
 
@@ -273,12 +273,11 @@ export function HomeScreen() {
 
   return (
     <section className="screen home-screen">
-      <header className="home-app-header" aria-label="Start Here Helper home">
+      <header className="home-app-header" aria-label="ArmaDesk home">
         <div className="home-brand">
-          <img src={appLogo} alt="" className="home-brand__logo" />
+          <img src={appBrand.headerLogoMark} alt="" className="home-brand__logo" />
           <div>
-            <strong>Start Here</strong>
-            <span>Helper</span>
+            <strong>{appBrand.productName}</strong>
           </div>
         </div>
         <div className="home-header-actions">

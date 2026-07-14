@@ -117,7 +117,7 @@ export function IntegrationCenterScreen() {
             <strong>Use account connections, never passwords</strong>
             <p className="muted small" style={{ margin: "4px 0 0" }}>
               Use files, screenshots, share links, and project access inside
-              Start Here Helper. Never share account passwords.
+              ArmaDesk. Never share account passwords.
             </p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export function IntegrationCenterScreen() {
           <div>
             <strong>QuickBooks boundary</strong>
             <p className="muted small" style={{ margin: "4px 0 0" }}>
-              Start Here Helper controls workflow and approvals. QuickBooks
+              ArmaDesk controls workflow and approvals. QuickBooks
               remains the accounting record.
             </p>
           </div>

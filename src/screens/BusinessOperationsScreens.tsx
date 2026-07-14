@@ -281,14 +281,14 @@ export function SyncCenterScreen() {
     {
       name: workspace.customers[0]?.name,
       type: "Updated customer",
-      source: "Start Here Helper",
+      source: "ArmaDesk",
       target: "QuickBooks",
       status: "Needs Sync",
     },
     {
       name: workspace.itemBank[0]?.name,
       type: "New item bank item",
-      source: "Start Here Helper",
+      source: "ArmaDesk",
       target: "QuickBooks",
       status: "Ready to Sync",
     },
@@ -303,7 +303,7 @@ export function SyncCenterScreen() {
       name: workspace.customers[1]?.name,
       type: "Customer contact",
       source: "QuickBooks",
-      target: "Start Here Helper",
+      target: "ArmaDesk",
       status: "Conflict",
     },
   ];
@@ -431,12 +431,12 @@ export function SyncCenterScreen() {
       {review === "conflict" && (
         <Modal title="Sync conflict" onClose={() => setReview(undefined)}>
           <p>
-            This record changed in Start Here Helper and QuickBooks. Choose
+            This record changed in ArmaDesk and QuickBooks. Choose
             which version to keep.
           </p>
           <div className="conflict-values">
             <div>
-              <strong>Start Here</strong>
+              <strong>ArmaDesk</strong>
               <p>(401) 555-0111</p>
             </div>
             <div>
@@ -448,11 +448,11 @@ export function SyncCenterScreen() {
             <Button
               variant="primary"
               onClick={() => {
-                setMessage("Start Here version selected for review.");
+                setMessage("ArmaDesk version selected for review.");
                 setReview(undefined);
               }}
             >
-              Keep Start Here Version
+              Keep ArmaDesk Version
             </Button>
             <Button
               variant="outline"

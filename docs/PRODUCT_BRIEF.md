@@ -2,7 +2,7 @@
 
 ## Product promise
 
-Start Here Helper gives small businesses one easy place to create estimates, invoices, progress invoices, flyers, QR codes, business cards, lead forms, posts, customer messages, and business kits, with real help available when they need it.
+ArmaDesk gives small businesses one easy place to create estimates, invoices, progress invoices, flyers, QR codes, business cards, lead forms, posts, customer messages, and business kits, with real help available when they need it.
 
 Core principles:
 

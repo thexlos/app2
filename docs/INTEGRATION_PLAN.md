@@ -14,7 +14,7 @@ All providers are explicit mock services. Disabled controls and responses say th
 
 ## Provider order
 
-1. **QuickBooks:** start with read-only customer/item import; then finalized invoice push; then payment/status pull. Drafts and internal versions stay in Start Here.
+1. **QuickBooks:** start with read-only customer/item import; then finalized invoice push; then payment/status pull. Drafts and internal versions stay in ArmaDesk.
 2. **Facebook Page / Instagram Business / Google Business Profile:** connect per business, validate eligibility, save draft first, explicit publish confirmation, and post history.
 3. **Canva:** store share links/uploads now; integrate only supported official capabilities later. Never request passwords.
 4. **VistaPrint:** print-prep/export/instructions and paid handoff. Treat direct integration as unavailable unless a suitable official API is confirmed.
