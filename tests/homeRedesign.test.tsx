@@ -148,10 +148,43 @@ describe("Home redesign", () => {
     });
   });
 
-  it("starts Smart Suggestions collapsed", () => {
+  it("renders Upcoming Schedule with existing schedule data and routes to calendar", () => {
+    const view = renderHome();
+    expect(screen.getByRole("heading", { name: "Upcoming Schedule" })).toBeTruthy();
+    expect(screen.getByText("Customer appointment")).toBeTruthy();
+    expect(screen.getByText("Site Visit")).toBeTruthy();
+    expect(screen.getByText("1 more event")).toBeTruthy();
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "View Calendar" }));
+    });
+    expect(view.state().currentScreen).toBe("calendar");
+  });
+
+  it("renders Smart Suggestions with existing suggestion data", () => {
     renderHome();
-    expect(screen.getByText("Smart suggestions")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Smart Suggestions" })).toBeTruthy();
+    expect(screen.getByText("Estimate needs follow-up")).toBeTruthy();
+    expect(screen.getByText("Invoice is overdue")).toBeTruthy();
+    expect(screen.queryByText("Approval received")).toBeNull();
     expect(screen.queryByText("Dismiss anytime or open the related area.")).toBeNull();
+  });
+
+  it("keeps Smart Suggestions actions working", () => {
+    const view = renderHome();
+    act(() => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Do It: Estimate needs follow-up" }),
+      );
+    });
+    expect(view.state().currentScreen).toBe("estimate-detail");
+  });
+
+  it("expands Smart Suggestions with See All", () => {
+    renderHome();
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "See All" }));
+    });
+    expect(screen.getByText("Approval received")).toBeTruthy();
   });
 
   it("starts Recent Activity collapsed", () => {

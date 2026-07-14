@@ -212,7 +212,79 @@ Step 5 is complete: the Home stats cards and Quick Actions cards now use the dar
   - bottom nav did not cover content
   - start of Quick Actions was visible after the stats
 
+## Step 6A completed
+
+Step 6A is complete: Upcoming Schedule and Smart Suggestions now follow the attached Home reference image style while preserving existing state data and routes.
+
+## Step 6A changes
+
+- Added a dedicated `Upcoming Schedule` section after Quick Actions.
+- Added the `View Calendar` action, routed through the existing calendar/schedule behavior.
+- Added a compact schedule card using existing calendar event data:
+  - left date block
+  - neon divider
+  - event title
+  - event time/location line
+  - event type/status pill
+  - right-side icon chip
+  - existing “more event” count when additional scheduled events exist
+- Added a compact empty schedule state for businesses with no scheduled events.
+- Redesigned `Smart Suggestions` as a reference-style card grid using existing suggestion data.
+- Preserved suggestion actions:
+  - primary action
+  - `Later`
+  - `Dismiss`
+- Added `See All` / `Show Less` behavior to reveal additional existing suggestions without creating a new route.
+
+## Step 6A icons and assets
+
+- Used existing Lucide/editable SVG icons only:
+  - `CalendarClock`
+  - `CalendarDays`
+  - `MapPin`
+  - `Sparkles`
+  - `Star`
+  - existing estimate/invoice/customer icons where relevant
+- Added no new PNG, JPG, AI-generated, or stock artwork.
+- Did not use the ArmaDesk logo as a section icon.
+- Did not replace or modify ArmaDesk brand assets.
+
+## Step 6A intentionally not changed
+
+- Stats layout was not changed.
+- Quick Actions layout was not changed.
+- Needs Attention placement was not changed.
+- Header, business selector, Open Kit shortcut, setup chip, and hero were not changed.
+- Bottom navigation was not redesigned.
+- Recent Activity and Recent Creations were not redesigned.
+- Business Kit promo layout was not redesigned.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, money, help, routing, or business logic was changed.
+- No Phase 4 work was started.
+- No iPhone device shell was added inside the app UI.
+
+## Step 6A validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Home tests now cover:
+  - Upcoming Schedule rendering
+  - View Calendar routing to the existing calendar/schedule screen
+  - existing schedule data rendering
+  - Smart Suggestions rendering
+  - existing suggestion data rendering
+  - Smart Suggestions primary action behavior
+  - See All expansion behavior
+  - old setup ring/banner remaining absent
+  - old `Start Here Helper` app branding remaining absent
+- Phone-width browser checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - schedule and suggestion cards rendered as dark glass/neon cards
+  - text did not overflow
+  - cards did not overlap
+  - bottom nav did not cover content
+
 ## Known follow-up steps
 
-- Step 6: schedule, suggestions, and recent content.
+- Later correction pass: exact stats sizing, Quick Actions sizing, and Needs Attention placement.
+- Step 6B: Recent Activity and Recent Creations.
 - Step 7: final polish.
