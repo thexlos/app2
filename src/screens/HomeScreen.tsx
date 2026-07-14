@@ -1,6 +1,5 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useState } from "react";
 import {
-  Activity,
   AlertTriangle,
   ArrowRight,
   Bell,
@@ -8,11 +7,8 @@ import {
   CalendarDays,
   CalendarClock,
   CheckCircle2,
-  ChevronDown,
   CircleDollarSign,
-  FileCheck2,
   FilePlus2,
-  FolderOpen,
   MapPin,
   QrCode,
   ReceiptText,
@@ -23,11 +19,9 @@ import {
 } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { BusinessSwitcher } from "../components/common/BusinessSwitcher";
-import { StatusBadge } from "../components/common/StatusBadge";
 import { appBrand } from "../config/brandAssets";
 import { useAppState } from "../state/AppState";
-import type { ActivityLogItem, CalendarEvent, SmartSuggestion } from "../types/models";
-import businessKitIllustration from "../assets/home/business_kit_illustration.png";
+import type { CalendarEvent, SmartSuggestion } from "../types/models";
 
 const pendingEstimateStatuses = new Set(["Sent", "Viewed", "Revised"]);
 const pendingChangeOrderStatuses = new Set([
@@ -38,25 +32,12 @@ const pendingChangeOrderStatuses = new Set([
   "Revised",
 ]);
 
-const activityIcon = (type: string) => {
-  if (type.includes("estimate")) return FileCheck2;
-  if (type.includes("invoice")) return ReceiptText;
-  if (type.includes("qr")) return QrCode;
-  return CheckCircle2;
-};
-
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(value);
-
-const formatItemType = (value: string) =>
-  value
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
 
 const formatScheduleDate = (date: string) => {
   const [year, month, day] = date.split("-").map(Number);
@@ -102,7 +83,6 @@ export function HomeScreen() {
     openInvoiceBuilder,
     openCreateTask,
     updateSuggestion,
-    openActivity,
     openCustomer,
     openLead,
     openHelpRequestDetail,
@@ -111,14 +91,10 @@ export function HomeScreen() {
     openSchedule,
   } = useAppState();
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
   const setupPercent = Math.min(100, Math.max(0, currentBusiness.setupPercent));
   const setupComplete = setupPercent >= 100;
   const todayKey = new Date().toISOString().slice(0, 10);
 
-  const attentionEstimate = workspace.estimates.find(
-    (item) => item.status === "Changes Requested",
-  );
   const waitingEstimates = workspace.estimates.filter((estimate) =>
     pendingEstimateStatuses.has(estimate.status),
   );
@@ -238,37 +214,6 @@ export function HomeScreen() {
       action: () => setCurrentScreen("money"),
     },
   ];
-
-  const recentCreations = useMemo(() => {
-    const workshopCards = workspace.workshopItems
-      .filter((item) => !item.archived && !item.trashed)
-      .slice(0, 1)
-      .map((item) => ({
-        id: item.id,
-        title: item.title,
-        meta: `${formatItemType(item.itemType)} · ${item.lastUsedAt ?? item.status}`,
-        icon: item.itemType === "qr_code" ? QrCode : FolderOpen,
-        tone: "blue",
-        action: () => openWorkshopItem(item.id),
-      }));
-    const estimateCards = workspace.estimates.slice(0, 1).map((estimate) => ({
-      id: estimate.id,
-      title: `Estimate ${estimate.number}`,
-      meta: estimate.updatedAt ? "Recently updated" : estimate.status,
-      icon: FilePlus2,
-      tone: "purple",
-      action: () => openEstimate(estimate.id),
-    }));
-    const invoiceCards = workspace.invoices.slice(0, 1).map((invoice) => ({
-      id: invoice.id,
-      title: `Invoice ${invoice.number}`,
-      meta: invoice.dueDate ? `Due ${invoice.dueDate}` : invoice.status,
-      icon: ReceiptText,
-      tone: "green",
-      action: () => openInvoice(invoice.id),
-    }));
-    return [...workshopCards, ...estimateCards, ...invoiceCards].slice(0, 3);
-  }, [openEstimate, openInvoice, openWorkshopItem, workspace.estimates, workspace.invoices, workspace.workshopItems]);
 
   const completeSuggestion = (suggestion: SmartSuggestion) => {
     if (suggestion.relatedRecordType === "estimate" && suggestion.relatedRecordId)
@@ -433,7 +378,7 @@ export function HomeScreen() {
           </div>
         </section>
 
-        <section className="home-panel home-quick-actions-panel">
+        <section className="home-quick-actions-panel">
         <div className="home-section-header">
           <div>
             <h2>Quick Actions</h2>
@@ -463,25 +408,7 @@ export function HomeScreen() {
         </div>
         </section>
 
-        {attentionEstimate && (
-        <button
-          className="home-attention-strip"
-          onClick={() => openEstimate(attentionEstimate.id)}
-        >
-          <span className="home-chip home-chip--warning">
-            <AlertTriangle size={19} />
-          </span>
-          <span className="grow">
-            <strong>Needs attention</strong>
-            <span>Estimate {attentionEstimate.number} needs changes.</span>
-          </span>
-          <span className="home-link-inline">
-            Review now <ArrowRight size={16} />
-          </span>
-        </button>
-        )}
-
-        <section className="home-panel home-schedule-panel" aria-labelledby="home-schedule-title">
+        <section className="home-schedule-panel" aria-labelledby="home-schedule-title">
           <div className="home-section-header">
             <div>
               <h2 id="home-schedule-title">Upcoming Schedule</h2>
@@ -535,7 +462,7 @@ export function HomeScreen() {
           )}
         </section>
 
-        <section className="home-panel home-suggestions-panel" aria-labelledby="home-suggestions-title">
+        <section className="home-suggestions-panel" aria-labelledby="home-suggestions-title">
           <div className="home-section-header">
             <div>
               <h2 id="home-suggestions-title">Smart Suggestions</h2>
@@ -584,144 +511,7 @@ export function HomeScreen() {
             })}
           </div>
         </section>
-
-        <button
-        className="home-kit-promo"
-        onClick={() => setCurrentScreen("my-business-kit")}
-      >
-        <img src={businessKitIllustration} alt="" />
-        <span className="grow">
-          <strong>My Business Kit</strong>
-          <span>Your brand, templates, and creations—all in one place.</span>
-        </span>
-        <span className="home-kit-promo__button">
-          Manage Kit <ArrowRight size={16} />
-        </span>
-        </button>
-
-        <div className="home-collapse-grid">
-        <CollapsedHomeSection
-          title="Recent activity"
-          subtitle="Latest updates and saved actions."
-          count={workspace.activity.length}
-          icon={Activity}
-          open={activityOpen}
-          onToggle={() => setActivityOpen((value) => !value)}
-        >
-          <div className="home-list">
-            {workspace.activity.slice(0, 5).map((item) => (
-              <RecentActivityRow
-                key={item.id}
-                item={item}
-                onOpen={() => openActivity(item.id)}
-              />
-            ))}
-          </div>
-        </CollapsedHomeSection>
-        </div>
-
-        {recentCreations.length > 0 && (
-        <section className="home-panel home-recent-creations">
-          <div className="home-section-header home-section-header--inline">
-            <h2>Recent creations</h2>
-            <Button variant="ghost" onClick={() => setCurrentScreen("workshop-library")}>
-              View all
-            </Button>
-          </div>
-          <div className="home-creations-row">
-            {recentCreations.map(({ id, title, meta, icon: Icon, tone, action }) => (
-              <button
-                key={id}
-                className={`home-creation-card home-tone-${tone}`}
-                onClick={action}
-              >
-                <span className="home-chip">
-                  <Icon size={18} />
-                </span>
-                <strong>{title}</strong>
-                <span>{meta}</span>
-              </button>
-            ))}
-            <button
-              className="home-creation-card home-creation-card--more"
-              onClick={() => setCurrentScreen("workshop-library")}
-            >
-              <span className="home-chip">
-                <ChevronDown size={18} />
-              </span>
-              <strong>More</strong>
-              <span>Open My Creations</span>
-            </button>
-          </div>
-        </section>
-        )}
       </div>
     </section>
-  );
-}
-
-function CollapsedHomeSection({
-  title,
-  subtitle,
-  count,
-  icon: Icon,
-  open,
-  onToggle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  count: number;
-  icon: typeof Activity;
-  open: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <section className={`home-collapsible${open ? " home-collapsible--open" : ""}`}>
-      <button className="home-collapsible__summary" onClick={onToggle}>
-        <span className="home-chip">
-          <Icon size={19} />
-        </span>
-        <span className="grow">
-          <strong>{title}</strong>
-          <span>{subtitle}</span>
-        </span>
-        <span className="home-count-badge">{count}</span>
-        <ArrowRight className="home-collapse-arrow" size={18} />
-      </button>
-      {open && <div className="home-collapsible__content">{children}</div>}
-    </section>
-  );
-}
-
-function RecentActivityRow({
-  item,
-  onOpen,
-}: {
-  item: ActivityLogItem;
-  onOpen: () => void;
-}) {
-  const Icon = activityIcon(item.type);
-  return (
-    <button className="home-list-row home-activity-row" onClick={onOpen}>
-      <span className={`home-chip home-chip--${item.tone}`}>
-        <Icon size={18} />
-      </span>
-      <span className="grow">
-        <strong>{item.label}</strong>
-        <small>{item.detail}</small>
-      </span>
-      <span className="home-activity-meta">
-        <StatusBadge tone={item.tone}>
-          {item.tone === "success"
-            ? "Done"
-            : item.tone === "warning"
-              ? "Review"
-              : "Saved"}
-        </StatusBadge>
-        <small>{item.occurredAt}</small>
-      </span>
-    </button>
   );
 }

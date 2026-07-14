@@ -424,6 +424,80 @@ Step 6C is complete: the Home card layout has been hard-locked closer to the sup
   - Upcoming Schedule remained below `Needs attention`
   - Smart Suggestions remained below Upcoming Schedule
 
+## Step 6E completed
+
+Step 6E is complete: the Home screen visible structure is now locked to the supplied mockup order and stops after Smart Suggestions.
+
+## Step 6E changes
+
+- Locked the visible Home content order to:
+  1. Header row
+  2. Business control row
+  3. Hero card
+  4. Four stat cards
+  5. Quick Actions header
+  6. Six Quick Action cards
+  7. Upcoming Schedule header
+  8. One Upcoming Schedule card
+  9. Smart Suggestions header
+  10. Smart Suggestions cards
+- Removed `Needs attention` as a separate visible Home strip.
+- Removed the `My Business Kit` promo card from the visible Home layout.
+- Removed the `Recent activity` collapsed section from the visible Home layout.
+- Removed the `Recent creations` section from the visible Home layout.
+- Removed extra visible Home content below Smart Suggestions.
+- Removed the large shared `home-panel` wrapper class from Quick Actions, Upcoming Schedule, and Smart Suggestions so those sections now render as title row plus individual cards.
+
+## Step 6E feature access retained
+
+- Business Kit remains accessible through `Open Kit` and the `Business Kit` Quick Action.
+- My Creations / Workshop Library features were not deleted.
+- File Vault features were not deleted.
+- Recent activity data and app state were not deleted.
+- Existing routes and app business logic were not changed.
+
+## Step 6E intentionally not changed
+
+- Header, business selector, Open Kit shortcut, setup chip, and hero were not redesigned.
+- Stat data and stat click behavior were not changed.
+- Quick Action routes were not changed.
+- Upcoming Schedule card behavior was not changed.
+- Smart Suggestions behavior was not changed.
+- Bottom navigation was not redesigned.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, money, help, routing, or business logic was changed.
+- No Phase 4 work was started.
+- No iPhone shell, iOS status bar, dynamic island, or home indicator was added inside the app UI.
+
+## Step 6E validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Home tests now cover:
+  - Header rendering
+  - Hero rendering
+  - stat card rendering
+  - six primary Quick Actions
+  - Upcoming Schedule rendering
+  - Smart Suggestions rendering
+  - no `My Business Kit` promo visible below Smart Suggestions
+  - no `Recent activity` section visible below Smart Suggestions
+  - no `Recent creations` section visible below Smart Suggestions
+  - no extra visible Home sections after Smart Suggestions
+  - no `My Creations` or `File Vault` cards in the primary Quick Actions grid
+  - no old `Start Here Helper` app branding
+  - old setup ring/banner remaining absent
+- In-app browser checks passed at 390px, 402px, and 430px:
+  - visible Home layout order matched the mockup structure
+  - Smart Suggestions was the last Home content child
+  - no visible content appeared under Smart Suggestions except the fixed bottom nav
+  - stats remained directly under hero
+  - Quick Actions directly followed stats
+  - Upcoming Schedule directly followed Quick Actions
+  - Smart Suggestions directly followed Upcoming Schedule
+  - no large extra wrapper boxes appeared around Quick Actions, Upcoming Schedule, or Smart Suggestions
+  - no Quick Action words broke inside labels
+  - no horizontal overflow
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

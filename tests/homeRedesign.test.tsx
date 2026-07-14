@@ -180,28 +180,6 @@ describe("Home redesign", () => {
     expect(quickGrid?.textContent).not.toContain("File Vault");
   });
 
-  it("keeps Needs Attention visible and routes to the estimate review", () => {
-    const view = renderHome();
-    const quickActions = view.container.querySelector(".home-quick-actions-panel");
-    const attentionButton = screen.getByText("Needs attention").closest("button");
-    const schedulePanel = view.container.querySelector(".home-schedule-panel");
-    expect(quickActions).toBeTruthy();
-    expect(attentionButton).toBeTruthy();
-    expect(schedulePanel).toBeTruthy();
-    expect(
-      quickActions!.compareDocumentPosition(attentionButton!) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      attentionButton!.compareDocumentPosition(schedulePanel!) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    act(() => {
-      fireEvent.click(attentionButton!);
-    });
-    expect(view.state().currentScreen).toBe("estimate-detail");
-  });
-
   it("renders Upcoming Schedule with existing schedule data and routes to calendar", () => {
     const view = renderHome();
     expect(screen.getByRole("heading", { name: "Upcoming Schedule" })).toBeTruthy();
@@ -241,16 +219,48 @@ describe("Home redesign", () => {
     expect(screen.getByText("Approval received")).toBeTruthy();
   });
 
-  it("starts Recent Activity collapsed", () => {
-    renderHome();
-    expect(screen.getByText("Recent activity")).toBeTruthy();
-    expect(screen.queryByText(/Estimate #1042 was accepted/i)).toBeNull();
-  });
-
-  it("shows Recent Creations when creations exist", () => {
-    renderHome();
-    expect(screen.getByText("Recent creations")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /More\s*Open My Creations/i })).toBeTruthy();
+  it("locks visible Home content to the mockup order and stops after Smart Suggestions", () => {
+    const { container } = renderHome();
+    const header = container.querySelector(".home-app-header");
+    const businessRow = container.querySelector(".home-top-utility-row");
+    const hero = container.querySelector(".home-hero");
+    const stats = container.querySelector(".home-stats-section");
+    const quickActions = container.querySelector(".home-quick-actions-panel");
+    const schedule = container.querySelector(".home-schedule-panel");
+    const suggestions = container.querySelector(".home-suggestions-panel");
+    expect(header).toBeTruthy();
+    expect(businessRow).toBeTruthy();
+    expect(hero).toBeTruthy();
+    expect(stats).toBeTruthy();
+    expect(quickActions).toBeTruthy();
+    expect(schedule).toBeTruthy();
+    expect(suggestions).toBeTruthy();
+    expect(
+      header!.compareDocumentPosition(businessRow!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      businessRow!.compareDocumentPosition(hero!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      hero!.compareDocumentPosition(stats!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      stats!.compareDocumentPosition(quickActions!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      quickActions!.compareDocumentPosition(schedule!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      schedule!.compareDocumentPosition(suggestions!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(suggestions!.nextElementSibling).toBeNull();
+    expect(quickActions!.classList.contains("home-panel")).toBe(false);
+    expect(schedule!.classList.contains("home-panel")).toBe(false);
+    expect(suggestions!.classList.contains("home-panel")).toBe(false);
+    expect(screen.queryByText("Needs attention")).toBeNull();
+    expect(screen.queryByText("My Business Kit")).toBeNull();
+    expect(screen.queryByText("Recent activity")).toBeNull();
+    expect(screen.queryByText("Recent creations")).toBeNull();
   });
 
   it("does not render the old setup banner when progress is below 100%", () => {
