@@ -62,11 +62,19 @@ describe("Home redesign", () => {
     expect(screen.getByRole("button", { name: "Help" })).toBeTruthy();
   });
 
-  it("shows the compact business selector", () => {
-    renderHome();
+  it("shows one connected business control bar with selector, kit, and setup controls", () => {
+    const { container } = renderHome();
+    const businessRow = container.querySelector(".home-top-utility-row");
+    expect(businessRow).toBeTruthy();
     expect(
       screen.getByRole("button", {
         name: "Switch business: J Thomas Flooring",
+      }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Open Kit" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: `Open setup: Set up ${defaultSetupPercent}% complete`,
       }),
     ).toBeTruthy();
   });
@@ -79,14 +87,18 @@ describe("Home redesign", () => {
     expect(view.state().currentScreen).toBe("my-business-kit");
   });
 
-  it("renders the compact command desk hero with a code-built analytics visual", () => {
+  it("renders the reference hero copy with a code-built analytics visual", () => {
     const { container } = renderHome();
-    expect(screen.getByText("Business Command Desk")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Good morning, Thomas" })).toBeTruthy();
-    expect(
-      screen.getByText("Create, store, send, and manage today’s work from one place."),
-    ).toBeTruthy();
+    expect(screen.queryByText("Business Command Desk")).toBeNull();
+    expect(screen.queryByText("Review Today")).toBeNull();
+    expect(screen.getByText("Good morning,")).toBeTruthy();
+    expect(screen.getByText("Thomas!")).toBeTruthy();
+    expect(screen.getByText("Here’s what’s happening with your business today.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /View Insights/i })).toBeTruthy();
+    expect(screen.getByText("+23%")).toBeTruthy();
+    expect(screen.getByText("vs last week")).toBeTruthy();
     expect(container.querySelector("[data-testid='home-hero-analytics']")).toBeTruthy();
+    expect(container.querySelector(".home-hero-analytics__platform")).toBeTruthy();
   });
 
   it("does not render the old oversized setup hero ring", () => {
@@ -96,12 +108,13 @@ describe("Home redesign", () => {
     ).toBeNull();
   });
 
-  it("shows the compact setup chip below 100% and routes to setup", () => {
+  it("shows the setup ring below 100% and routes to setup", () => {
     const view = renderHome();
     const setupChip = screen.getByRole("button", {
-      name: `Open setup: Set Up ${defaultSetupPercent}% complete`,
+      name: `Open setup: Set up ${defaultSetupPercent}% complete`,
     });
-    expect(screen.getByText(`Set Up · ${defaultSetupPercent}%`)).toBeTruthy();
+    expect(screen.getByText(`${defaultSetupPercent}%`)).toBeTruthy();
+    expect(screen.getByText("Set up")).toBeTruthy();
     act(() => {
       fireEvent.click(setupChip);
     });
@@ -118,18 +131,24 @@ describe("Home redesign", () => {
       hero!.compareDocumentPosition(statsSection!) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(screen.queryByText("Today’s Snapshot")).toBeNull();
-    expect(screen.getByRole("button", { name: "Estimates: 1" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Changes: 1" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Estimates: 4" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Invoices: 2" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Outstanding: $4,850" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Customers: 3" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tasks: 4" })).toBeTruthy();
+    expect(screen.getByText("↑ 3 today")).toBeTruthy();
+    expect(screen.getByText("↑ 2 paid")).toBeTruthy();
+    expect(screen.getByText("↑ 6 this week")).toBeTruthy();
+    expect(screen.getByText("↑ 2 due today")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Changes:/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Outstanding:/ })).toBeNull();
   });
 
   it("keeps the stats card routing behavior", () => {
     const cases = [
-      ["Estimates: 1", "estimate-detail"],
-      ["Changes: 1", "estimate-detail"],
+      ["Estimates: 4", "estimate-detail"],
       ["Invoices: 2", "money"],
-      ["Outstanding: $4,850", "money"],
+      ["Customers: 3", "customers"],
+      ["Tasks: 4", "calendar"],
     ] as const;
 
     cases.forEach(([label, expectedScreen]) => {
@@ -183,8 +202,13 @@ describe("Home redesign", () => {
   it("renders Upcoming Schedule with existing schedule data and routes to calendar", () => {
     const view = renderHome();
     expect(screen.getByRole("heading", { name: "Upcoming Schedule" })).toBeTruthy();
-    expect(screen.getByText("Customer appointment")).toBeTruthy();
+    expect(screen.queryByText("Customer appointment")).toBeNull();
+    expect(screen.getByText("JUL")).toBeTruthy();
+    expect(screen.getByText("13")).toBeTruthy();
+    expect(screen.getByText("MON")).toBeTruthy();
     expect(screen.getByText("Site Visit")).toBeTruthy();
+    expect(screen.getByText("10:00 AM • 123 Main St")).toBeTruthy();
+    expect(screen.getByText("Upcoming")).toBeTruthy();
     expect(screen.getByText("1 more event")).toBeTruthy();
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: "View Calendar" }));
@@ -192,31 +216,36 @@ describe("Home redesign", () => {
     expect(view.state().currentScreen).toBe("calendar");
   });
 
-  it("renders Smart Suggestions with existing suggestion data", () => {
+  it("renders exactly the two reference Smart Suggestions cards", () => {
     renderHome();
     expect(screen.getByRole("heading", { name: "Smart Suggestions" })).toBeTruthy();
-    expect(screen.getByText("Estimate needs follow-up")).toBeTruthy();
-    expect(screen.getByText("Invoice is overdue")).toBeTruthy();
+    expect(screen.getByText("Send 2 pending estimates")).toBeTruthy();
+    expect(screen.getByText("Worth $4,250")).toBeTruthy();
+    expect(screen.getByText("Follow up with 3 recent leads")).toBeTruthy();
+    expect(screen.getByText("High opportunity")).toBeTruthy();
+    expect(screen.queryByText("Estimate needs follow-up")).toBeNull();
+    expect(screen.queryByText("Invoice is overdue")).toBeNull();
     expect(screen.queryByText("Approval received")).toBeNull();
     expect(screen.queryByText("Dismiss anytime or open the related area.")).toBeNull();
+    expect(screen.queryByText("Do It")).toBeNull();
+    expect(screen.queryByText("Later")).toBeNull();
+    expect(screen.queryByText("Dismiss")).toBeNull();
   });
 
-  it("keeps Smart Suggestions actions working", () => {
+  it("keeps Smart Suggestions card routing working without inline action clutter", () => {
     const view = renderHome();
     act(() => {
-      fireEvent.click(
-        screen.getByRole("button", { name: "Do It: Estimate needs follow-up" }),
-      );
+      fireEvent.click(screen.getByRole("button", { name: "Send 2 pending estimates" }));
     });
     expect(view.state().currentScreen).toBe("estimate-detail");
   });
 
-  it("expands Smart Suggestions with See All", () => {
+  it("does not expand extra Smart Suggestions on Home", () => {
     renderHome();
     act(() => {
-      fireEvent.click(screen.getByRole("button", { name: "See All" }));
+      fireEvent.click(screen.getAllByRole("button", { name: "See All" }).at(-1)!);
     });
-    expect(screen.getByText("Approval received")).toBeTruthy();
+    expect(screen.queryByText("Approval received")).toBeNull();
   });
 
   it("locks visible Home content to the mockup order and stops after Smart Suggestions", () => {
@@ -261,6 +290,8 @@ describe("Home redesign", () => {
     expect(screen.queryByText("My Business Kit")).toBeNull();
     expect(screen.queryByText("Recent activity")).toBeNull();
     expect(screen.queryByText("Recent creations")).toBeNull();
+    expect(screen.queryByText("Business Command Desk")).toBeNull();
+    expect(screen.queryByText("Review Today")).toBeNull();
   });
 
   it("does not render the old setup banner when progress is below 100%", () => {
@@ -269,29 +300,24 @@ describe("Home redesign", () => {
     expect(screen.queryByText(/Continue setup/i)).toBeNull();
   });
 
-  it("hides setup controls when progress is 100%", () => {
+  it("keeps the setup ring available at 100% setup", () => {
     businessProfiles[0].setupPercent = 100;
     renderHome();
     expect(screen.queryByText(/Continue setup/i)).toBeNull();
-    expect(screen.queryByText(/set up/i)).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Open setup: Set up 100% complete" }),
+    ).toBeTruthy();
+    expect(screen.getByText("100%")).toBeTruthy();
+    expect(screen.getByText("Set up")).toBeTruthy();
   });
 
-  it("shows setup complete in the compact setup chip at 100% setup", () => {
+  it("keeps the reference hero copy at 100% setup", () => {
     businessProfiles[0].setupPercent = 100;
     renderHome();
-    expect(screen.getByText("Setup Complete")).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: "Open setup: Setup Complete" }),
-    ).toBeTruthy();
-  });
-
-  it("shows the compact ready-state hero at 100% setup", () => {
-    businessProfiles[0].setupPercent = 100;
-    renderHome();
-    expect(screen.getByText("Business ready")).toBeTruthy();
-    expect(
-      screen.getByText("Your workspace is ready. Let’s keep today moving."),
-    ).toBeTruthy();
+    expect(screen.queryByText("Business ready")).toBeNull();
+    expect(screen.getByText("Good morning,")).toBeTruthy();
+    expect(screen.getByText("Thomas!")).toBeTruthy();
+    expect(screen.getByText("Here’s what’s happening with your business today.")).toBeTruthy();
     expect(screen.queryByText("Today at a glance")).toBeNull();
   });
 });

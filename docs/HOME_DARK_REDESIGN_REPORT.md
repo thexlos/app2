@@ -498,6 +498,102 @@ Step 6E is complete: the Home screen visible structure is now locked to the supp
   - no Quick Action words broke inside labels
   - no horizontal overflow
 
+## Step 6F completed
+
+Step 6F is complete: the Home screen visible components were rebuilt to follow the locked reference mockup structure as closely as possible while keeping the app name as ArmaDesk and preserving existing app logic.
+
+## Step 6F changes
+
+- Rebuilt the visible Home component structure around the exact requested order:
+  1. Header
+  2. Connected business control bar
+  3. Hero analytics card
+  4. Four stat cards
+  5. Quick Actions header
+  6. Six Quick Action cards
+  7. Upcoming Schedule header
+  8. One Upcoming Schedule card
+  9. Smart Suggestions header
+  10. Smart Suggestions cards
+- Reworked the header to keep the ArmaDesk logo mark and ArmaDesk text compact on the left with notification/profile circular controls on the right.
+- Rebuilt the business control row as one connected glass card containing:
+  - business switcher
+  - `Open Kit`
+  - circular setup progress ring with `72%` and `Set up`
+- Updated the hero copy to exactly:
+  - `Good morning,`
+  - `Thomas!`
+  - `Here’s what’s happening with your business today.`
+  - `View Insights`
+- Rebuilt the hero analytics visual in code with glowing bars, line graph, particles, platform rings, and `+23% vs last week` badge.
+- Replaced the old stat set with the four reference labels:
+  - `Estimates`
+  - `Invoices`
+  - `Customers`
+  - `Tasks`
+- Added the requested stat trend text:
+  - `↑ 3 today`
+  - `↑ 2 paid`
+  - `↑ 6 this week`
+  - `↑ 2 due today`
+- Rebuilt Quick Actions to the exact six-card set:
+  - `Create Estimate`
+  - `Create Invoice`
+  - `Add Customer`
+  - `Calendar`
+  - `QR Code`
+  - `Business Kit`
+- Rebuilt the Upcoming Schedule card to show the requested reference content:
+  - `JUL / 13 / MON`
+  - `Site Visit`
+  - `10:00 AM • 123 Main St`
+  - `Upcoming`
+  - `1 more event`
+- Rebuilt Smart Suggestions to exactly two Home cards:
+  - `Send 2 pending estimates` / `Worth $4,250`
+  - `Follow up with 3 recent leads` / `High opportunity`
+- Removed inline suggestion action clutter from Home suggestions.
+- Tightened phone-width styles so the connected business row and Quick Action labels do not visually break at 390px, 402px, or 430px.
+
+## Step 6F intentionally not changed
+
+- App name remains ArmaDesk, not StartHere.
+- No iPhone shell, iOS status bar, dynamic island, or home indicator was added inside the app UI.
+- Bottom navigation was not fully redesigned.
+- QR, estimate, invoice, customer, File Vault, recovery draft, persistence, money, help, routing, and business logic were not changed.
+- My Creations, File Vault, Recent Activity, and Business Kit functionality were not deleted from the app.
+- No Phase 4 work was started.
+
+## Step 6F validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Home tests now cover:
+  - ArmaDesk header and logo
+  - connected business control bar
+  - Open Kit routing
+  - setup ring routing
+  - exact hero copy and analytics visual
+  - exact four stat labels and trend text
+  - stat routing behavior
+  - exact six Quick Actions and routes
+  - exact Upcoming Schedule reference content
+  - exact two Smart Suggestions cards
+  - no inline suggestion action clutter
+  - Home content order ending after Smart Suggestions
+  - no Business Kit promo, Recent Activity, Recent Creations, or Needs Attention strip in the visible Home flow
+  - no old `Business Command Desk`, `Review Today`, or `Start Here Helper` content
+- In-app browser checks passed at 390px, 402px, and 430px:
+  - one connected business control bar rendered
+  - hero copy and code-built analytics visual rendered
+  - stats measured as 4 columns × 1 row
+  - Quick Actions measured as 3 columns × 2 rows
+  - Quick Action labels used normal word wrapping rules with no forced word breaking
+  - Upcoming Schedule and Smart Suggestions rendered in the locked order
+  - Smart Suggestions remained the last Home content child
+  - no forbidden extra Home sections appeared
+  - no horizontal overflow
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.
