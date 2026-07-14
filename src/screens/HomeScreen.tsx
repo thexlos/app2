@@ -272,8 +272,9 @@ export function HomeScreen() {
   } as CSSProperties;
 
   return (
-    <section className="screen home-screen">
-      <header className="home-app-header" aria-label="ArmaDesk home">
+    <section className="screen home-screen home-shell">
+      <div className="home-content">
+        <header className="home-app-header" aria-label="ArmaDesk home">
         <div className="home-brand">
           <img src={appBrand.headerLogoMark} alt="" className="home-brand__logo" />
           <div>
@@ -288,11 +289,11 @@ export function HomeScreen() {
             <UserRound size={20} />
           </button>
         </div>
-      </header>
+        </header>
 
-      <BusinessSwitcher className="home-business-switcher" />
+        <BusinessSwitcher className="home-business-switcher" />
 
-      <section className={`home-hero${setupComplete ? " home-hero--ready" : ""}`}>
+        <section className={`home-hero${setupComplete ? " home-hero--ready" : ""}`}>
         <div className="home-hero__copy">
           <span>Good morning,</span>
           <h1>{currentBusiness.ownerName}!</h1>
@@ -333,9 +334,9 @@ export function HomeScreen() {
             <span>set up</span>
           </button>
         )}
-      </section>
+        </section>
 
-      {!setupComplete && (
+        {!setupComplete && (
         <section className="home-setup-banner">
           <img src={setupRocket} alt="" />
           <div>
@@ -346,9 +347,9 @@ export function HomeScreen() {
             Continue setup <ArrowRight size={17} />
           </Button>
         </section>
-      )}
+        )}
 
-      <section className="home-stat-grid" aria-label="Business dashboard stats">
+        <section className="home-stat-grid" aria-label="Business dashboard stats">
         {stats.map(({ label, value, icon: Icon, tone, action }) => (
           <button
             key={label}
@@ -362,9 +363,9 @@ export function HomeScreen() {
             <span>{label}</span>
           </button>
         ))}
-      </section>
+        </section>
 
-      {attentionEstimate && (
+        {attentionEstimate && (
         <button
           className="home-attention-strip"
           onClick={() => openEstimate(attentionEstimate.id)}
@@ -380,9 +381,9 @@ export function HomeScreen() {
             Review now <ArrowRight size={16} />
           </span>
         </button>
-      )}
+        )}
 
-      <section className="home-panel">
+        <section className="home-panel">
         <div className="home-section-header">
           <div>
             <h2>Quick actions</h2>
@@ -406,9 +407,9 @@ export function HomeScreen() {
             </button>
           ))}
         </div>
-      </section>
+        </section>
 
-      <button
+        <button
         className="home-kit-promo"
         onClick={() => setCurrentScreen("my-business-kit")}
       >
@@ -420,9 +421,9 @@ export function HomeScreen() {
         <span className="home-kit-promo__button">
           Open Kit <ArrowRight size={16} />
         </span>
-      </button>
+        </button>
 
-      <div className="home-collapse-grid">
+        <div className="home-collapse-grid">
         <CollapsedHomeSection
           title="Smart suggestions"
           subtitle="Actionable next steps for your business."
@@ -475,9 +476,9 @@ export function HomeScreen() {
             ))}
           </div>
         </CollapsedHomeSection>
-      </div>
+        </div>
 
-      {recentCreations.length > 0 && (
+        {recentCreations.length > 0 && (
         <section className="home-panel home-recent-creations">
           <div className="home-section-header home-section-header--inline">
             <h2>Recent creations</h2>
@@ -511,7 +512,8 @@ export function HomeScreen() {
             </button>
           </div>
         </section>
-      )}
+        )}
+      </div>
     </section>
   );
 }
