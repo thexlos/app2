@@ -594,6 +594,83 @@ Step 6F is complete: the Home screen visible components were rebuilt to follow t
   - no forbidden extra Home sections appeared
   - no horizontal overflow
 
+## Step 6G completed
+
+Step 6G is complete: the Home screen sizing/proportions were tightened and the bottom nav was rebuilt toward the locked mockup direction.
+
+## Step 6G changes
+
+- Corrected overall Home layout density so the screen is closer to the mockup’s compact mobile proportions.
+- Reduced excessive vertical padding and section gaps.
+- Tightened the header and connected business control bar height.
+- Reduced hero height and internal spacing while keeping the approved hero content:
+  - `Good morning,`
+  - `Thomas!`
+  - `Here’s what’s happening with your business today.`
+  - `View Insights`
+- Tightened stat card proportions:
+  - four cards remain across
+  - smaller icon chips
+  - tighter label/number/trend spacing
+  - no broken words
+- Tightened Quick Actions card proportions:
+  - still 3 columns × 2 rows
+  - lower-profile cards
+  - tighter icon/label spacing
+  - exact six actions retained
+- Tightened Upcoming Schedule proportions:
+  - smaller date block
+  - tighter text area
+  - compact right-side location/extra-event area
+- Tightened Smart Suggestions card proportions:
+  - two cards only
+  - compact icon/title/subtitle/arrow spacing
+  - no inline action buttons
+- Rebuilt the visible bottom nav to match the mockup direction:
+  - `Home`
+  - `Customers`
+  - `Create`
+  - `Calendar`
+  - `More`
+- Removed `Money` and `Help` from the visible primary bottom nav.
+- Added a large raised circular gradient `Create` button overlapping the nav, matching the mockup direction.
+- Routed `Calendar` to the existing calendar screen.
+- Routed `More` to the existing Help/utility area without adding a new More system.
+
+## Step 6G intentionally not changed
+
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, money, help, or business logic was changed.
+- No app functionality was deleted.
+- Money and Help screens still exist; they are just not visible primary bottom-nav items in this step.
+- No iPhone shell, iOS status bar, dynamic island, or home indicator was added inside the app UI.
+- No Phase 4 work was started.
+
+## Step 6G validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Home tests now cover:
+  - rebuilt bottom nav labels: `Home`, `Customers`, `Create`, `Calendar`, `More`
+  - `Money` and `Help` not appearing in the visible primary bottom nav
+  - center Create nav item class
+  - Calendar routing to the existing calendar screen
+  - More routing safely to the existing Help/utility screen
+  - Smart Suggestions remaining the last Home content section before bottom nav
+  - exact six Quick Actions still rendered
+  - no `My Business Kit` promo below Smart Suggestions
+  - no `Recent Activity` below Smart Suggestions
+  - no `Recent Creations` below Smart Suggestions
+- In-app browser checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - no broken words
+  - stats measured as 4 columns × 1 row
+  - Quick Actions measured as 3 columns × 2 rows
+  - bottom nav labels measured as `Home`, `Customers`, `Create`, `Calendar`, `More`
+  - center Create button was raised above the nav bar
+  - Smart Suggestions stayed above the bottom nav
+  - Smart Suggestions remained the last Home content child
+  - no forbidden extra Home sections appeared
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

@@ -1,25 +1,33 @@
 import {
-  CircleHelp,
+  CalendarDays,
   CirclePlus,
   Home,
+  MoreHorizontal,
   UsersRound,
-  WalletCards,
 } from "lucide-react";
-import type { MainTab } from "../../state/AppState";
+import type { Screen } from "../../state/AppState";
 import { useAppState } from "../../state/AppState";
 
-const items: { id: MainTab; label: string; icon: typeof Home }[] = [
-  { id: "home", label: "Home", icon: Home },
-  { id: "customers", label: "Customers", icon: UsersRound },
-  { id: "money", label: "Money", icon: WalletCards },
-  { id: "create", label: "Create", icon: CirclePlus },
-  { id: "help", label: "Help", icon: CircleHelp },
+type NavItem = {
+  id: "home" | "customers" | "create" | "calendar" | "more";
+  label: string;
+  icon: typeof Home;
+  target: Screen;
+  isCenter?: boolean;
+};
+
+const items: NavItem[] = [
+  { id: "home", label: "Home", icon: Home, target: "home" },
+  { id: "customers", label: "Customers", icon: UsersRound, target: "customers" },
+  { id: "create", label: "Create", icon: CirclePlus, target: "create", isCenter: true },
+  { id: "calendar", label: "Calendar", icon: CalendarDays, target: "calendar" },
+  { id: "more", label: "More", icon: MoreHorizontal, target: "help" },
 ];
 
-function isTabActive(currentScreen: string, tab: MainTab) {
-  if (currentScreen === tab) return true;
+function isTabActive(currentScreen: string, item: NavItem) {
+  if (currentScreen === item.target) return true;
   if (
-    tab === "customers" &&
+    item.id === "customers" &&
     [
       "customer-detail",
       "add-customer",
@@ -28,19 +36,11 @@ function isTabActive(currentScreen: string, tab: MainTab) {
       "import-wizard",
       "sync-center",
       "export-center",
-      "calendar",
     ].includes(currentScreen)
   )
     return true;
-  if (tab === "money" && currentScreen === "estimate-detail") return true;
   if (
-    tab === "money" &&
-    ["estimate-builder", "invoice-builder"].includes(currentScreen)
-  )
-    return true;
-  if (tab === "money" && currentScreen === "official-document") return true;
-  if (
-    tab === "create" &&
+    item.id === "create" &&
     [
       "business-kits",
       "my-business-kit",
@@ -58,9 +58,11 @@ function isTabActive(currentScreen: string, tab: MainTab) {
     ].includes(currentScreen)
   )
     return true;
+  if (item.id === "calendar" && currentScreen === "calendar") return true;
   if (
-    tab === "help" &&
+    item.id === "more" &&
     [
+      "help",
       "help-request",
       "help-request-detail",
       "monthly-support",
@@ -68,7 +70,7 @@ function isTabActive(currentScreen: string, tab: MainTab) {
     ].includes(currentScreen)
   )
     return true;
-  if (tab === "home" && currentScreen === "setup") return true;
+  if (item.id === "home" && currentScreen === "setup") return true;
   return false;
 }
 
@@ -76,16 +78,25 @@ export function BottomNavigation() {
   const { currentScreen, setCurrentScreen } = useAppState();
   return (
     <nav className="bottom-nav" aria-label="Main navigation">
-      {items.map(({ id, label, icon: Icon }) => (
-        <button
-          key={id}
-          className={`bottom-nav__item${isTabActive(currentScreen, id) ? " bottom-nav__item--active" : ""}`}
-          onClick={() => setCurrentScreen(id)}
-        >
-          <Icon size={22} strokeWidth={2.1} />
-          <span>{label}</span>
-        </button>
-      ))}
+      {items.map((item) => {
+        const { id, label, icon: Icon, target, isCenter } = item;
+        const active = isTabActive(currentScreen, item);
+        return (
+          <button
+            key={id}
+            className={`bottom-nav__item${active ? " bottom-nav__item--active" : ""}${isCenter ? " bottom-nav__item--create" : ""}`}
+            onClick={() => setCurrentScreen(target)}
+          >
+            <span className="bottom-nav__icon-wrap">
+              <Icon
+                size={isCenter ? 34 : 23}
+                strokeWidth={isCenter ? 2.2 : 2.05}
+              />
+            </span>
+            <span>{label}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 }

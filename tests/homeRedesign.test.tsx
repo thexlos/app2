@@ -47,19 +47,42 @@ describe("Home redesign", () => {
     expect(screen.queryByText("Start Here Helper")).toBeNull();
   });
 
-  it("keeps the existing bottom navigation labels and class structure", () => {
+  it("shows the rebuilt mockup bottom navigation labels and class structure", () => {
+    let latest: State | undefined;
+    function Probe() {
+      latest = useAppState();
+      return null;
+    }
     render(
       <AppStateProvider>
         <BottomNavigation />
+        <Probe />
       </AppStateProvider>,
     );
     const bottomNav = screen.getByRole("navigation", { name: "Main navigation" });
     expect(bottomNav.classList.contains("bottom-nav")).toBe(true);
     expect(screen.getByRole("button", { name: "Home" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Customers" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Money" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Create" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Calendar" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "More" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Money" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Help" })).toBeNull();
+    expect(
+      screen
+        .getByRole("button", { name: "Create" })
+        .classList.contains("bottom-nav__item--create"),
+    ).toBe(true);
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Calendar" }));
+    });
+    expect(latest!.currentScreen).toBe("calendar");
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "More" }));
+    });
+    expect(latest!.currentScreen).toBe("help");
   });
 
   it("shows one connected business control bar with selector, kit, and setup controls", () => {
