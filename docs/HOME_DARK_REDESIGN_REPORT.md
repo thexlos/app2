@@ -90,9 +90,67 @@ No new artwork or logos were generated.
   - notification/profile buttons remained stable with no console errors
   - old `Start Here Helper` branding was not visible in the Home header
 
+## Step 4 completed
+
+Step 4 is complete: the old oversized Home hero/setup treatment has been replaced with a compact futuristic ArmaDesk hero that saves vertical space on phone screens.
+
+## Step 4 changes
+
+- Replaced the old setup-heavy hero with a compact command desk hero.
+- Added the approved hero copy:
+  - eyebrow: `Business Command Desk`
+  - title: `Good morning, Thomas`
+  - subtitle: `Create, store, send, and manage today’s work from one place.`
+- Added one compact `Review Today` action that routes to the existing calendar/schedule view.
+- Added a compact 100% setup hero state:
+  - eyebrow: `Business ready`
+  - subtitle: `Your workspace is ready. Let’s keep today moving.`
+- Removed the old oversized setup progress ring from the hero.
+- Removed the old `You’re on track` / `Continue setup` setup banner/card.
+- Kept setup progress access in the Step 3 setup chip.
+
+## Step 4 hero visual approach
+
+- `src/assets/home/home-hero-analytics.png` was not present in the project.
+- No external stock image was used.
+- No ArmaDesk logo was reused as hero artwork.
+- The hero visual was built directly in scoped React/CSS/SVG as an editable analytics visual:
+  - glowing mini chart
+  - neon bars
+  - cyan line graph
+  - subtle digital grid
+  - blue/cyan/purple glow
+
+## Step 4 intentionally not changed
+
+- Stats cards were not redesigned.
+- Quick actions were not redesigned.
+- Smart suggestions, recent activity, recent creations, and bottom navigation were not redesigned.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, money, help, routing, or business logic was changed.
+- No Phase 4 work was started.
+- No iPhone device shell was added inside the app UI.
+
+## Step 4 validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Phone-width browser checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - compact hero title/subtitle rendered
+  - hero visual stayed inside the viewport
+  - old setup ring label was absent
+  - old `You’re on track` / `Continue setup` banner text was absent
+  - setup chip still rendered at 72%
+  - Open Kit remained visible
+  - Quick actions remained present
+- Measured compact hero heights:
+  - 390px viewport: 157px
+  - 402px viewport: 142px
+  - 430px viewport: 142px
+- Functional check passed: `Review Today` routes to the existing calendar/schedule view.
+
 ## Known follow-up steps
 
-- Step 4: compact hero.
 - Step 5: stats and quick actions.
 - Step 6: schedule, suggestions, and recent content.
 - Step 7: final polish.

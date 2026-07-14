@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -24,7 +24,6 @@ import { StatusBadge } from "../components/common/StatusBadge";
 import { appBrand } from "../config/brandAssets";
 import { useAppState } from "../state/AppState";
 import type { ActivityLogItem, SmartSuggestion } from "../types/models";
-import setupRocket from "../assets/home/setup_rocket_illustration.png";
 import businessKitIllustration from "../assets/home/business_kit_illustration.png";
 
 const pendingEstimateStatuses = new Set(["Sent", "Viewed", "Revised"]);
@@ -268,10 +267,6 @@ export function HomeScreen() {
     updateSuggestion(suggestion.id, "Completed");
   };
 
-  const ringStyle = {
-    "--setup-progress": `${setupPercent}%`,
-  } as CSSProperties;
-
   return (
     <section className="screen home-screen home-shell">
       <div className="home-content">
@@ -325,60 +320,55 @@ export function HomeScreen() {
         </div>
 
         <section className={`home-hero${setupComplete ? " home-hero--ready" : ""}`}>
-        <div className="home-hero__copy">
-          <span>Good morning,</span>
-          <h1>{currentBusiness.ownerName}!</h1>
-          <p>
-            {setupComplete
-              ? "Your business is ready to go. Let’s make today count."
-              : "Let’s keep your business moving forward."}
-          </p>
-        </div>
-        {setupComplete ? (
-          <div className="today-glance-card" aria-label="Today at a glance">
-            <span className="ready-pill">
-              <CheckCircle2 size={15} />
-              Business ready
+          <div className="home-hero__copy">
+            <span className="home-hero__eyebrow">
+              {setupComplete ? "Business ready" : "Business Command Desk"}
             </span>
-            <strong>Today at a glance</strong>
-            <button onClick={() => setCurrentScreen("money")}>
-              <span>Approvals waiting</span>
-              <b>{waitingEstimates.length}</b>
-            </button>
-            <button onClick={() => setCurrentScreen("money")}>
-              <span>Unpaid invoices</span>
-              <b>{unpaidInvoices.length}</b>
-            </button>
-            <button onClick={() => openSchedule()}>
-              <span>Appointments today</span>
-              <b>{scheduledToday}</b>
+            <h1>Good morning, {currentBusiness.ownerName}</h1>
+            <p>
+              {setupComplete
+                ? "Your workspace is ready. Let’s keep today moving."
+                : "Create, store, send, and manage today’s work from one place."}
+            </p>
+            <button className="home-hero__action" onClick={() => openSchedule()}>
+              Review Today <ArrowRight size={14} />
             </button>
           </div>
-        ) : (
-          <button
-            className="home-setup-ring"
-            style={ringStyle}
-            aria-label={`Business setup ${setupPercent}% complete`}
-            onClick={() => setCurrentScreen("setup")}
+          <div
+            className="home-hero-analytics"
+            aria-hidden="true"
+            data-testid="home-hero-analytics"
           >
-            <strong>{setupPercent}%</strong>
-            <span>set up</span>
-          </button>
-        )}
-        </section>
-
-        {!setupComplete && (
-        <section className="home-setup-banner">
-          <img src={setupRocket} alt="" />
-          <div>
-            <strong>You’re on track! 🚀</strong>
-            <span>Finish a few steps and we’ll handle the rest automatically.</span>
+            <span className="home-hero-analytics__badge">
+              +{Math.max(1, scheduledToday + waitingEstimates.length)}
+            </span>
+            <div className="home-hero-analytics__grid">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="home-hero-analytics__bars">
+              <i />
+              <i />
+              <i />
+              <i />
+            </div>
+            <svg viewBox="0 0 120 70" role="presentation">
+              <path d="M8 52 L34 42 L55 45 L76 24 L106 12" />
+              <circle cx="34" cy="42" r="3.5" />
+              <circle cx="76" cy="24" r="3.5" />
+              <circle cx="106" cy="12" r="3.5" />
+            </svg>
+            {setupComplete && (
+              <div className="home-hero-analytics__mini">
+                <span>{waitingEstimates.length} approvals</span>
+                <span>{scheduledToday} today</span>
+                <span>{unpaidInvoices.length} unpaid</span>
+              </div>
+            )}
           </div>
-          <Button variant="primary" onClick={() => setCurrentScreen("setup")}>
-            Continue setup <ArrowRight size={17} />
-          </Button>
         </section>
-        )}
 
         <section className="home-stat-grid" aria-label="Business dashboard stats">
         {stats.map(({ label, value, icon: Icon, tone, action }) => (

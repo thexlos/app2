@@ -63,6 +63,23 @@ describe("Home redesign", () => {
     expect(view.state().currentScreen).toBe("my-business-kit");
   });
 
+  it("renders the compact command desk hero with a code-built analytics visual", () => {
+    const { container } = renderHome();
+    expect(screen.getByText("Business Command Desk")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Good morning, Thomas" })).toBeTruthy();
+    expect(
+      screen.getByText("Create, store, send, and manage today’s work from one place."),
+    ).toBeTruthy();
+    expect(container.querySelector("[data-testid='home-hero-analytics']")).toBeTruthy();
+  });
+
+  it("does not render the old oversized setup hero ring", () => {
+    renderHome();
+    expect(
+      screen.queryByLabelText(`Business setup ${defaultSetupPercent}% complete`),
+    ).toBeNull();
+  });
+
   it("shows the compact setup chip below 100% and routes to setup", () => {
     const view = renderHome();
     const setupChip = screen.getByRole("button", {
@@ -119,10 +136,10 @@ describe("Home redesign", () => {
     expect(screen.getByRole("button", { name: /More\s*Open My Creations/i })).toBeTruthy();
   });
 
-  it("shows the setup banner when progress is below 100%", () => {
+  it("does not render the old setup banner when progress is below 100%", () => {
     renderHome();
-    expect(screen.getByText(/on track/i)).toBeTruthy();
-    expect(screen.getByText(/Continue setup/i)).toBeTruthy();
+    expect(screen.queryByText(/on track/i)).toBeNull();
+    expect(screen.queryByText(/Continue setup/i)).toBeNull();
   });
 
   it("hides setup controls when progress is 100%", () => {
@@ -141,10 +158,13 @@ describe("Home redesign", () => {
     ).toBeTruthy();
   });
 
-  it("shows the ready-state glance area at 100% setup", () => {
+  it("shows the compact ready-state hero at 100% setup", () => {
     businessProfiles[0].setupPercent = 100;
     renderHome();
-    expect(screen.getByText("Today at a glance")).toBeTruthy();
     expect(screen.getByText("Business ready")).toBeTruthy();
+    expect(
+      screen.getByText("Your workspace is ready. Let’s keep today moving."),
+    ).toBeTruthy();
+    expect(screen.queryByText("Today at a glance")).toBeNull();
   });
 });
