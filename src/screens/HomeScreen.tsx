@@ -159,56 +159,36 @@ export function HomeScreen() {
   const quickActions = [
     {
       label: "Create Estimate",
-      helper: "Build and send",
       icon: FilePlus2,
       tone: "blue",
       action: () => openEstimateBuilder(),
     },
     {
       label: "Create Invoice",
-      helper: "Bill for work",
       icon: ReceiptText,
       tone: "purple",
       action: () => openInvoiceBuilder(),
     },
     {
       label: "Add Customer",
-      helper: "Save contact info",
       icon: UserRoundPlus,
       tone: "green",
       action: () => setCurrentScreen("add-customer"),
     },
     {
-      label: "Calendar & Schedule",
-      helper: "Review appointments",
+      label: "Calendar",
       icon: CalendarDays,
       tone: "orange",
       action: () => setCurrentScreen("calendar"),
     },
     {
-      label: "Create QR Code",
-      helper: "Make scan tools",
+      label: "QR Code",
       icon: QrCode,
       tone: "pink",
       action: () => openCreateTask("Create QR Code"),
     },
     {
-      label: "My Creations",
-      helper: "Open saved work",
-      icon: FolderOpen,
-      tone: "cyan",
-      action: () => setCurrentScreen("workshop-library"),
-    },
-    {
-      label: "File Vault",
-      helper: "Find saved files",
-      icon: FolderOpen,
-      tone: "indigo",
-      action: () => setCurrentScreen("file-vault"),
-    },
-    {
       label: "Business Kit",
-      helper: "Manage brand tools",
       icon: Briefcase,
       tone: "violet",
       action: () => setCurrentScreen("my-business-kit"),
@@ -430,13 +410,7 @@ export function HomeScreen() {
           </div>
         </section>
 
-        <section className="home-stats-section" aria-labelledby="home-stats-title">
-          <div className="home-section-header home-section-header--compact">
-            <div>
-              <h2 id="home-stats-title">Today’s Snapshot</h2>
-              <p>Key work waiting for this business.</p>
-            </div>
-          </div>
+        <section className="home-stats-section" aria-label="Business dashboard stats">
           <div className="home-stat-grid" aria-label="Business dashboard stats">
             {stats.map(({ label, value, hint, icon: Icon, tone, action }) => (
               <button
@@ -459,6 +433,36 @@ export function HomeScreen() {
           </div>
         </section>
 
+        <section className="home-panel home-quick-actions-panel">
+        <div className="home-section-header">
+          <div>
+            <h2>Quick Actions</h2>
+            <p>Jump into the work you use most.</p>
+          </div>
+          <Button variant="ghost" onClick={() => setCurrentScreen("create")}>
+            View all
+          </Button>
+        </div>
+        <div className="home-quick-grid">
+          {quickActions.map(({ label, icon: Icon, tone, action }) => (
+            <button
+              key={label}
+              className={`home-action-card home-tone-${tone}`}
+              onClick={action}
+              aria-label={label}
+            >
+              <span className="home-chip">
+                <Icon size={18} />
+              </span>
+              <span className="home-action-card__copy">
+                <strong>{label}</strong>
+              </span>
+              <ArrowRight className="home-action-card__arrow" size={15} />
+            </button>
+          ))}
+        </div>
+        </section>
+
         {attentionEstimate && (
         <button
           className="home-attention-strip"
@@ -476,37 +480,6 @@ export function HomeScreen() {
           </span>
         </button>
         )}
-
-        <section className="home-panel home-quick-actions-panel">
-        <div className="home-section-header">
-          <div>
-            <h2>Quick Actions</h2>
-            <p>Jump into the work you use most.</p>
-          </div>
-          <Button variant="ghost" onClick={() => setCurrentScreen("create")}>
-            View all
-          </Button>
-        </div>
-        <div className="home-quick-grid">
-          {quickActions.map(({ label, helper, icon: Icon, tone, action }) => (
-            <button
-              key={label}
-              className={`home-action-card home-tone-${tone}`}
-              onClick={action}
-              aria-label={label}
-            >
-              <span className="home-chip">
-                <Icon size={18} />
-              </span>
-              <span className="home-action-card__copy">
-                <strong>{label}</strong>
-                <small>{helper}</small>
-              </span>
-              <ArrowRight className="home-action-card__arrow" size={15} />
-            </button>
-          ))}
-        </div>
-        </section>
 
         <section className="home-panel home-schedule-panel" aria-labelledby="home-schedule-title">
           <div className="home-section-header">

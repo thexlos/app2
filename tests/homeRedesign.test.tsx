@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { businessProfiles } from "../src/data/mock/businessProfiles";
+import { BottomNavigation } from "../src/components/navigation/Navigation";
 import { HomeScreen } from "../src/screens/HomeScreen";
 import { AppStateProvider, useAppState } from "../src/state/AppState";
 
@@ -44,6 +45,21 @@ describe("Home redesign", () => {
     expect(logo).toBeTruthy();
     expect(logo?.getAttribute("src")).toContain("armadesk-logo-mark");
     expect(screen.queryByText("Start Here Helper")).toBeNull();
+  });
+
+  it("keeps the existing bottom navigation labels and class structure", () => {
+    render(
+      <AppStateProvider>
+        <BottomNavigation />
+      </AppStateProvider>,
+    );
+    const bottomNav = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(bottomNav.classList.contains("bottom-nav")).toBe(true);
+    expect(screen.getByRole("button", { name: "Home" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Customers" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Money" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Create" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help" })).toBeTruthy();
   });
 
   it("shows the compact business selector", () => {
@@ -92,9 +108,9 @@ describe("Home redesign", () => {
     expect(view.state().currentScreen).toBe("setup");
   });
 
-  it("renders the Today’s Snapshot stats with state-derived values", () => {
+  it("renders the stats with state-derived values directly under the hero", () => {
     renderHome();
-    expect(screen.getByRole("heading", { name: "Today’s Snapshot" })).toBeTruthy();
+    expect(screen.queryByText("Today’s Snapshot")).toBeNull();
     expect(screen.getByRole("button", { name: "Estimates waiting: 1" })).toBeTruthy();
     expect(
       screen.getByRole("button", { name: "Change order pending: 1" }),
@@ -127,10 +143,8 @@ describe("Home redesign", () => {
       ["Create Estimate", "estimate-builder"],
       ["Create Invoice", "invoice-builder"],
       ["Add Customer", "add-customer"],
-      ["Calendar & Schedule", "calendar"],
-      ["Create QR Code", "create-mode"],
-      ["My Creations", "workshop-library"],
-      ["File Vault", "file-vault"],
+      ["Calendar", "calendar"],
+      ["QR Code", "create-mode"],
       ["Business Kit", "my-business-kit"],
     ] as const;
 
@@ -142,10 +156,33 @@ describe("Home redesign", () => {
         fireEvent.click(screen.getByRole("button", { name: label }));
       });
       expect(view.state().currentScreen).toBe(expectedScreen);
-      if (label === "Create QR Code") {
+      if (label === "QR Code") {
         expect(view.state().selectedCreateTask).toBe("Create QR Code");
       }
     });
+  });
+
+  it("limits the primary quick action grid to the six reference actions", () => {
+    const { container } = renderHome();
+    const quickGrid = container.querySelector(".home-quick-grid");
+    expect(quickGrid?.textContent).toContain("Create Estimate");
+    expect(quickGrid?.textContent).toContain("Create Invoice");
+    expect(quickGrid?.textContent).toContain("Add Customer");
+    expect(quickGrid?.textContent).toContain("Calendar");
+    expect(quickGrid?.textContent).toContain("QR Code");
+    expect(quickGrid?.textContent).toContain("Business Kit");
+    expect(quickGrid?.textContent).not.toContain("My Creations");
+    expect(quickGrid?.textContent).not.toContain("File Vault");
+  });
+
+  it("keeps Needs Attention visible and routes to the estimate review", () => {
+    const view = renderHome();
+    const attentionButton = screen.getByText("Needs attention").closest("button");
+    expect(attentionButton).toBeTruthy();
+    act(() => {
+      fireEvent.click(attentionButton!);
+    });
+    expect(view.state().currentScreen).toBe("estimate-detail");
   });
 
   it("renders Upcoming Schedule with existing schedule data and routes to calendar", () => {

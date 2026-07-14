@@ -283,8 +283,81 @@ Step 6A is complete: Upcoming Schedule and Smart Suggestions now follow the atta
   - cards did not overlap
   - bottom nav did not cover content
 
+## Step 6B completed
+
+Step 6B is complete: the Home middle layout has been corrected so the stats and Quick Actions area follows the locked Home reference image more closely while preserving the existing Home behavior.
+
+## Step 6B changes
+
+- Removed the visible `Today’s Snapshot` heading and helper text.
+- Moved the stat cards directly under the compact hero.
+- Increased stat card sizing and hierarchy so the cards feel like premium dashboard cards instead of thin strips:
+  - two-column phone grid
+  - four-column grid on wider containers
+  - larger icon chips
+  - larger value text
+  - stronger label/status hierarchy
+- Moved `Needs attention` below Quick Actions and before Upcoming Schedule.
+- Corrected the primary Home Quick Actions grid to the six reference actions:
+  - `Create Estimate`
+  - `Create Invoice`
+  - `Add Customer`
+  - `Calendar`
+  - `QR Code`
+  - `Business Kit`
+- Updated Quick Action cards to use a compact horizontal card feel with the icon on the left and short label text beside it.
+- Removed long helper text from the primary Quick Action cards so labels do not crowd the cards.
+- Kept `Calendar`, `QR Code`, and `Business Kit` as the short primary labels requested for this layout.
+
+## Step 6B extra action handling
+
+- `My Creations` and `File Vault` were removed only from the primary Home Quick Actions grid.
+- Their routes and features were not deleted from the app.
+- Those areas remain available elsewhere in the existing app flow.
+
+## Step 6B intentionally not changed
+
+- Upcoming Schedule was not redesigned.
+- Smart Suggestions was not redesigned.
+- Header, business selector, Open Kit shortcut, setup chip, and hero were not redesigned.
+- Bottom navigation was not redesigned.
+- Recent Activity and Recent Creations were not redesigned.
+- Business Kit promo layout was not redesigned.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, money, help, routing, or business logic was changed.
+- No Phase 4 work was started.
+- No iPhone device shell was added inside the app UI.
+
+## Step 6B icons and assets
+
+- Used existing Lucide/editable SVG icons only.
+- Added no new PNG, JPG, AI-generated, stock, or Figma-exported artwork.
+- Did not replace or modify ArmaDesk brand assets.
+
+## Step 6B validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Home tests now cover:
+  - state-derived stats still render
+  - `Today’s Snapshot` no longer appears
+  - the primary Quick Actions grid contains the six requested reference actions
+  - `My Creations` and `File Vault` do not appear in the primary Quick Actions grid
+  - `Needs attention` still renders and routes to the estimate review
+  - Upcoming Schedule still renders
+  - Smart Suggestions still render
+  - header/top/hero behavior remains covered
+  - old setup ring/banner remain absent
+  - old `Start Here Helper` app branding remains absent
+- In-app browser check on `http://127.0.0.1:5176/` passed:
+  - no horizontal overflow in the active app view
+  - four stat cards rendered
+  - six Quick Actions rendered
+  - `Today’s Snapshot` was absent
+  - `My Creations` and `File Vault` were absent from the primary Quick Actions grid
+  - `Needs attention` appeared below Quick Actions and before Upcoming Schedule
+  - Upcoming Schedule and Smart Suggestions remained visible
+
 ## Known follow-up steps
 
-- Later correction pass: exact stats sizing, Quick Actions sizing, and Needs Attention placement.
-- Step 6B: Recent Activity and Recent Creations.
+- Later Home pass: Recent Activity and Recent Creations visual treatment.
 - Step 7: final polish.
