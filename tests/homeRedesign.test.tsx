@@ -128,6 +128,8 @@ describe("Home redesign", () => {
     expect(analytics?.getAttribute("data-badge-value")).toBe("4 active");
     expect(container.querySelector(".home-hero-analytics__platform")).toBeTruthy();
     expect(container.querySelectorAll(".home-hero-analytics__bar")).toHaveLength(5);
+    expect(container.querySelectorAll(".home-hero-analytics__particles span")).toHaveLength(36);
+    expect(container.querySelectorAll(".home-hero-analytics__platform span")).toHaveLength(4);
   });
 
   it("does not render the old oversized setup hero ring", () => {

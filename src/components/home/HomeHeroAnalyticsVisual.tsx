@@ -14,7 +14,7 @@ type HomeHeroAnalyticsVisualProps = {
   };
 };
 
-const particles = Array.from({ length: 28 }, (_, index) => index);
+const particles = Array.from({ length: 36 }, (_, index) => index);
 
 export function HomeHeroAnalyticsVisual({
   metrics,
@@ -35,7 +35,7 @@ export function HomeHeroAnalyticsVisual({
   ];
   const maxValue = Math.max(...bars.map((metric) => metric.value), 1);
   const normalized = bars.map((metric) => {
-    const height = 28 + (metric.value / maxValue) * 62;
+    const height = 34 + (metric.value / maxValue) * 66;
     return {
       ...metric,
       height,
@@ -43,7 +43,7 @@ export function HomeHeroAnalyticsVisual({
   });
   const linePoints = normalized.map((metric, index) => {
     const x = 22 + index * 30;
-    const y = 94 - metric.height * 0.72;
+    const y = 98 - metric.height * 0.78;
     return { x, y };
   });
   const linePath =

@@ -763,13 +763,100 @@ Step 6H is complete: the uploaded `armadesk_home_reference_packet_v1.zip` was us
   - no broken words
   - hero visual reported four input metrics
   - hero visual rendered five chart bars
-  - hero visual rendered 28 particles
+  - hero visual rendered 36 particles
   - hero visual rendered four platform rings
   - hero visual rendered a generated SVG path
   - `+23%` and `vs last week` did not appear
   - Smart Suggestions stayed above the bottom nav
   - Smart Suggestions remained the last Home content child
   - no forbidden extra Home sections appeared
+
+## Step 6I completed
+
+Step 6I is complete: the Home screen received a final visual-detail polish against the reference packet crops without changing the locked Home structure.
+
+## Step 6I reference packet used
+
+- Reused the uploaded `armadesk_home_reference_packet_v1.zip` handoff.
+- Used these crops only as visual references:
+  - `03_business_control_bar_reference.png`
+  - `04_hero_card_reference.png`
+  - `05_stat_cards_reference.png`
+  - `06_quick_actions_reference.png`
+  - `07_upcoming_schedule_reference.png`
+  - `08_smart_suggestions_reference.png`
+  - `09_bottom_nav_reference.png`
+  - `10_hero_chart_visual_reference.png`
+- No reference image, mockup screenshot, phone shell, iOS status bar, dynamic island, or home indicator was pasted into the app UI.
+
+## Step 6I changes
+
+- Polished the connected business control bar proportions:
+  - kept it as one connected glass control bar
+  - restored the subtle internal divider
+  - adjusted the business icon, Open Kit button, and setup ring sizing so the row is less cramped
+- Improved the data-driven hero chart depth:
+  - increased the particle field from 28 to 36 dots
+  - strengthened cyan/blue/purple chart glow
+  - strengthened the generated curved SVG line
+  - deepened the editable platform/ring glow under the bars
+  - kept the truthful `4 active / current work` badge instead of the fake `+23% vs last week`
+- Polished stat card proportions and detail:
+  - stronger neon corner accents
+  - stronger icon-chip glow
+  - clearer value hierarchy while keeping four cards across
+- Polished Quick Action card proportions:
+  - kept exactly six cards
+  - preserved 3 columns × 2 rows at the checked phone widths
+  - strengthened icon/card glow without adding helper text or arrows
+- Polished Upcoming Schedule and Smart Suggestions cards:
+  - tightened bottom clearance so Smart Suggestions stays above the bottom nav
+  - strengthened glass borders, neon glows, date divider, and suggestion icon treatments
+  - kept Smart Suggestions as the last visible Home content section
+- Polished the bottom nav:
+  - retained `Home`, `Customers`, `Create`, `Calendar`, `More`
+  - kept `Money` and `Help` out of the visible primary nav
+  - strengthened the active Home underline/glow, raised Create button glow, and More icon treatment
+
+## Step 6I intentionally not changed
+
+- Home order was not changed:
+  1. Header
+  2. Business control bar
+  3. Hero
+  4. Stat cards
+  5. Quick Actions
+  6. Upcoming Schedule
+  7. Smart Suggestions
+  8. Bottom nav
+- No visible content was added below Smart Suggestions except the fixed bottom nav.
+- No `Needs Attention`, `My Business Kit` promo, `Recent Activity`, `Recent Creations`, `File Vault` primary quick action, or `My Creations` primary quick action was restored.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, routing, state, or business logic was changed.
+- No route was removed and no app functionality was deleted.
+- No Phase 4 work was started.
+
+## Step 6I validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Home tests now additionally verify:
+  - the data-driven hero visual renders 36 particles
+  - the data-driven hero visual renders four platform rings
+- In-app browser checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - no broken words
+  - visible Home content order matched the locked order
+  - Smart Suggestions stayed above the bottom nav
+  - Smart Suggestions remained the last Home content child
+  - no forbidden Home sections or old action clutter appeared
+  - hero visual reported four input metrics
+  - hero visual rendered five chart bars
+  - hero visual rendered 36 particles
+  - hero visual rendered four platform rings
+  - hero visual rendered a generated SVG path
+  - `+23%` and `vs last week` did not appear
+  - bottom nav labels measured as `Home`, `Customers`, `Create`, `Calendar`, `More`
+  - `Money` and `Help` were absent from the visible primary nav
 
 ## Known follow-up steps
 
