@@ -858,6 +858,95 @@ Step 6I is complete: the Home screen received a final visual-detail polish again
   - bottom nav labels measured as `Home`, `Customers`, `Create`, `Calendar`, `More`
   - `Money` and `Help` were absent from the visible primary nav
 
+## Step 6K completed
+
+Step 6K is complete: the Home screen was aligned against the uploaded `armadesk_home_exact_handoff_v1.zip` measurement handoff using the packet as a Figma-style sizing/spec source.
+
+## Step 6K measurement packet used
+
+- Extracted and reviewed:
+  - `CODEX_IMPLEMENTATION_PROMPT_STEP_6K.txt`
+  - `ARMA_DESK_HOME_EXACT_SPEC_v1.md`
+  - `home_exact_measurements_v1.json`
+  - `home_design_tokens_v1.css`
+  - `13_measurement_overlay_v1.png`
+- Used these reference crops only as visual measurement references:
+  - `01_app_screen_reference_crop.png`
+  - `03_business_control_bar_reference.png`
+  - `04_hero_card_reference.png`
+  - `05_stat_cards_reference.png`
+  - `06_quick_actions_reference.png`
+  - `07_upcoming_schedule_reference.png`
+  - `08_smart_suggestions_reference.png`
+  - `09_bottom_nav_reference.png`
+  - `10_hero_chart_visual_reference.png`
+- No reference PNG, phone shell, iOS status bar, dynamic island, or home indicator was pasted into the app UI.
+
+## Step 6K changes
+
+- Added measurement-derived Home sizing variables for the locked 390px, 402px, and 430px phone-width targets.
+- Re-aligned the Home shell top padding, side padding, section gaps, and content max width to the measured handoff.
+- Tightened the connected business bar to the handoff height while preserving the existing business selector, Open Kit route, and setup route.
+- Locked the hero card to the measured height while keeping the existing data-driven hero analytics visual.
+- Locked stat cards to the measured one-row dashboard sizing:
+  - four stat cards
+  - measured card heights
+  - compact label/value/trend hierarchy
+- Locked Quick Actions to the measured three-column by two-row structure:
+  - six cards only
+  - measured card heights
+  - no broken action labels
+- Locked Upcoming Schedule and Smart Suggestions cards to the measured card heights and spacing.
+- Corrected the bottom nav sizing and grid row behavior so the raised Create button no longer pushes the other nav labels below the nav container.
+- Changed the Home content width rule from viewport-width-based to parent-width-based so short desktop browser viewports with a scrollbar do not create horizontal overflow.
+
+## Step 6K intentionally not changed
+
+- Home order was not changed:
+  1. Header
+  2. Connected business control bar
+  3. Hero card
+  4. Four stat cards
+  5. Quick Actions header
+  6. Six Quick Action cards
+  7. Upcoming Schedule header
+  8. Schedule card
+  9. Smart Suggestions header
+  10. Two Smart Suggestion cards
+  11. Bottom nav
+- The hero chart remains functional and data-driven:
+  - four metric inputs
+  - five generated bars
+  - one generated SVG line path
+  - 36 particle spans
+  - four platform/ring spans
+  - truthful `4 active / current work` badge
+- No fake `+23%` / `vs last week` badge was restored.
+- No visible content was added below Smart Suggestions except the fixed bottom nav.
+- `Needs Attention`, `My Business Kit`, `Recent Activity`, `Recent Creations`, `File Vault`, and `My Creations` were not restored into the visible Home flow.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, routing, state, or business logic was changed.
+- No route was removed and no app functionality was deleted.
+- No Phase 4 work was started.
+
+## Step 6K validation
+
+- Browser checks passed at 390px, 402px, and 430px.
+- Short-height browser check passed at 390px × 844px.
+- Measurement highlights:
+  - 430px: header ~45px, business bar ~56px, hero ~172px, stats ~125px, Quick Action cards ~59px, schedule card ~76px, suggestion cards ~67px, nav ~63px.
+  - 390px: header ~41px, business bar ~50px, hero ~156px, stats ~114px, Quick Action cards ~54px, schedule card ~69px, suggestion cards ~61px, nav ~57px.
+- Guard checks passed:
+  - no horizontal overflow
+  - no broken action labels
+  - visible Home order matched the handoff
+  - Smart Suggestions remained the last Home content child
+  - Smart Suggestions was not covered by the bottom nav
+  - no forbidden Home sections appeared
+  - bottom nav labels measured as `Home`, `Customers`, `Create`, `Calendar`, `More`
+  - `Money` and `Help` were absent from the visible primary nav
+  - hero visual reported four input metrics
+  - hero visual rendered five chart bars, 36 particles, four platform/ring spans, and one generated SVG path
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

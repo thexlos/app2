@@ -3230,3 +3230,536 @@
     height: 31px;
   }
 }
+
+/* Step 6K: measurement-based Home match pass from armadesk_home_exact_handoff_v1. */
+.screen.home-screen {
+  --home-ref-side-pad: clamp(13px, 3.3vw, 14px);
+  --home-ref-header-h: clamp(41px, 10.47vw, 45px);
+  --home-ref-business-h: clamp(50px, 12.93vw, 56px);
+  --home-ref-hero-h: clamp(156px, 40.03vw, 172px);
+  --home-ref-stat-h: clamp(114px, 29.16vw, 125px);
+  --home-ref-quick-card-h: clamp(54px, 13.74vw, 59px);
+  --home-ref-schedule-h: clamp(69px, 17.6vw, 76px);
+  --home-ref-suggestion-h: clamp(61px, 15.53vw, 67px);
+  --home-ref-bottom-nav-h: clamp(57px, 14.6vw, 63px);
+  --home-ref-gap-header-business: clamp(5px, 1.38vw, 6px);
+  --home-ref-gap-business-hero: clamp(14px, 3.58vw, 15px);
+  --home-ref-gap-hero-stats: clamp(10px, 2.47vw, 11px);
+  --home-ref-gap-stats-quick: clamp(14px, 3.58vw, 15px);
+  --home-ref-gap-title-grid: 3px;
+  --home-ref-gap-quick-schedule: clamp(10px, 2.6vw, 11px);
+  --home-ref-gap-schedule-suggestions: clamp(13px, 3.44vw, 15px);
+  --home-ref-top-pad: clamp(23px, 5.8vw, 25px);
+  padding: var(--home-ref-top-pad) 0 calc(var(--home-ref-bottom-nav-h) + 32px + env(safe-area-inset-bottom, 0px));
+}
+
+.home-content {
+  max-width: 430px;
+  padding-inline: var(--home-ref-side-pad);
+}
+
+.home-app-header {
+  min-height: var(--home-ref-header-h);
+  margin-top: 0;
+}
+
+.home-brand {
+  gap: clamp(8px, 2.3vw, 10px);
+}
+
+.home-brand__logo {
+  width: clamp(36px, 9.2vw, 40px);
+  height: clamp(36px, 9.2vw, 40px);
+  border-radius: 12px;
+}
+
+.home-brand strong {
+  font-size: clamp(1.1rem, 4.9vw, 1.35rem);
+  letter-spacing: -0.045em;
+}
+
+.home-header-actions {
+  gap: clamp(7px, 1.9vw, 9px);
+}
+
+.home-icon-button {
+  width: clamp(37px, 9.55vw, 41px);
+  height: clamp(37px, 9.55vw, 41px);
+}
+
+.home-top-utility-row {
+  min-height: var(--home-ref-business-h);
+  grid-template-columns: minmax(0, 1fr) 1px clamp(82px, 20.5vw, 88px) clamp(44px, 10.7vw, 46px);
+  gap: clamp(5px, 1.42vw, 6px);
+  margin-top: var(--home-ref-gap-header-business);
+  padding: clamp(5px, 1.4vw, 6px) clamp(8px, 2.1vw, 9px);
+  border-radius: clamp(18px, 5.1vw, 22px);
+}
+
+.business-switcher.home-business-switcher,
+.business-switcher.home-business-switcher.business-switcher--compact {
+  min-height: calc(var(--home-ref-business-h) - 12px);
+}
+
+.business-switcher.home-business-switcher .business-switcher__body {
+  gap: clamp(7px, 1.9vw, 8px);
+}
+
+.business-switcher.home-business-switcher .icon-box {
+  width: clamp(34px, 9.3vw, 40px);
+  height: clamp(34px, 9.3vw, 40px);
+  flex-basis: clamp(34px, 9.3vw, 40px);
+}
+
+.business-switcher.home-business-switcher strong {
+  font-size: clamp(0.8rem, 3.35vw, 0.92rem);
+}
+
+.home-business-control-divider {
+  height: clamp(38px, 10vw, 43px);
+}
+
+.home-open-kit-button {
+  width: clamp(82px, 20.5vw, 88px);
+  min-height: clamp(34px, 8.8vw, 38px);
+  border-radius: 12px;
+  font-size: clamp(0.62rem, 2.55vw, 0.69rem);
+}
+
+.home-setup-control {
+  width: clamp(44px, 10.7vw, 46px);
+  min-height: calc(var(--home-ref-business-h) - 8px);
+  gap: 1px;
+}
+
+.home-setup-ring,
+.home-setup-ring svg {
+  width: clamp(38px, 9.5vw, 41px);
+  height: clamp(38px, 9.5vw, 41px);
+}
+
+.home-setup-control > span:last-child {
+  font-size: clamp(0.5rem, 1.35vw, 0.56rem);
+}
+
+.home-hero {
+  height: var(--home-ref-hero-h);
+  min-height: 0;
+  grid-template-columns: minmax(0, 0.64fr) minmax(clamp(198px, 50.9vw, 219px), 1.36fr);
+  gap: clamp(7px, 2.1vw, 9px);
+  margin-top: var(--home-ref-gap-business-hero);
+  padding: clamp(13px, 3.7vw, 16px);
+  border-radius: clamp(18px, 5vw, 21px);
+}
+
+.home-hero__copy h1 {
+  margin-bottom: clamp(7px, 2.2vw, 9px);
+}
+
+.home-hero__copy h1 span {
+  font-size: clamp(1rem, 4.3vw, 1.18rem);
+}
+
+.home-hero__copy h1 strong {
+  font-size: clamp(1.95rem, 8.75vw, 2.45rem);
+}
+
+.home-hero__copy p {
+  max-width: clamp(9rem, 34vw, 10.8rem);
+  font-size: clamp(0.7rem, 3.05vw, 0.82rem);
+  line-height: 1.36;
+}
+
+.home-hero__action {
+  min-height: clamp(29px, 7.8vw, 34px);
+  margin-top: clamp(8px, 2.8vw, 12px);
+  padding: 0 clamp(11px, 3.25vw, 14px);
+  font-size: clamp(0.72rem, 3vw, 0.82rem);
+}
+
+.home-hero-analytics {
+  align-self: center;
+  width: 100%;
+  min-height: clamp(129px, 33vw, 142px);
+}
+
+.home-hero-analytics__badge {
+  top: clamp(32px, 9vw, 39px);
+  left: clamp(6px, 1.9vw, 8px);
+}
+
+.home-hero-analytics__bars {
+  left: clamp(29px, 8.1vw, 35px);
+  right: clamp(5px, 1.7vw, 7px);
+  bottom: clamp(23px, 6.4vw, 27px);
+  height: clamp(78px, 20.9vw, 90px);
+}
+
+.home-hero-analytics__platform {
+  left: clamp(8px, 2.8vw, 12px);
+  right: -10px;
+  bottom: -6px;
+  height: clamp(60px, 16.2vw, 70px);
+}
+
+.home-stats-section {
+  margin-top: var(--home-ref-gap-hero-stats);
+}
+
+.home-stat-grid {
+  gap: clamp(8px, 2.95vw, 13px);
+}
+
+.home-stat-card {
+  min-height: var(--home-ref-stat-h);
+  padding: clamp(11px, 3.35vw, 14px) clamp(5px, 1.9vw, 8px) clamp(9px, 2.8vw, 12px);
+  border-radius: clamp(18px, 4.8vw, 21px);
+  gap: clamp(4px, 1.4vw, 6px);
+}
+
+.home-stat-card__icon {
+  width: clamp(38px, 11.4vw, 49px);
+  height: clamp(38px, 11.4vw, 49px);
+  border-radius: clamp(12px, 3.5vw, 15px);
+}
+
+.home-stat-card__label {
+  margin-top: clamp(2px, 1.1vw, 5px);
+  font-size: clamp(0.68rem, 3.25vw, 0.82rem);
+}
+
+.home-stat-card strong {
+  font-size: clamp(1.46rem, 7.5vw, 2rem);
+}
+
+.home-stat-card__trend {
+  font-size: clamp(0.52rem, 2.45vw, 0.66rem);
+}
+
+.home-quick-actions-panel {
+  margin-top: var(--home-ref-gap-stats-quick);
+}
+
+.home-section-header {
+  min-height: clamp(18px, 4.65vw, 20px);
+  margin-bottom: var(--home-ref-gap-title-grid);
+}
+
+.home-section-header h2 {
+  font-size: clamp(1rem, 5.4vw, 1.28rem);
+  line-height: 1;
+}
+
+.home-screen .btn--ghost {
+  min-height: clamp(18px, 4.65vw, 20px);
+  font-size: clamp(0.78rem, 4.1vw, 0.98rem);
+  line-height: 1;
+}
+
+.home-quick-grid {
+  gap: clamp(8px, 2.1vw, 9px) clamp(10px, 3.05vw, 13px);
+}
+
+.home-action-card {
+  min-height: var(--home-ref-quick-card-h);
+  grid-template-columns: clamp(30px, 9.3vw, 40px) minmax(0, 1fr);
+  gap: clamp(7px, 2.2vw, 10px);
+  padding: clamp(8px, 2.35vw, 10px) clamp(8px, 2.6vw, 11px);
+  border-radius: clamp(14px, 4.2vw, 18px);
+}
+
+.home-action-card .home-chip {
+  width: clamp(31px, 9.3vw, 40px);
+  height: clamp(31px, 9.3vw, 40px);
+  border-radius: clamp(10px, 3.3vw, 14px);
+}
+
+.home-action-card strong {
+  font-size: clamp(0.64rem, 3.15vw, 0.8rem);
+  line-height: 1.15;
+}
+
+.home-schedule-panel {
+  margin-top: var(--home-ref-gap-quick-schedule);
+}
+
+.home-suggestions-panel {
+  margin-top: var(--home-ref-gap-schedule-suggestions);
+}
+
+.home-schedule-card {
+  min-height: var(--home-ref-schedule-h);
+  grid-template-columns: clamp(50px, 14vw, 60px) auto minmax(0, 1fr) auto;
+  gap: clamp(8px, 2.55vw, 11px);
+  padding: clamp(8px, 2.8vw, 12px) clamp(10px, 3.25vw, 14px);
+  border-radius: clamp(15px, 4.4vw, 19px);
+}
+
+.home-schedule-date {
+  width: clamp(48px, 13.5vw, 58px);
+  min-height: clamp(55px, 14.9vw, 64px);
+  padding: clamp(5px, 1.8vw, 7px);
+}
+
+.home-schedule-date span {
+  font-size: clamp(0.58rem, 2.6vw, 0.72rem);
+}
+
+.home-schedule-date strong {
+  font-size: clamp(1.35rem, 7.2vw, 1.9rem);
+}
+
+.home-schedule-divider {
+  height: clamp(50px, 13.2vw, 57px);
+}
+
+.home-schedule-main strong {
+  font-size: clamp(0.88rem, 4.35vw, 1.05rem);
+}
+
+.home-schedule-main span {
+  font-size: clamp(0.64rem, 3.25vw, 0.78rem);
+}
+
+.home-schedule-main small {
+  padding: 2px clamp(8px, 2.1vw, 9px);
+  font-size: clamp(0.6rem, 2.8vw, 0.72rem);
+}
+
+.home-schedule-side {
+  min-width: clamp(60px, 16vw, 68px);
+  gap: clamp(5px, 1.65vw, 7px);
+  font-size: clamp(0.58rem, 2.65vw, 0.7rem);
+}
+
+.home-schedule-side .home-chip {
+  width: clamp(36px, 11.6vw, 50px);
+  height: clamp(36px, 11.6vw, 50px);
+}
+
+.home-suggestion-grid {
+  gap: clamp(9px, 4.55vw, 19px);
+}
+
+.home-suggestion-card,
+.home-suggestion-card__main {
+  min-height: var(--home-ref-suggestion-h);
+}
+
+.home-suggestion-card {
+  border-radius: clamp(15px, 4.4vw, 19px);
+}
+
+.home-suggestion-card__main {
+  grid-template-columns: clamp(40px, 11.7vw, 50px) minmax(0, 1fr) auto;
+  gap: clamp(8px, 2.7vw, 11px);
+  padding: clamp(8px, 2.8vw, 12px);
+}
+
+.home-suggestion-card .home-chip {
+  width: clamp(39px, 11.6vw, 50px);
+  height: clamp(39px, 11.6vw, 50px);
+}
+
+.home-suggestion-card strong {
+  font-size: clamp(0.72rem, 3.65vw, 0.9rem);
+}
+
+.home-suggestion-card small {
+  font-size: clamp(0.61rem, 3.05vw, 0.74rem);
+}
+
+@media (max-width: 400px) {
+  .home-hero {
+    grid-template-columns: minmax(0, 0.62fr) minmax(198px, 1.38fr);
+  }
+
+  .home-hero__copy p {
+    max-width: 8.8rem;
+  }
+
+  .home-action-card strong,
+  .home-suggestion-card strong {
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Step 6K correction: force measured component boxes over earlier Home pass rules. */
+.home-content {
+  width: min(100%, 430px);
+}
+
+.home-top-utility-row {
+  height: var(--home-ref-business-h);
+  min-height: 0;
+  padding-block: clamp(4px, 1.15vw, 5px);
+}
+
+.business-switcher.home-business-switcher,
+.business-switcher.home-business-switcher.business-switcher--compact {
+  min-height: calc(var(--home-ref-business-h) - clamp(8px, 2.3vw, 10px));
+}
+
+.home-setup-control {
+  min-height: calc(var(--home-ref-business-h) - clamp(8px, 2.3vw, 10px));
+}
+
+.home-stats-section {
+  height: var(--home-ref-stat-h);
+}
+
+.home-stat-grid {
+  height: 100%;
+}
+
+.home-stat-card {
+  height: var(--home-ref-stat-h);
+  min-height: 0;
+  align-content: start;
+  gap: clamp(3px, 0.9vw, 4px);
+  padding: clamp(9px, 2.65vw, 11px) clamp(5px, 1.65vw, 7px) clamp(8px, 2.15vw, 9px);
+}
+
+.home-stat-card__icon {
+  width: clamp(35px, 9.7vw, 42px);
+  height: clamp(35px, 9.7vw, 42px);
+}
+
+.home-stat-card__label {
+  font-size: clamp(0.66rem, 2.95vw, 0.76rem);
+}
+
+.home-stat-card strong {
+  font-size: clamp(1.35rem, 6.6vw, 1.78rem);
+}
+
+.home-stat-card__trend {
+  font-size: clamp(0.52rem, 2.25vw, 0.62rem);
+}
+
+.home-quick-actions-panel .home-section-header,
+.home-schedule-panel .home-section-header,
+.home-suggestions-panel .home-section-header {
+  height: clamp(18px, 4.65vw, 20px);
+  min-height: 0;
+  margin-bottom: var(--home-ref-gap-title-grid);
+}
+
+.home-quick-actions-panel .home-section-header h2,
+.home-schedule-panel .home-section-header h2,
+.home-suggestions-panel .home-section-header h2,
+.home-quick-actions-panel .btn--ghost,
+.home-schedule-panel .btn--ghost,
+.home-suggestions-panel .btn--ghost {
+  height: clamp(18px, 4.65vw, 20px);
+  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.home-action-card {
+  height: var(--home-ref-quick-card-h);
+  min-height: 0;
+  grid-template-columns: clamp(32px, 9vw, 39px) minmax(0, 1fr);
+  gap: clamp(7px, 2vw, 9px);
+  padding: clamp(7px, 2.1vw, 9px) clamp(8px, 2.35vw, 10px);
+}
+
+.home-action-card .home-chip {
+  width: clamp(32px, 8.8vw, 38px);
+  height: clamp(32px, 8.8vw, 38px);
+}
+
+.home-action-card strong {
+  font-size: clamp(0.64rem, 2.95vw, 0.75rem);
+  line-height: 1.14;
+}
+
+.home-action-card__copy {
+  min-width: 0;
+}
+
+.home-schedule-card {
+  height: var(--home-ref-schedule-h);
+  min-height: 0;
+  padding: clamp(7px, 2.05vw, 9px) clamp(10px, 3.05vw, 13px);
+}
+
+.home-schedule-date {
+  width: clamp(47px, 12.8vw, 55px);
+  min-height: clamp(51px, 13.3vw, 57px);
+  padding: clamp(4px, 1.45vw, 6px);
+}
+
+.home-schedule-date strong {
+  font-size: clamp(1.28rem, 6.35vw, 1.7rem);
+}
+
+.home-schedule-divider {
+  height: clamp(45px, 12vw, 52px);
+}
+
+.home-schedule-main {
+  gap: 2px;
+}
+
+.home-schedule-side .home-chip {
+  width: clamp(34px, 9.3vw, 40px);
+  height: clamp(34px, 9.3vw, 40px);
+}
+
+.home-suggestion-card,
+.home-suggestion-card__main {
+  height: var(--home-ref-suggestion-h);
+  min-height: 0;
+}
+
+.home-suggestion-card__main {
+  grid-template-columns: clamp(38px, 9.8vw, 42px) minmax(0, 1fr) auto;
+  gap: clamp(7px, 2.2vw, 9px);
+  padding: clamp(7px, 2.05vw, 9px);
+}
+
+.home-suggestion-card .home-chip {
+  width: clamp(38px, 9.8vw, 42px);
+  height: clamp(38px, 9.8vw, 42px);
+}
+
+.home-suggestion-card strong {
+  font-size: clamp(0.7rem, 3.25vw, 0.82rem);
+  line-height: 1.18;
+}
+
+.home-suggestion-card small {
+  margin-top: 2px;
+  font-size: clamp(0.6rem, 2.8vw, 0.7rem);
+}
+
+@media (max-width: 400px) {
+  .home-action-card {
+    grid-template-columns: 32px minmax(0, 1fr);
+    padding-inline: 8px;
+  }
+
+  .home-action-card strong {
+    font-size: 0.63rem;
+  }
+
+  .home-suggestion-card__main {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 410px) {
+  .home-action-card {
+    grid-template-columns: clamp(29px, 8vw, 33px) minmax(0, 1fr);
+    gap: clamp(5px, 1.55vw, 7px);
+  }
+
+  .home-action-card .home-chip {
+    width: clamp(30px, 8vw, 33px);
+    height: clamp(30px, 8vw, 33px);
+  }
+}

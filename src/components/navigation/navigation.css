@@ -193,3 +193,55 @@
     height: 64px;
   }
 }
+
+/* Step 6K: measured bottom nav sizing from armadesk_home_exact_handoff_v1. */
+.bottom-nav {
+  width: min(calc(100% - clamp(13px, 3.3vw, 14px)), 416px);
+  height: clamp(57px, 14.6vw, 63px);
+  bottom: max(10px, env(safe-area-inset-bottom));
+  grid-template-rows: 1fr;
+  align-items: stretch;
+  padding: clamp(5px, 1.55vw, 7px) clamp(9px, 2.7vw, 12px) clamp(5px, 1.65vw, 7px);
+  border-radius: clamp(23px, 7vw, 30px);
+  overflow: visible;
+}
+
+.bottom-nav__item {
+  height: 100%;
+  min-height: 0;
+  gap: clamp(2px, 0.7vw, 3px);
+  font-size: clamp(0.62rem, 3.05vw, 0.78rem);
+  padding: 0 clamp(3px, 1.35vw, 6px);
+}
+
+.bottom-nav__icon-wrap {
+  width: clamp(24px, 6.7vw, 29px);
+  height: clamp(24px, 6.7vw, 29px);
+}
+
+.bottom-nav__item--active:not(.bottom-nav__item--create)::before {
+  width: clamp(28px, 7.8vw, 34px);
+  bottom: -1px;
+}
+
+.bottom-nav__item--create {
+  height: 100%;
+  min-height: 0;
+  transform: translateY(clamp(-28px, -7vw, -25px));
+}
+
+.bottom-nav__item--create .bottom-nav__icon-wrap {
+  width: clamp(58px, 15vw, 65px);
+  height: clamp(58px, 15vw, 65px);
+}
+
+@media (max-width: 390px) {
+  .bottom-nav {
+    width: min(calc(100% - 13px), 377px);
+  }
+
+  .bottom-nav__item--create .bottom-nav__icon-wrap {
+    width: 58px;
+    height: 58px;
+  }
+}
