@@ -947,6 +947,92 @@ Step 6K is complete: the Home screen was aligned against the uploaded `armadesk_
   - hero visual reported four input metrics
   - hero visual rendered five chart bars, 36 particles, four platform/ring spans, and one generated SVG path
 
+## Phase 2B hero analytics visual handoff completed
+
+Phase 2B is complete: the Home hero analytics visual was refined against the uploaded `armadesk_phase2b_hero_visual_handoff_v1.zip` packet and the addendum animation requirements.
+
+## Phase 2B reference used
+
+- Extracted and reviewed the handoff packet.
+- Used `approved_hero_design_reference.png` as the visual source of truth for the hero analytics visual.
+- The reference image was not pasted as a static chart or flat UI.
+- The app continues to render the chart with React, CSS, and SVG.
+
+## Phase 2B changes
+
+- Rebuilt the hero analytics visual around exactly four metric bars:
+  1. `Estimates`
+  2. `Invoices`
+  3. `Customers`
+  4. `Tasks`
+- Each bar uses the same current Home stat values shown in the visible stat cards.
+- Bar heights are normalized with:
+  - `maxValue = Math.max(...metricValues, 1)`
+  - a minimum visible bar height so low values still render
+  - a maximum display height so the visual stays compact inside the hero
+- The glowing SVG line graph is generated from the normalized bar-top points.
+- Each metric renders a compact futuristic callout/pin with the metric label and current value.
+- Replaced the older hero badge behavior with a truthful total active work summary:
+  - `13 active`
+  - `work items`
+- Added subtle professional animation:
+  - bars rise from the platform with staggered timing
+  - the SVG line draws across the bars
+  - callouts and pins fade/slide into place
+  - the platform/glow pulses subtly after load
+- Added reduced-motion protection with a `prefers-reduced-motion: reduce` override.
+- Tightened the hero split at phone widths so the existing left greeting/CTA and the chart both stay inside the hero card.
+
+## Phase 2B intentionally not changed
+
+- Home section order was not changed:
+  1. Header
+  2. Connected business control bar
+  3. Hero card
+  4. Four stat cards
+  5. Quick Actions header
+  6. Six Quick Action cards
+  7. Upcoming Schedule header
+  8. Schedule card
+  9. Smart Suggestions header
+  10. Two Smart Suggestion cards
+  11. Bottom nav
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, routing, state, or business logic was changed.
+- No old Home sections were restored.
+- No fake `+23%`, `vs last week`, fake revenue, or fake growth claims were introduced.
+- No static screenshot UI, iPhone shell, status bar, dynamic island, or home indicator was added.
+- No Phase 4 work was started.
+- No deployment was performed.
+
+## Phase 2B validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Home tests now cover:
+  - hero greeting and `View Insights`
+  - four hero analytics bars
+  - locked bar order: `Estimates`, `Invoices`, `Customers`, `Tasks`
+  - values sourced from current Home stat data
+  - normalized bar-height metadata
+  - generated SVG line and point markers
+  - line source marked as normalized bar-top points
+  - four callouts mapped to the same metric categories and values
+  - total active work badge
+  - fake `+23%` / `vs last week` remaining absent
+  - reduced-motion-safe marker
+  - locked Home order ending after Smart Suggestions
+- In-app browser checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - hero copy stayed inside the hero card
+  - analytics visual stayed inside the hero card
+  - callouts stayed inside the analytics visual
+  - four bars rendered in the correct order
+  - SVG line rendered with four points
+  - fake growth text did not render
+  - Home order remained locked
+  - Smart Suggestions remained the last Home content child
+  - console error count was zero
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

@@ -120,16 +120,100 @@ describe("Home redesign", () => {
     expect(screen.getByRole("button", { name: /View Insights/i })).toBeTruthy();
     expect(screen.queryByText("+23%")).toBeNull();
     expect(screen.queryByText("vs last week")).toBeNull();
-    expect(screen.getByText("4 active")).toBeTruthy();
-    expect(screen.getByText("current work")).toBeTruthy();
+    expect(screen.getByText("13 active")).toBeTruthy();
+    expect(screen.getByText("work items")).toBeTruthy();
     const analytics = container.querySelector("[data-testid='home-hero-analytics']");
     expect(analytics).toBeTruthy();
     expect(analytics?.getAttribute("data-metric-count")).toBe("4");
-    expect(analytics?.getAttribute("data-badge-value")).toBe("4 active");
+    expect(analytics?.getAttribute("data-bar-count")).toBe("4");
+    expect(analytics?.getAttribute("data-categories")).toBe(
+      "Estimates,Invoices,Customers,Tasks",
+    );
+    expect(analytics?.getAttribute("data-line-source")).toBe(
+      "normalized-bar-top-points",
+    );
+    expect(analytics?.getAttribute("data-value-source")).toBe(
+      "current-home-stat-values",
+    );
+    expect(analytics?.getAttribute("data-animation")).toBe("bars-line-callouts");
+    expect(analytics?.getAttribute("data-reduced-motion-safe")).toBe("true");
+    expect(analytics?.getAttribute("data-badge-value")).toBe("13 active");
+    expect(analytics?.getAttribute("data-badge-label")).toBe("work items");
     expect(container.querySelector(".home-hero-analytics__platform")).toBeTruthy();
-    expect(container.querySelectorAll(".home-hero-analytics__bar")).toHaveLength(5);
+    expect(container.querySelectorAll(".home-hero-analytics__bar")).toHaveLength(4);
+    expect(container.querySelectorAll(".home-hero-analytics__bar-stack")).toHaveLength(
+      4,
+    );
+    expect(container.querySelectorAll(".home-hero-analytics__callout")).toHaveLength(
+      4,
+    );
+    expect(container.querySelector(".home-hero-analytics__line")).toBeTruthy();
+    expect(container.querySelector(".home-hero-analytics__line-path")).toBeTruthy();
+    expect(container.querySelectorAll(".home-hero-analytics__line-point")).toHaveLength(
+      4,
+    );
     expect(container.querySelectorAll(".home-hero-analytics__particles span")).toHaveLength(36);
     expect(container.querySelectorAll(".home-hero-analytics__platform span")).toHaveLength(4);
+    const bars = Array.from(container.querySelectorAll(".home-hero-analytics__bar"));
+    expect(bars.map((bar) => bar.getAttribute("data-category"))).toEqual([
+      "Estimates",
+      "Invoices",
+      "Customers",
+      "Tasks",
+    ]);
+    expect(bars.map((bar) => bar.getAttribute("data-value"))).toEqual([
+      "4",
+      "2",
+      "3",
+      "4",
+    ]);
+    const stacks = Array.from(
+      container.querySelectorAll(".home-hero-analytics__bar-stack"),
+    );
+    expect(stacks.map((stack) => stack.getAttribute("data-category"))).toEqual([
+      "Estimates",
+      "Invoices",
+      "Customers",
+      "Tasks",
+    ]);
+    expect(stacks.map((stack) => stack.getAttribute("data-value"))).toEqual([
+      "4",
+      "2",
+      "3",
+      "4",
+    ]);
+    expect(stacks.map((stack) => stack.getAttribute("data-height-percent"))).toEqual(
+      ["68", "46", "57", "68"],
+    );
+    const linePoints = analytics?.getAttribute("data-line-points")?.split("|") ?? [];
+    expect(linePoints).toHaveLength(4);
+    expect(linePoints[0]).toBe("25:40.96");
+    expect(linePoints.at(-1)).toBe("145:40.96");
+    expect(
+      container
+        .querySelector(".home-hero-analytics__line")
+        ?.getAttribute("data-line-source"),
+    ).toBe("normalized-bar-top-points");
+    expect(
+      container
+        .querySelector(".home-hero-analytics__line-path")
+        ?.getAttribute("pathLength"),
+    ).toBe("1");
+    const callouts = Array.from(
+      container.querySelectorAll(".home-hero-analytics__callout"),
+    );
+    expect(callouts.map((callout) => callout.getAttribute("data-category"))).toEqual([
+      "Estimates",
+      "Invoices",
+      "Customers",
+      "Tasks",
+    ]);
+    expect(callouts.map((callout) => callout.getAttribute("data-value"))).toEqual([
+      "4",
+      "2",
+      "3",
+      "4",
+    ]);
   });
 
   it("does not render the old oversized setup hero ring", () => {
