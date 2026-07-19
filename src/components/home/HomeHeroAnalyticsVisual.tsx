@@ -5,28 +5,21 @@ import {
   UsersRound,
 } from "lucide-react";
 import type { ComponentType, CSSProperties, SVGProps } from "react";
+import heroPlatformBase from "../../assets/home/hero-3d-platform-base.webp";
+import type {
+  HeroAnalyticsMetric,
+  HomeHeroAnalyticsVisualProps,
+} from "./heroAnalyticsTypes";
 
-export type HeroAnalyticsMetric = {
-  label: "Estimates" | "Invoices" | "Customers" | "Tasks";
-  value: number;
-  tone: "blue" | "green" | "purple" | "orange";
-};
+export type { HeroAnalyticsMetric } from "./heroAnalyticsTypes";
 
-type HomeHeroAnalyticsVisualProps = {
-  metrics: HeroAnalyticsMetric[];
-  badge: {
-    value: string;
-    label: string;
-  };
-};
-
-const particles = Array.from({ length: 36 }, (_, index) => index);
 const orderedLabels: HeroAnalyticsMetric["label"][] = [
   "Estimates",
   "Invoices",
   "Customers",
   "Tasks",
 ];
+
 const fallbackTones: Record<
   HeroAnalyticsMetric["label"],
   HeroAnalyticsMetric["tone"]
@@ -36,6 +29,7 @@ const fallbackTones: Record<
   Customers: "blue",
   Tasks: "green",
 };
+
 const metricIcons: Record<
   HeroAnalyticsMetric["label"],
   ComponentType<SVGProps<SVGSVGElement>>
@@ -45,6 +39,16 @@ const metricIcons: Record<
   Customers: UsersRound,
   Tasks: ClipboardCheck,
 };
+
+const geometry = {
+  viewBoxWidth: 420,
+  viewBoxHeight: 210,
+  barCenters: [70, 158, 246, 334],
+  barBaseY: 172,
+  chartTopY: 30,
+  minHeight: 48,
+  maxHeight: 122,
+} as const;
 
 function buildSmoothPath(points: { x: number; y: number }[]) {
   if (points.length === 0) return "";
@@ -69,150 +73,119 @@ export function HomeHeroAnalyticsVisual({
     const metric = metrics.find((candidate) => candidate.label === label);
     return {
       label,
-      value: Math.max(0, metric?.value ?? 0),
+      value: Math.max(0, Number(metric?.value ?? 0)),
       tone: metric?.tone ?? fallbackTones[label],
     };
   });
+
   const maxValue = Math.max(...orderedMetrics.map((metric) => metric.value), 1);
-  const minVisibleBarPercent = 24;
-  const maxVisibleBarPercent = 68;
   const normalized = orderedMetrics.map((metric, index) => {
+    const ratio = metric.value / maxValue;
     const height =
-      minVisibleBarPercent +
-      (metric.value / maxValue) *
-        (maxVisibleBarPercent - minVisibleBarPercent);
+      geometry.minHeight +
+      ratio * (geometry.maxHeight - geometry.minHeight);
+
     return {
       ...metric,
       index,
       height: Number(height.toFixed(2)),
     };
   });
+
   const totalValue = normalized.reduce((total, metric) => total + metric.value, 0);
-  const chartBaseY = 94;
-  const chartTopY = 16;
-  const linePoints = normalized.map((metric, index) => {
-    const x = Number((25 + index * 40).toFixed(2));
-    const y = Number(
-      (chartBaseY -
-        (metric.height / 100) * (chartBaseY - chartTopY)).toFixed(2),
-    );
-    return { x, y };
-  });
-  const linePath = buildSmoothPath(linePoints);
   const resolvedBadge =
     totalValue > 0
-      ? {
-          value: `${totalValue} active`,
-          label: "work items",
-        }
+      ? { value: `${totalValue} active`, label: "work items" }
       : badge;
+
+  const linePoints = normalized.map((metric, index) => ({
+    x: geometry.barCenters[index],
+    y: Number((geometry.barBaseY - metric.height - 6).toFixed(2)),
+  }));
+  const linePath = buildSmoothPath(linePoints);
+  const animationSignature = normalized
+    .map((metric) => `${metric.label}:${metric.value}:${metric.height}`)
+    .join("|");
+
+  const accessibleSummary = normalized
+    .map((metric) => `${metric.label} ${metric.value}`)
+    .join(", ");
 
   return (
     <div
-      className="home-hero-analytics home-hero-analytics--phase2b"
-      aria-hidden="true"
+      className="home-hero-analytics home-hero-analytics--upgrade-v2"
+      role="img"
+      aria-label={`Business activity analytics. ${accessibleSummary}. ${resolvedBadge.value} ${resolvedBadge.label}.`}
       data-testid="home-hero-analytics"
+      data-layout-version="hero-upgrade-v2"
       data-metric-count={normalized.length}
       data-bar-count={normalized.length}
       data-categories={normalized.map((metric) => metric.label).join(",")}
       data-line-source="normalized-bar-top-points"
       data-value-source="current-home-stat-values"
-      data-animation="bars-line-callouts"
+      data-animation="platform-bars-line-callouts"
       data-reduced-motion-safe="true"
       data-badge-value={resolvedBadge.value}
       data-badge-label={resolvedBadge.label}
-      data-line-points={linePoints
-        .map((point) => `${point.x}:${point.y}`)
-        .join("|")}
     >
-      <span className="home-hero-analytics__glow" />
-      <span className="home-hero-analytics__badge">
-        <strong>{resolvedBadge.value}</strong>
-        <small>{resolvedBadge.label}</small>
-      </span>
-      <div className="home-hero-analytics__particles" aria-hidden="true">
-        {particles.map((particle) => (
-          <span key={particle} />
-        ))}
-      </div>
-      <div className="home-hero-analytics__vertical-lines" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
-      <div className="home-hero-analytics__grid">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
-      <div className="home-hero-analytics__axis" aria-hidden="true">
-        <span>100</span>
-        <span>50</span>
-        <span>0</span>
-      </div>
-      <div className="home-hero-analytics__bars" aria-hidden="true">
-        {normalized.map((metric, index) => (
-          <span
-            key={metric.label}
-            className={`home-hero-analytics__bar-stack home-tone-${metric.tone}`}
-            data-category={metric.label}
-            data-value={metric.value}
-            data-height-percent={metric.height}
-            style={
-              {
-                "--bar-height": `${metric.height}%`,
-                "--bar-index": index,
-                "--bar-delay": `${index * 80}ms`,
-                "--callout-delay": `${360 + index * 90}ms`,
-              } as CSSProperties
-            }
-          >
+      <img
+        className="home-hero-analytics__platform-base"
+        src={heroPlatformBase}
+        alt=""
+        aria-hidden="true"
+      />
+
+      <div className="home-hero-analytics__bars">
+        {normalized.map((metric, index) => {
+          const Icon = metricIcons[metric.label];
+
+          return (
             <span
-              className="home-hero-analytics__callout"
+              key={metric.label}
+              className={`home-hero-analytics__bar-stack home-tone-${metric.tone}`}
               data-category={metric.label}
               data-value={metric.value}
+              data-height-px={metric.height}
+              style={
+                {
+                  "--bar-height": `${metric.height}px`,
+                  "--bar-index": index,
+                  "--bar-delay": `${index * 90}ms`,
+                  "--callout-delay": `${360 + index * 90}ms`,
+                } as CSSProperties
+              }
             >
-              {(() => {
-                const Icon = metricIcons[metric.label];
-                return <Icon className="home-hero-analytics__callout-icon" />;
-              })()}
-              <span>
-                <em>{metric.label}</em>
-                <strong>{metric.value}</strong>
-                <small>current</small>
+              <span className="home-hero-analytics__callout">
+                <Icon className="home-hero-analytics__callout-icon" />
+                <span>
+                  <em>{metric.label}</em>
+                  <strong>{metric.value}</strong>
+                  <small>current</small>
+                </span>
               </span>
+              <span className="home-hero-analytics__pin" aria-hidden="true" />
+              <i className="home-hero-analytics__bar" aria-hidden="true">
+                <span className="home-hero-analytics__bar-top" />
+                <span className="home-hero-analytics__bar-front" />
+                <span className="home-hero-analytics__bar-side" />
+              </i>
             </span>
-            <span className="home-hero-analytics__pin" />
-            <i
-              className={`home-hero-analytics__bar home-tone-${metric.tone}`}
-              data-category={metric.label}
-              data-value={metric.value}
-            >
-              <span className="home-hero-analytics__bar-top" />
-              <span className="home-hero-analytics__bar-face" />
-            </i>
-          </span>
-        ))}
+          );
+        })}
       </div>
-      <div className="home-hero-analytics__platform" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
+
       <svg
+        key={animationSignature}
         className="home-hero-analytics__line"
-        viewBox="0 0 170 112"
+        viewBox={`0 0 ${geometry.viewBoxWidth} ${geometry.viewBoxHeight}`}
         role="presentation"
-        data-line-source="normalized-bar-top-points"
+        aria-hidden="true"
       >
         <defs>
-          <linearGradient id="homeHeroLineGradient" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="#38bdf8" />
-            <stop offset="55%" stopColor="#22d3ee" />
-            <stop offset="100%" stopColor="#a855f7" />
+          <linearGradient id="heroUpgradeLineGradient" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="#38BDF8" />
+            <stop offset="52%" stopColor="#22D3EE" />
+            <stop offset="100%" stopColor="#A855F7" />
           </linearGradient>
         </defs>
         <path
@@ -227,14 +200,20 @@ export function HomeHeroAnalyticsVisual({
         />
         {linePoints.map((point, index) => (
           <circle
-            key={`${point.x}-${index}`}
+            key={`${point.x}-${point.y}-${index}`}
             className="home-hero-analytics__line-point"
             cx={point.x}
             cy={point.y}
-            r="3.7"
+            r="4"
           />
         ))}
       </svg>
+
+      <span className="home-hero-analytics__badge">
+        <strong>{resolvedBadge.value}</strong>
+        <small>{resolvedBadge.label}</small>
+        {badge.comparison ? <em>{badge.comparison}</em> : null}
+      </span>
     </div>
   );
 }

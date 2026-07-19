@@ -4370,3 +4370,455 @@
     inset-inline: 6%;
   }
 }
+
+/* Phase 2C: supplied ArmaDesk Home Hero Analytics Upgrade Kit v2. */
+
+/* ArmaDesk Home Hero Analytics Upgrade v2
+   Copy this block into src/screens/home.css after removing or overriding
+   the older Phase 2B hero analytics presentation rules. */
+
+.home-hero-analytics--upgrade-v2 {
+  --hero-bg: rgba(2, 8, 23, 0.02);
+  --hero-border: rgba(34, 211, 238, 0.2);
+  --hero-cyan: #22d3ee;
+  --hero-blue: #2563eb;
+  --hero-purple: #a855f7;
+  --hero-teal: #14b8a6;
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 100%;
+  overflow: visible;
+  color: #f8fafc;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__platform-base {
+  position: absolute;
+  z-index: 0;
+  right: -10%;
+  bottom: -8%;
+  width: 120%;
+  height: 90%;
+  object-fit: contain;
+  object-position: center bottom;
+  pointer-events: none;
+  filter:
+    saturate(1.2)
+    contrast(1.08)
+    drop-shadow(0 0 18px rgba(34, 211, 238, 0.24))
+    drop-shadow(0 0 24px rgba(168, 85, 247, 0.16));
+  opacity: 0;
+  animation: heroPlatformAppear 520ms ease-out 80ms forwards,
+             heroPlatformPulse 3600ms ease-in-out 1200ms infinite;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__bars {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__bar-stack {
+  --tone: #22d3ee;
+  position: absolute;
+  left: calc((var(--bar-index) * 21.1%) + 8%);
+  bottom: 17%;
+  width: 12%;
+  height: 72%;
+  transform: translateX(-50%);
+}
+
+.home-hero-analytics--upgrade-v2 .home-tone-blue {
+  --tone: #22d3ee;
+}
+.home-hero-analytics--upgrade-v2 .home-tone-purple {
+  --tone: #a855f7;
+}
+.home-hero-analytics--upgrade-v2 .home-tone-green {
+  --tone: #14b8a6;
+}
+.home-hero-analytics--upgrade-v2 .home-tone-orange {
+  --tone: #f59e0b;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--bar-height);
+  min-height: 28px;
+  border: 1px solid color-mix(in srgb, var(--tone) 92%, white 8%);
+  border-radius: 7px 7px 3px 3px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.18), transparent 28%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--tone) 72%, white 28%) 0%,
+      color-mix(in srgb, var(--tone) 64%, transparent) 44%,
+      color-mix(in srgb, var(--tone) 82%, #08112a 18%) 100%);
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--tone) 88%, transparent),
+    0 0 22px color-mix(in srgb, var(--tone) 55%, transparent),
+    inset 5px 0 10px rgba(255,255,255,.13),
+    inset -5px 0 10px rgba(0,0,0,.22);
+  transform-origin: center bottom;
+  animation: heroBarRise 650ms cubic-bezier(.2,.8,.2,1) var(--bar-delay) both;
+  transition:
+    height 650ms cubic-bezier(.2,.8,.2,1),
+    filter 260ms ease,
+    box-shadow 260ms ease;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__bar-top {
+  position: absolute;
+  right: -1px;
+  left: -1px;
+  top: -7px;
+  height: 14px;
+  border: 1px solid color-mix(in srgb, var(--tone) 88%, white 12%);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tone) 62%, white 18%);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--tone) 82%, transparent);
+  transform: perspective(42px) rotateX(58deg);
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__bar-front {
+  position: absolute;
+  inset: 4px 6px 5px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255,255,255,.24), transparent 38%);
+  opacity: .66;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__bar-side {
+  position: absolute;
+  top: 5px;
+  right: -6px;
+  bottom: 2px;
+  width: 7px;
+  border-radius: 0 4px 3px 0;
+  background: color-mix(in srgb, var(--tone) 60%, #020817 40%);
+  filter: brightness(.74);
+  transform: skewY(-34deg);
+  transform-origin: left top;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__callout {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: calc(var(--bar-height) + 30px);
+  width: clamp(58px, 17vw, 78px);
+  min-height: 45px;
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: start;
+  gap: 5px;
+  padding: 6px 7px;
+  border: 1px solid color-mix(in srgb, var(--tone) 74%, #475569 26%);
+  border-radius: 11px;
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 30% 0%, color-mix(in srgb, var(--tone) 18%, transparent), transparent 56%),
+    rgba(2, 10, 27, .92);
+  box-shadow:
+    0 8px 22px rgba(0,0,0,.28),
+    0 0 14px color-mix(in srgb, var(--tone) 30%, transparent),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  animation: heroCalloutReveal 380ms ease-out var(--callout-delay) forwards;
+  transition: bottom 650ms cubic-bezier(.2,.8,.2,1);
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__callout-icon {
+  width: 17px;
+  height: 17px;
+  color: var(--tone);
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--tone) 65%, transparent));
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__callout > span {
+  min-width: 0;
+  display: grid;
+  line-height: 1;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__callout em {
+  overflow: hidden;
+  color: var(--tone);
+  font-size: clamp(.48rem, 1.75vw, .63rem);
+  font-style: normal;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__callout strong {
+  margin-top: 3px;
+  font-size: clamp(.84rem, 3.2vw, 1.05rem);
+  line-height: 1;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__callout small {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: clamp(.4rem, 1.35vw, .52rem);
+  font-weight: 700;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__pin {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: calc(var(--bar-height) + 9px);
+  width: 1px;
+  height: 20px;
+  background: linear-gradient(180deg, var(--tone), transparent);
+  box-shadow: 0 0 7px var(--tone);
+  transform: translateX(-50%);
+  transition: bottom 650ms cubic-bezier(.2,.8,.2,1);
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__line {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__line-glow,
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__line-path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: heroLineDraw 540ms ease-out 280ms forwards;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__line-glow {
+  stroke: rgba(34, 211, 238, .46);
+  stroke-width: 10;
+  filter: blur(5px);
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__line-path {
+  stroke: url(#heroUpgradeLineGradient);
+  stroke-width: 3.3;
+  filter:
+    drop-shadow(0 0 5px rgba(34,211,238,.95))
+    drop-shadow(0 0 11px rgba(37,99,235,.48));
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__line-point {
+  fill: #effcff;
+  stroke: #22d3ee;
+  stroke-width: 2.2;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px rgba(34,211,238,.95));
+  animation: heroPointReveal 250ms ease-out 610ms forwards;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__badge {
+  position: absolute;
+  z-index: 9;
+  right: 2%;
+  bottom: 9%;
+  min-width: clamp(72px, 21vw, 92px);
+  display: grid;
+  padding: 8px 9px;
+  border: 1px solid rgba(56, 189, 248, .4);
+  border-radius: 12px;
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(34,211,238,.14), transparent 55%),
+    rgba(2, 10, 27, .92);
+  box-shadow:
+    0 8px 20px rgba(0,0,0,.28),
+    0 0 16px rgba(34,211,238,.16),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__badge strong {
+  font-size: clamp(.74rem, 2.9vw, .98rem);
+  line-height: 1.05;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__badge small,
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__badge em {
+  color: #cbd5e1;
+  font-size: clamp(.45rem, 1.5vw, .58rem);
+  font-style: normal;
+  font-weight: 700;
+}
+
+@keyframes heroPlatformAppear {
+  from { opacity: 0; transform: translateY(7px) scale(.98); }
+  to { opacity: .96; transform: translateY(0) scale(1); }
+}
+
+@keyframes heroPlatformPulse {
+  0%, 100% { filter: saturate(1.15) drop-shadow(0 0 15px rgba(34,211,238,.20)); }
+  50% { filter: saturate(1.3) drop-shadow(0 0 24px rgba(34,211,238,.34)); }
+}
+
+@keyframes heroBarRise {
+  from { transform: scaleY(0); opacity: .35; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes heroLineDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes heroPointReveal {
+  from { opacity: 0; transform: scale(.4); transform-origin: center; }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes heroCalloutReveal {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (max-width: 400px) {
+  .home-hero-analytics--upgrade-v2 .home-hero-analytics__bar-stack {
+    width: 11%;
+  }
+
+  .home-hero-analytics--upgrade-v2 .home-hero-analytics__callout {
+    width: 58px;
+    grid-template-columns: 14px 1fr;
+    gap: 3px;
+    padding: 5px;
+  }
+
+  .home-hero-analytics--upgrade-v2 .home-hero-analytics__callout-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .home-hero-analytics--upgrade-v2 .home-hero-analytics__badge {
+    right: 0;
+    bottom: 7%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-analytics--upgrade-v2 *,
+  .home-hero-analytics--upgrade-v2 *::before,
+  .home-hero-analytics--upgrade-v2 *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .home-hero-analytics--upgrade-v2 .home-hero-analytics__platform-base,
+  .home-hero-analytics--upgrade-v2 .home-hero-analytics__callout,
+  .home-hero-analytics--upgrade-v2 .home-hero-analytics__line-point {
+    opacity: 1;
+  }
+
+  .home-hero-analytics--upgrade-v2 .home-hero-analytics__line-glow,
+  .home-hero-analytics--upgrade-v2 .home-hero-analytics__line-path {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Phase 2C integration fit: preserve the supplied v2 layers while fitting them
+   into the existing Home hero card instead of inheriting older chart sizing. */
+.home-hero:has(.home-hero-analytics--upgrade-v2) {
+  height: clamp(238px, 56vw, 252px);
+  grid-template-columns: minmax(120px, 0.75fr) minmax(0, 1.25fr);
+  gap: clamp(7px, 2.1vw, 9px);
+}
+
+.home-hero:has(.home-hero-analytics--upgrade-v2) .home-hero__copy {
+  min-width: 0;
+}
+
+.home-hero:has(.home-hero-analytics--upgrade-v2) .home-hero__copy h1 {
+  margin-bottom: clamp(5px, 1.7vw, 7px);
+}
+
+.home-hero:has(.home-hero-analytics--upgrade-v2) .home-hero__copy h1 span {
+  font-size: clamp(0.93rem, 4vw, 1.12rem);
+  line-height: 1.05;
+}
+
+.home-hero:has(.home-hero-analytics--upgrade-v2) .home-hero__copy h1 strong {
+  font-size: clamp(1.75rem, 7.2vw, 2.28rem);
+  line-height: 0.92;
+}
+
+.home-hero:has(.home-hero-analytics--upgrade-v2) .home-hero__copy p {
+  max-width: clamp(9.2rem, 38vw, 10.6rem);
+  font-size: clamp(0.68rem, 2.85vw, 0.78rem);
+  line-height: 1.28;
+}
+
+.home-hero:has(.home-hero-analytics--upgrade-v2) .home-hero__action {
+  min-height: clamp(27px, 7vw, 31px);
+  margin-top: clamp(6px, 2vw, 8px);
+  padding-inline: clamp(9px, 2.75vw, 12px);
+  font-size: clamp(0.68rem, 2.8vw, 0.78rem);
+}
+
+.home-hero-analytics.home-hero-analytics--upgrade-v2 {
+  align-self: stretch;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-hero-analytics.home-hero-analytics--upgrade-v2::before,
+.home-hero-analytics.home-hero-analytics--upgrade-v2::after {
+  content: none;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__bars {
+  display: block;
+  height: auto;
+  gap: 0;
+  align-items: normal;
+  justify-content: normal;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__bar-stack {
+  top: auto;
+  right: auto;
+  display: block;
+  align-items: normal;
+  justify-content: normal;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__bar {
+  top: auto;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__callout {
+  top: auto;
+  right: auto;
+  height: auto;
+  bottom: calc(var(--bar-height) + 20px);
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__pin {
+  bottom: calc(var(--bar-height) + 5px);
+  height: 16px;
+}
+
+.home-hero-analytics--upgrade-v2 .home-hero-analytics__badge {
+  top: auto;
+  left: auto;
+  width: auto;
+  height: auto;
+}

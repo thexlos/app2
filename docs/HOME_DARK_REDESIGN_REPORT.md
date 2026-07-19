@@ -1033,6 +1033,106 @@ Phase 2B is complete: the Home hero analytics visual was refined against the upl
   - Smart Suggestions remained the last Home content child
   - console error count was zero
 
+## Phase 2C supplied hero upgrade kit integrated
+
+Phase 2C is complete: the uploaded `armadesk_hero_upgrade_kit_v2.zip` was integrated as a supplied implementation kit rather than redesigned or recreated.
+
+## Phase 2C source files used
+
+- Read and followed:
+  - `00_READ_ME_FIRST.md`
+  - `CODEX_IMPLEMENTATION_PROMPT.txt`
+  - `INTEGRATION_README.md`
+  - `geometry/hero_geometry.json`
+  - `animation/animation_behavior.md`
+  - `styling/visual_layer_contract.md`
+- Inspected the required visual references:
+  - `reference/approved_final_hero_reference.png`
+  - `reference/visual_difference_board.png`
+  - `geometry/hero_geometry_overlay.png`
+  - `animation/animation_storyboard.png`
+- Integrated the supplied platform asset:
+  - `assets/hero-3d-platform-base.webp`
+- Integrated the supplied React/CSS/test implementation:
+  - `component/HomeHeroAnalyticsVisual.tsx`
+  - `component/HomeHeroAnalyticsVisual.css`
+  - `component/heroAnalyticsTypes.ts`
+  - `tests/HomeHeroAnalyticsVisual.test.tsx`
+
+## Phase 2C changes
+
+- Copied the supplied decorative platform-only asset to:
+  - `src/assets/home/hero-3d-platform-base.webp`
+- Replaced the Home hero analytics component with the supplied v2 component.
+- Added the supplied `heroAnalyticsTypes.ts` file.
+- Added a type-only re-export from `HomeHeroAnalyticsVisual.tsx` so the existing `HomeScreen` metric import could keep working without changing Home data logic.
+- Appended the supplied `HomeHeroAnalyticsVisual.css` block into `src/screens/home.css`.
+- Added scoped v2 integration overrides in `home.css` to prevent older generic hero chart styles from overriding the supplied component geometry.
+- Added the supplied focused hero test file and extended it to verify the reduced-motion CSS contract.
+- Updated the existing Home redesign test so it checks the v2 contract:
+  - `data-layout-version="hero-upgrade-v2"`
+  - exactly four bars
+  - categories: `Estimates`, `Invoices`, `Customers`, `Tasks`
+  - current Home stat values
+  - truthful `13 active / work items` total badge
+  - four SVG line points
+  - supplied platform asset layer
+
+## Phase 2C data mapping
+
+- The existing HomeScreen stat mapping was retained.
+- The hero still receives exactly four live categories:
+  1. `Estimates`
+  2. `Invoices`
+  3. `Customers`
+  4. `Tasks`
+- Bar heights are calculated from the current metric values using the supplied component geometry.
+- The SVG line is generated from the same bar-top coordinates.
+- Each callout displays the current value for its matching category.
+- The badge total is calculated as the sum of the four current values.
+
+## Phase 2C animation and reduced motion
+
+- The supplied animation behavior is integrated:
+  - platform appears
+  - four bars rise with 90ms stagger
+  - line draws through bar tops
+  - pins and callout cards reveal
+  - badge remains truthful
+- Data changes keep the bar height and callout positions tied to the current values.
+- Reduced-motion CSS is present for `.home-hero-analytics--upgrade-v2` and renders the final state without extended motion.
+
+## Phase 2C intentionally not changed
+
+- Home header was not redesigned.
+- Business control bar was not redesigned.
+- Hero text and CTA were not changed.
+- Stat cards, Quick Actions, Upcoming Schedule, Smart Suggestions, bottom navigation, and Home order were not changed.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, routing, state, or business logic was changed.
+- No fake `+23%`, `+30%`, `vs last week`, revenue, or comparison claim was introduced.
+- No reference PNG or full screenshot was pasted into the app UI.
+- No Phase 4 work was started.
+- No deployment was performed.
+
+## Phase 2C validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Test suite result: 11 test files passed, 91 tests passed.
+- In-app browser checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - hero copy stayed inside its side
+  - chart stayed inside the hero
+  - badge remained visible inside the hero
+  - line stayed inside the hero
+  - callouts stayed inside the hero
+  - exactly four bars rendered
+  - categories remained `Estimates`, `Invoices`, `Customers`, `Tasks`
+  - no fake comparison text rendered
+  - Home order remained unchanged
+  - Smart Suggestions remained the last Home content child
+  - console error count was zero
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

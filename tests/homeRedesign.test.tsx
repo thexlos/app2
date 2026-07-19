@@ -124,6 +124,7 @@ describe("Home redesign", () => {
     expect(screen.getByText("work items")).toBeTruthy();
     const analytics = container.querySelector("[data-testid='home-hero-analytics']");
     expect(analytics).toBeTruthy();
+    expect(analytics?.getAttribute("data-layout-version")).toBe("hero-upgrade-v2");
     expect(analytics?.getAttribute("data-metric-count")).toBe("4");
     expect(analytics?.getAttribute("data-bar-count")).toBe("4");
     expect(analytics?.getAttribute("data-categories")).toBe(
@@ -135,11 +136,17 @@ describe("Home redesign", () => {
     expect(analytics?.getAttribute("data-value-source")).toBe(
       "current-home-stat-values",
     );
-    expect(analytics?.getAttribute("data-animation")).toBe("bars-line-callouts");
+    expect(analytics?.getAttribute("data-animation")).toBe(
+      "platform-bars-line-callouts",
+    );
     expect(analytics?.getAttribute("data-reduced-motion-safe")).toBe("true");
     expect(analytics?.getAttribute("data-badge-value")).toBe("13 active");
     expect(analytics?.getAttribute("data-badge-label")).toBe("work items");
-    expect(container.querySelector(".home-hero-analytics__platform")).toBeTruthy();
+    const platformBase = container.querySelector(
+      ".home-hero-analytics__platform-base",
+    );
+    expect(platformBase).toBeTruthy();
+    expect(platformBase?.getAttribute("src")).toContain("hero-3d-platform-base");
     expect(container.querySelectorAll(".home-hero-analytics__bar")).toHaveLength(4);
     expect(container.querySelectorAll(".home-hero-analytics__bar-stack")).toHaveLength(
       4,
@@ -152,21 +159,6 @@ describe("Home redesign", () => {
     expect(container.querySelectorAll(".home-hero-analytics__line-point")).toHaveLength(
       4,
     );
-    expect(container.querySelectorAll(".home-hero-analytics__particles span")).toHaveLength(36);
-    expect(container.querySelectorAll(".home-hero-analytics__platform span")).toHaveLength(4);
-    const bars = Array.from(container.querySelectorAll(".home-hero-analytics__bar"));
-    expect(bars.map((bar) => bar.getAttribute("data-category"))).toEqual([
-      "Estimates",
-      "Invoices",
-      "Customers",
-      "Tasks",
-    ]);
-    expect(bars.map((bar) => bar.getAttribute("data-value"))).toEqual([
-      "4",
-      "2",
-      "3",
-      "4",
-    ]);
     const stacks = Array.from(
       container.querySelectorAll(".home-hero-analytics__bar-stack"),
     );
@@ -182,37 +174,37 @@ describe("Home redesign", () => {
       "3",
       "4",
     ]);
-    expect(stacks.map((stack) => stack.getAttribute("data-height-percent"))).toEqual(
-      ["68", "46", "57", "68"],
+    expect(stacks.map((stack) => stack.getAttribute("data-height-px"))).toEqual(
+      ["122", "85", "103.5", "122"],
     );
-    const linePoints = analytics?.getAttribute("data-line-points")?.split("|") ?? [];
-    expect(linePoints).toHaveLength(4);
-    expect(linePoints[0]).toBe("25:40.96");
-    expect(linePoints.at(-1)).toBe("145:40.96");
-    expect(
-      container
-        .querySelector(".home-hero-analytics__line")
-        ?.getAttribute("data-line-source"),
-    ).toBe("normalized-bar-top-points");
     expect(
       container
         .querySelector(".home-hero-analytics__line-path")
         ?.getAttribute("pathLength"),
     ).toBe("1");
+    const linePoints = Array.from(
+      container.querySelectorAll(".home-hero-analytics__line-point"),
+    );
+    expect(linePoints.map((point) => point.getAttribute("cx"))).toEqual([
+      "70",
+      "158",
+      "246",
+      "334",
+    ]);
+    expect(linePoints.map((point) => point.getAttribute("cy"))).toEqual([
+      "44",
+      "81",
+      "62.5",
+      "44",
+    ]);
     const callouts = Array.from(
       container.querySelectorAll(".home-hero-analytics__callout"),
     );
-    expect(callouts.map((callout) => callout.getAttribute("data-category"))).toEqual([
-      "Estimates",
-      "Invoices",
-      "Customers",
-      "Tasks",
-    ]);
-    expect(callouts.map((callout) => callout.getAttribute("data-value"))).toEqual([
-      "4",
-      "2",
-      "3",
-      "4",
+    expect(callouts.map((callout) => callout.textContent)).toEqual([
+      "Estimates4current",
+      "Invoices2current",
+      "Customers3current",
+      "Tasks4current",
     ]);
   });
 
