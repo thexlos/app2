@@ -124,7 +124,9 @@ describe("Home redesign", () => {
     expect(screen.getByText("work items")).toBeTruthy();
     const analytics = container.querySelector("[data-testid='home-hero-analytics']");
     expect(analytics).toBeTruthy();
-    expect(analytics?.getAttribute("data-layout-version")).toBe("hero-svg-v2.2");
+    expect(analytics?.getAttribute("data-layout-version")).toBe("hero-composition-v2.3");
+    expect(analytics?.getAttribute("data-composition-split")).toBe("43-57");
+    expect(analytics?.getAttribute("data-chart-contained")).toBe("true");
     expect(analytics?.getAttribute("data-bar-count")).toBe("4");
     expect(analytics?.getAttribute("data-categories")).toBe(
       "Estimates,Invoices,Customers,Tasks",
@@ -193,9 +195,6 @@ describe("Home redesign", () => {
       "62.5",
       "50",
     ]);
-    expect(analytics?.getAttribute("data-line-points")).toBe(
-      "28:50|72:75|116:62.5|160:50",
-    );
     const callouts = Array.from(
       container.querySelectorAll(".home-hero-analytics__callout"),
     );

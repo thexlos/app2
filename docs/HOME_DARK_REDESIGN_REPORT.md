@@ -1342,6 +1342,90 @@ Phase 2E is complete: the uploaded `armadesk_hero_unified_svg_patch_v2_2.zip` un
   - Smart Suggestions remained the last Home content child
   - console error count was zero
 
+## Phase 2F exact hero composition patch integrated
+
+Phase 2F is complete: the uploaded `armadesk_hero_composition_patch_v2_3.zip` was integrated as a supplied exact-composition implementation rather than redesigned, resized, reinterpreted, or recreated.
+
+## Phase 2F source files used
+
+- Read and followed:
+  - `00_READ_ME_FIRST.md`
+  - `INTEGRATION_README.md`
+  - `CODEX_COMPOSITION_PATCH_PROMPT.txt`
+  - `geometry/composition_geometry.json`
+  - `animation/composition_animation_contract.md`
+- Inspected the required visual references:
+  - `reference/current_live_hero.png`
+  - `reference/approved_composition_target.png`
+  - `reference/current_vs_composition_target.png`
+  - `geometry/composition_geometry_overlay.png`
+- Integrated the supplied React/CSS/test implementation:
+  - `component/HomeHeroAnalyticsVisual.tsx`
+  - `component/heroAnalyticsTypes.ts`
+  - `component/HomeHeroAnalyticsVisual.css`
+  - `tests/HomeHeroAnalyticsVisual.composition.test.tsx`
+- Continued using the existing compact platform asset:
+  - `src/assets/home/hero-3d-platform-compact.webp`
+
+## Phase 2F changes
+
+- Replaced the Home hero analytics component with the supplied v2.3 composition component.
+- Locked the hero card to the supplied 43/57 structure:
+  - left 43% text zone for greeting, supporting copy, and `View Insights`
+  - right 57% chart zone for all chart content
+- Added the supplied hard clipping contract:
+  - chart zone root uses hidden overflow
+  - SVG content uses `clipPath id="heroCompositionClip"`
+  - chart root exposes `data-chart-contained="true"`
+- Preserved the existing live metric data:
+  - `Estimates`
+  - `Invoices`
+  - `Customers`
+  - `Tasks`
+- Preserved the existing truthful badge total:
+  - `13 active`
+  - `work items`
+- Kept the line graph data-linked to the bar tops in the same SVG coordinate system.
+- Kept `View Insights` on one line.
+- Added scoped integration resets so older generic hero CSS cannot reposition the supplied v2.3 SVG composition.
+
+## Phase 2F intentionally not changed
+
+- Home header was not redesigned.
+- Business control bar was not redesigned.
+- Hero copy text and CTA text were not changed.
+- Stats, Quick Actions, Upcoming Schedule, Smart Suggestions, bottom navigation, and Home order were not changed.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, routing, state, or business logic was changed.
+- No fake `+23%`, `+30%`, `vs last week`, revenue, or comparison claim was introduced.
+- No reference PNG or full screenshot was pasted into the app UI.
+- No deployment was performed.
+- No Phase 4 work was started.
+
+## Phase 2F validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Test suite result: 14 test files passed, 94 tests passed.
+- In-app browser responsive checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - `data-layout-version="hero-composition-v2.3"`
+  - `data-composition-split="43-57"`
+  - `data-chart-contained="true"`
+  - chart container starts inside the right 57% zone
+  - chart container uses hidden overflow and the supplied SVG clipping path
+  - greeting text stayed in the left text zone
+  - `View Insights` stayed on one line
+  - four live bar groups rendered
+  - four line points rendered
+  - four pins rendered
+  - four callouts rendered
+  - line points remained tied to the bar-top coordinates
+  - pins terminated at the matching line/bar-top coordinates
+  - badge remained visible
+  - compact platform asset remained in use
+  - Home order remained unchanged
+  - console error count was zero
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

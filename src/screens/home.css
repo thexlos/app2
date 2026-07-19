@@ -5515,3 +5515,289 @@
   inset: auto;
   transform: none;
 }
+
+/* Phase 2F: supplied ArmaDesk exact hero composition patch v2.3.
+   The rendered component now uses .home-hero-analytics--composition-v23,
+   leaving older --upgrade-v2, --compact-v21, and --svg-v22 presentation rules
+   inactive for the current hero chart. */
+
+/* ArmaDesk exact hero composition patch v2.3
+   Locks the hero into a 43% text zone and 57% chart zone. */
+
+.home-hero:has(.home-hero-analytics--composition-v23) {
+  position: relative;
+  height: clamp(238px, 56vw, 252px);
+  display: grid;
+  grid-template-columns: minmax(0, 43fr) minmax(0, 57fr);
+  gap: clamp(3px, 1vw, 5px);
+  overflow: hidden;
+}
+
+.home-hero:has(.home-hero-analytics--composition-v23)::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 8%;
+  bottom: 8%;
+  left: 43%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(96,165,250,.13), transparent);
+  pointer-events: none;
+}
+
+.home-hero:has(.home-hero-analytics--composition-v23) .home-hero__copy {
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+  overflow: hidden;
+  padding-right: clamp(2px, .8vw, 4px);
+}
+
+.home-hero:has(.home-hero-analytics--composition-v23) .home-hero__copy h1,
+.home-hero:has(.home-hero-analytics--composition-v23) .home-hero__copy p,
+.home-hero:has(.home-hero-analytics--composition-v23) .home-hero__action {
+  position: relative;
+  z-index: 3;
+}
+
+.home-hero:has(.home-hero-analytics--composition-v23) .home-hero__copy h1 span {
+  font-size: clamp(.94rem, 4vw, 1.1rem);
+  line-height: 1.05;
+}
+
+.home-hero:has(.home-hero-analytics--composition-v23) .home-hero__copy h1 strong {
+  font-size: clamp(1.78rem, 7.4vw, 2.25rem);
+  line-height: .93;
+}
+
+.home-hero:has(.home-hero-analytics--composition-v23) .home-hero__copy p {
+  max-width: 9.3rem;
+  font-size: clamp(.68rem, 2.85vw, .78rem);
+  line-height: 1.28;
+}
+
+.home-hero:has(.home-hero-analytics--composition-v23) .home-hero__action {
+  width: max-content;
+  min-width: clamp(100px, 26vw, 112px);
+  min-height: clamp(28px, 7.2vw, 32px);
+  padding-inline: clamp(10px, 2.6vw, 12px);
+  white-space: nowrap;
+}
+
+.home-hero-analytics.home-hero-analytics--composition-v23 {
+  position: relative;
+  z-index: 2;
+  align-self: stretch;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  clip-path: inset(0 round 12px);
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__platform {
+  opacity: 0;
+  animation:
+    heroCompositionPlatformIn 480ms ease-out 60ms forwards,
+    heroCompositionPlatformPulse 3600ms ease-in-out 1100ms infinite;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__bar-group {
+  filter: url(#heroCompositionBarGlow);
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: heroCompositionBarRise 620ms cubic-bezier(.2,.8,.2,1) var(--bar-delay) both;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__bar-front,
+.home-hero-analytics--composition-v23 .home-hero-analytics__bar-side,
+.home-hero-analytics--composition-v23 .home-hero-analytics__bar-top {
+  vector-effect: non-scaling-stroke;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__line-glow,
+.home-hero-analytics--composition-v23 .home-hero-analytics__line-path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: heroCompositionLineDraw 500ms ease-out 250ms forwards;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__line-glow {
+  stroke: rgba(34,211,238,.46);
+  stroke-width: 7;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__line-path {
+  stroke: url(#heroCompositionLineGradient);
+  stroke-width: 2.8;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__line-point {
+  fill: #F0FDFF;
+  stroke: #22D3EE;
+  stroke-width: 1.7;
+  opacity: 0;
+  animation: heroCompositionPointIn 220ms ease-out 560ms forwards;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__pin,
+.home-hero-analytics--composition-v23 .home-hero-analytics__callout {
+  opacity: 0;
+  animation: heroCompositionCalloutIn 340ms ease-out var(--callout-delay) forwards;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__callout-label {
+  font-size: 5.4px;
+  font-weight: 800;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__callout-value {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__badge-value {
+  font-size: 8.5px;
+  font-weight: 900;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__badge-label {
+  font-size: 6.2px;
+  font-weight: 700;
+}
+
+@keyframes heroCompositionPlatformIn {
+  from { opacity: 0; transform: translateY(5px) scale(.98); }
+  to { opacity: .96; transform: translateY(0) scale(1); }
+}
+
+@keyframes heroCompositionPlatformPulse {
+  0%,100% { filter: saturate(1.12) drop-shadow(0 0 10px rgba(34,211,238,.18)); }
+  50% { filter: saturate(1.25) drop-shadow(0 0 18px rgba(34,211,238,.30)); }
+}
+
+@keyframes heroCompositionBarRise {
+  from { transform: scaleY(0); opacity: .32; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes heroCompositionLineDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes heroCompositionPointIn {
+  from { opacity: 0; transform: scale(.4); transform-origin: center; }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes heroCompositionCalloutIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 400px) {
+  .home-hero:has(.home-hero-analytics--composition-v23) {
+    grid-template-columns: minmax(0, 43fr) minmax(0, 57fr);
+    gap: 3px;
+  }
+
+  .home-hero:has(.home-hero-analytics--composition-v23) .home-hero__copy p {
+    max-width: 8.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-analytics--composition-v23 *,
+  .home-hero-analytics--composition-v23 *::before,
+  .home-hero-analytics--composition-v23 *::after {
+    animation-duration: .001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: .001ms !important;
+  }
+
+  .home-hero-analytics--composition-v23 .home-hero-analytics__platform,
+  .home-hero-analytics--composition-v23 .home-hero-analytics__line-point,
+  .home-hero-analytics--composition-v23 .home-hero-analytics__pin,
+  .home-hero-analytics--composition-v23 .home-hero-analytics__callout {
+    opacity: 1;
+  }
+
+  .home-hero-analytics--composition-v23 .home-hero-analytics__line-glow,
+  .home-hero-analytics--composition-v23 .home-hero-analytics__line-path {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Scope reset: older generic .home-hero-analytics svg rules predate the supplied
+   component and must not reposition the v2.3 composition SVG. */
+.home-hero-analytics--composition-v23 .home-hero-analytics__svg,
+.home-hero-analytics.home-hero-analytics--composition-v23 svg.home-hero-analytics__svg {
+  position: static;
+  inset: auto;
+  transform: none;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__bars,
+.home-hero-analytics--composition-v23 .home-hero-analytics__pins,
+.home-hero-analytics--composition-v23 .home-hero-analytics__trend,
+.home-hero-analytics--composition-v23 .home-hero-analytics__callouts,
+.home-hero-analytics--composition-v23 .home-hero-analytics__badge,
+.home-hero-analytics--composition-v23 .home-hero-analytics__platform,
+.home-hero-analytics--composition-v23 .home-hero-analytics__bar-group,
+.home-hero-analytics--composition-v23 .home-hero-analytics__callout,
+.home-hero-analytics--composition-v23 .home-hero-analytics__pin {
+  position: static;
+  inset: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  z-index: auto;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  display: inline;
+  transform: none;
+  translate: none;
+  padding: 0;
+  gap: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__callout::after {
+  content: none;
+}
+
+.home-hero-analytics--composition-v23 image.home-hero-analytics__platform {
+  width: 250px;
+  height: 120px;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__line-glow,
+.home-hero-analytics--composition-v23 .home-hero-analytics__line-path {
+  opacity: 1;
+  filter: none;
+  background: none;
+  mask-image: none;
+}
+
+.home-hero-analytics--composition-v23 .home-hero-analytics__line-point {
+  filter: none;
+}

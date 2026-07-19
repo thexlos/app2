@@ -101,20 +101,19 @@ export function HomeHeroAnalyticsVisual({
 
   return (
     <div
-      className="home-hero-analytics home-hero-analytics--svg-v22"
+      className="home-hero-analytics home-hero-analytics--composition-v23"
       role="img"
       aria-label={`Business activity analytics. ${summary}. ${resolvedBadge.value} ${resolvedBadge.label}.`}
       data-testid="home-hero-analytics"
-      data-layout-version="hero-svg-v2.2"
+      data-layout-version="hero-composition-v2.3"
+      data-composition-split="43-57"
+      data-chart-contained="true"
       data-bar-count={bars.length}
       data-categories={bars.map((bar) => bar.label).join(",")}
       data-line-source="same-svg-bar-top-points"
       data-value-source="current-home-stat-values"
       data-badge-value={resolvedBadge.value}
       data-badge-label={resolvedBadge.label}
-      data-line-points={linePoints
-        .map((point) => `${point.x}:${point.y}`)
-        .join("|")}
       data-reduced-motion-safe="true"
     >
       <svg
@@ -125,21 +124,24 @@ export function HomeHeroAnalyticsVisual({
         aria-hidden="true"
       >
         <defs>
-          <filter id="heroBarGlow" x="-70%" y="-40%" width="240%" height="200%">
+          <clipPath id="heroCompositionClip">
+            <rect x="0" y="0" width="240" height="180" rx="8" />
+          </clipPath>
+          <filter id="heroCompositionBarGlow" x="-70%" y="-40%" width="240%" height="200%">
             <feGaussianBlur stdDeviation="3.8" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <filter id="heroLineGlow" x="-50%" y="-100%" width="200%" height="300%">
+          <filter id="heroCompositionLineGlow" x="-50%" y="-100%" width="200%" height="300%">
             <feGaussianBlur stdDeviation="2.2" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <linearGradient id="heroLineGradient" x1="0" x2="1" y1="0" y2="0">
+          <linearGradient id="heroCompositionLineGradient" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0%" stopColor="#38BDF8" />
             <stop offset="52%" stopColor="#22D3EE" />
             <stop offset="100%" stopColor="#A855F7" />
@@ -147,7 +149,7 @@ export function HomeHeroAnalyticsVisual({
           {bars.map((bar) => (
             <linearGradient
               key={`gradient-${bar.label}`}
-              id={`barGradient-${bar.index}`}
+              id={`compositionBarGradient-${bar.index}`}
               x1="0"
               x2="0"
               y1="0"
@@ -160,179 +162,179 @@ export function HomeHeroAnalyticsVisual({
           ))}
         </defs>
 
-        <image
-          href={compactPlatformBase}
-          x="-5"
-          y="70"
-          width="250"
-          height="120"
-          preserveAspectRatio="xMidYMid meet"
-          className="home-hero-analytics__platform"
-        />
-
-        <g className="home-hero-analytics__bars">
-          {bars.map((bar) => {
-            const left = bar.x - geometry.barWidth / 2;
-            const right = bar.x + geometry.barWidth / 2;
-            const depth = geometry.barDepth;
-            const top = bar.topY;
-            const base = geometry.baseY;
-
-            return (
-              <g
-                key={bar.label}
-                className="home-hero-analytics__bar-group"
-                data-category={bar.label}
-                data-value={bar.value}
-                data-height={bar.height}
-                style={
-                  {
-                    "--bar-delay": `${bar.index * 85}ms`,
-                    "--callout-delay": `${360 + bar.index * 80}ms`,
-                    transformOrigin: `${bar.x}px ${base}px`,
-                  } as CSSProperties
-                }
-              >
-                <polygon
-                  className="home-hero-analytics__bar-side"
-                  points={`${right},${top} ${right + depth},${top - depth} ${right + depth},${base - depth} ${right},${base}`}
-                  fill={bar.tone.dark}
-                  opacity=".72"
-                />
-                <rect
-                  className="home-hero-analytics__bar-front"
-                  x={left}
-                  y={top}
-                  width={geometry.barWidth}
-                  height={bar.height}
-                  rx="4"
-                  fill={`url(#barGradient-${bar.index})`}
-                  stroke={bar.tone.main}
-                />
-                <polygon
-                  className="home-hero-analytics__bar-top"
-                  points={`${left},${top} ${left + depth},${top - depth} ${right + depth},${top - depth} ${right},${top}`}
-                  fill={bar.tone.light}
-                  stroke={bar.tone.main}
-                />
-              </g>
-            );
-          })}
-        </g>
-
-        <g className="home-hero-analytics__pins">
-          {bars.map((bar) => {
-            const c = bar.callout;
-            const startX = c.x + c.width / 2;
-            const startY = c.y + c.height;
-            return (
-              <line
-                key={`pin-${bar.label}`}
-                x1={startX}
-                y1={startY}
-                x2={bar.x}
-                y2={bar.lineY - 3}
-                stroke={bar.tone.main}
-                strokeWidth="1"
-                opacity=".9"
-                className="home-hero-analytics__pin"
-                style={{ "--callout-delay": `${360 + bar.index * 80}ms` } as CSSProperties}
-              />
-            );
-          })}
-        </g>
-
-        <g className="home-hero-analytics__trend" filter="url(#heroLineGlow)">
-          <path
-            className="home-hero-analytics__line-glow"
-            d={linePath}
-            pathLength={1}
+        <g clipPath="url(#heroCompositionClip)">
+          <image
+            href={compactPlatformBase}
+            x="-5"
+            y="70"
+            width="250"
+            height="120"
+            preserveAspectRatio="xMidYMid meet"
+            className="home-hero-analytics__platform"
           />
-          <path
-            className="home-hero-analytics__line-path"
-            d={linePath}
-            pathLength={1}
-          />
-          {linePoints.map((point, index) => (
-            <circle
-              key={`point-${index}`}
-              className="home-hero-analytics__line-point"
-              cx={point.x}
-              cy={point.y}
-              r="3.7"
+
+          <g className="home-hero-analytics__bars">
+            {bars.map((bar) => {
+              const left = bar.x - geometry.barWidth / 2;
+              const right = bar.x + geometry.barWidth / 2;
+              const depth = geometry.barDepth;
+              const top = bar.topY;
+              const base = geometry.baseY;
+
+              return (
+                <g
+                  key={bar.label}
+                  className="home-hero-analytics__bar-group"
+                  data-category={bar.label}
+                  data-value={bar.value}
+                  data-height={bar.height}
+                  style={
+                    {
+                      "--bar-delay": `${bar.index * 85}ms`,
+                      "--callout-delay": `${360 + bar.index * 80}ms`,
+                      transformOrigin: `${bar.x}px ${base}px`,
+                    } as CSSProperties
+                  }
+                >
+                  <polygon
+                    className="home-hero-analytics__bar-side"
+                    points={`${right},${top} ${right + depth},${top - depth} ${right + depth},${base - depth} ${right},${base}`}
+                    fill={bar.tone.dark}
+                    opacity=".72"
+                  />
+                  <rect
+                    className="home-hero-analytics__bar-front"
+                    x={left}
+                    y={top}
+                    width={geometry.barWidth}
+                    height={bar.height}
+                    rx="4"
+                    fill={`url(#compositionBarGradient-${bar.index})`}
+                    stroke={bar.tone.main}
+                  />
+                  <polygon
+                    className="home-hero-analytics__bar-top"
+                    points={`${left},${top} ${left + depth},${top - depth} ${right + depth},${top - depth} ${right},${top}`}
+                    fill={bar.tone.light}
+                    stroke={bar.tone.main}
+                  />
+                </g>
+              );
+            })}
+          </g>
+
+          <g className="home-hero-analytics__pins">
+            {bars.map((bar) => {
+              const c = bar.callout;
+              return (
+                <line
+                  key={`pin-${bar.label}`}
+                  x1={c.x + c.width / 2}
+                  y1={c.y + c.height}
+                  x2={bar.x}
+                  y2={bar.lineY - 3}
+                  stroke={bar.tone.main}
+                  strokeWidth="1"
+                  opacity=".9"
+                  className="home-hero-analytics__pin"
+                  style={{ "--callout-delay": `${360 + bar.index * 80}ms` } as CSSProperties}
+                />
+              );
+            })}
+          </g>
+
+          <g className="home-hero-analytics__trend" filter="url(#heroCompositionLineGlow)">
+            <path
+              className="home-hero-analytics__line-glow"
+              d={linePath}
+              pathLength={1}
             />
-          ))}
-        </g>
+            <path
+              className="home-hero-analytics__line-path"
+              d={linePath}
+              pathLength={1}
+            />
+            {linePoints.map((point, index) => (
+              <circle
+                key={`point-${index}`}
+                className="home-hero-analytics__line-point"
+                cx={point.x}
+                cy={point.y}
+                r="3.7"
+              />
+            ))}
+          </g>
 
-        <g className="home-hero-analytics__callouts">
-          {bars.map((bar) => {
-            const c = bar.callout;
-            return (
-              <g
-                key={`callout-${bar.label}`}
-                className="home-hero-analytics__callout"
-                style={{ "--callout-delay": `${360 + bar.index * 80}ms` } as CSSProperties}
-              >
-                <rect
-                  x={c.x}
-                  y={c.y}
-                  width={c.width}
-                  height={c.height}
-                  rx="6"
-                  fill="#020A1B"
-                  fillOpacity=".95"
-                  stroke={bar.tone.main}
-                  strokeWidth=".8"
-                />
-                <text
-                  x={c.x + 4}
-                  y={c.y + 9}
-                  fill={bar.tone.main}
-                  className="home-hero-analytics__callout-label"
+          <g className="home-hero-analytics__callouts">
+            {bars.map((bar) => {
+              const c = bar.callout;
+              return (
+                <g
+                  key={`callout-${bar.label}`}
+                  className="home-hero-analytics__callout"
+                  style={{ "--callout-delay": `${360 + bar.index * 80}ms` } as CSSProperties}
                 >
-                  {bar.label}
-                </text>
-                <text
-                  x={c.x + 4}
-                  y={c.y + 22}
-                  fill="#F8FAFC"
-                  className="home-hero-analytics__callout-value"
-                >
-                  {bar.value}
-                </text>
-              </g>
-            );
-          })}
-        </g>
+                  <rect
+                    x={c.x}
+                    y={c.y}
+                    width={c.width}
+                    height={c.height}
+                    rx="6"
+                    fill="#020A1B"
+                    fillOpacity=".95"
+                    stroke={bar.tone.main}
+                    strokeWidth=".8"
+                  />
+                  <text
+                    x={c.x + 4}
+                    y={c.y + 9}
+                    fill={bar.tone.main}
+                    className="home-hero-analytics__callout-label"
+                  >
+                    {bar.label}
+                  </text>
+                  <text
+                    x={c.x + 4}
+                    y={c.y + 22}
+                    fill="#F8FAFC"
+                    className="home-hero-analytics__callout-value"
+                  >
+                    {bar.value}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
 
-        <g className="home-hero-analytics__badge">
-          <rect
-            x={geometry.badge.x}
-            y={geometry.badge.y}
-            width={geometry.badge.width}
-            height={geometry.badge.height}
-            rx="8"
-            fill="#020A1B"
-            fillOpacity=".95"
-            stroke="#38BDF8"
-            strokeOpacity=".56"
-          />
-          <text
-            x={geometry.badge.x + 6}
-            y={geometry.badge.y + 14}
-            className="home-hero-analytics__badge-value"
-            fill="#F8FAFC"
-          >
-            {resolvedBadge.value}
-          </text>
-          <text
-            x={geometry.badge.x + 6}
-            y={geometry.badge.y + 26}
-            className="home-hero-analytics__badge-label"
-            fill="#CBD5E1"
-          >
-            {resolvedBadge.label}
-          </text>
+          <g className="home-hero-analytics__badge">
+            <rect
+              x={geometry.badge.x}
+              y={geometry.badge.y}
+              width={geometry.badge.width}
+              height={geometry.badge.height}
+              rx="8"
+              fill="#020A1B"
+              fillOpacity=".95"
+              stroke="#38BDF8"
+              strokeOpacity=".56"
+            />
+            <text
+              x={geometry.badge.x + 6}
+              y={geometry.badge.y + 14}
+              className="home-hero-analytics__badge-value"
+              fill="#F8FAFC"
+            >
+              {resolvedBadge.value}
+            </text>
+            <text
+              x={geometry.badge.x + 6}
+              y={geometry.badge.y + 26}
+              className="home-hero-analytics__badge-label"
+              fill="#CBD5E1"
+            >
+              {resolvedBadge.label}
+            </text>
+          </g>
         </g>
       </svg>
     </div>

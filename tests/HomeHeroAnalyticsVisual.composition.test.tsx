@@ -10,7 +10,7 @@ const metrics = [
 ];
 
 describe("HomeHeroAnalyticsVisual composition v2.3", () => {
-  it("keeps bars and line in the same SVG coordinate system", () => {
+  it("locks the live chart inside the 57% chart zone", () => {
     const { container } = render(
       <HomeHeroAnalyticsVisual
         metrics={metrics}
@@ -26,17 +26,11 @@ describe("HomeHeroAnalyticsVisual composition v2.3", () => {
     expect(root.getAttribute("data-line-source")).toBe(
       "same-svg-bar-top-points",
     );
-    expect(root.getAttribute("data-categories")).toBe(
-      "Estimates,Invoices,Customers,Tasks",
-    );
     expect(root.getAttribute("data-badge-value")).toBe("13 active");
 
+    expect(container.querySelector("clipPath#heroCompositionClip")).toBeTruthy();
     expect(container.querySelectorAll(".home-hero-analytics__bar-group")).toHaveLength(4);
     expect(container.querySelectorAll(".home-hero-analytics__line-point")).toHaveLength(4);
-    expect(container.querySelectorAll(".home-hero-analytics__pin")).toHaveLength(4);
-    expect(container.querySelectorAll(".home-hero-analytics__callout")).toHaveLength(4);
-
     expect(screen.queryByText("+23%")).toBeNull();
-    expect(screen.queryByText(/vs last week/i)).toBeNull();
   });
 });
