@@ -1580,6 +1580,69 @@ Phase 3B is complete: the uploaded `armadesk_phase3b_premium_proportion_patch_v1
 | 402px | 138.28px | 72.75px | 100.5px | 86.02px | 78.38px | 75.17px |
 | 430px | 147.91px | 77.83px | 107.5px | 92px | 83.84px | 80px |
 
+## Phase 3C final card visual-match patch integrated
+
+Phase 3C is complete: the uploaded `armadesk_phase3c_final_card_visual_match_v1.zip` packet was integrated as the final premium card presentation-tuning pass. Phase 3A material and Phase 3B proportions remain locked.
+
+## Phase 3C source files used
+
+- Read and followed:
+  - `00_READ_ME_FIRST.md`
+  - `INTEGRATION_README.md`
+  - `CODEX_IMPLEMENTATION_PROMPT.txt`
+  - `docs/PHASE_3C_ACCEPTANCE_CHECKLIST.md`
+  - `geometry/final_visual_match_contract.json`
+- Inspected the supplied references:
+  - `reference/approved_final_card_style.png`
+  - `reference/current_live_after_phase3b.png`
+  - `reference/approved_reference_at_live_width.png`
+  - `reference/component_by_component_comparison.png`
+  - `geometry/final_visual_correction_map.png`
+  - all `reference/crops/` images
+- Integrated the supplied implementation files:
+  - `implementation/home_final_visual_match.css`
+  - `implementation/navigation_final_visual_match.css`
+  - `tests/homeFinalCardVisualMatch.test.tsx`
+
+## Phase 3C changes
+
+- Appended the supplied final Home visual-match CSS after Phase 3A and Phase 3B Home overrides.
+- Appended the supplied final bottom-nav visual-match CSS after Phase 3A and Phase 3B navigation overrides.
+- Added the supplied Phase 3C test.
+- Tuned card typography, sheen, inner highlights, icon-well depth, Quick Action spacing, schedule hierarchy, suggestion hierarchy, and bottom-nav presentation alignment.
+- Added scoped final guards to preserve Phase 3B mobile icon-well geometry and keep Quick Action labels from overflowing at 390px, 402px, and 430px without changing card dimensions.
+
+## Phase 3C intentionally not changed
+
+- Phase 3A premium material was preserved.
+- Phase 3B card/nav dimensions and proportions were preserved.
+- Home JSX was not rebuilt.
+- Hero component, hero data, hero animation, and hero layout version were not changed.
+- Header, business row, setup chip, Home section order, routes, state, icons, and business logic were not changed.
+- QR, estimate, invoice, customer, File Vault, recovery draft, persistence, and business-profile logic were not changed.
+- Smart Suggestions remains the final Home content section.
+- No screenshots or static visual references were pasted into the live UI.
+- No deployment was performed.
+- No Phase 4 work was started.
+
+## Phase 3C validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Test suite result: 17 test files passed, 100 tests passed.
+- In-app browser responsive checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - stat cards remained four across in one row
+  - Quick Actions remained three columns by two rows
+  - no Quick Action label overflow
+  - no Quick Action or Smart Suggestion arrow collisions
+  - schedule stayed readable
+  - Smart Suggestions stayed two cards across
+  - Smart Suggestions remained the final Home content section
+  - bottom nav cleared Smart Suggestions at the bottom scroll position
+  - hero remained `hero-composition-v2.3`
+  - console error count was zero
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.
