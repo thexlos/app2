@@ -6,20 +6,40 @@ import {
   type ReferenceStatTone,
 } from "./referenceLayerAssets";
 
-function ReferenceLayers({
-  border,
-  texture,
-}: {
-  border: string;
+type RegisteredLayers = {
+  surface: string;
   texture: string;
+  border: string;
+  well: string;
+  glyph: string;
+};
+
+function FullCanvasReferenceLayers({
+  assets,
+}: {
+  assets: RegisteredLayers;
 }) {
   return (
-    <span className="reference-card__layers" aria-hidden="true">
-      <span className="reference-card__surface" />
-      <img className="reference-card__texture" src={texture} alt="" />
-      <img className="reference-card__border" src={border} alt="" />
+    <span
+      className="reference-card__layers"
+      aria-hidden="true"
+      data-registration="full-canvas-inset-zero"
+    >
+      <img className="reference-card__layer reference-card__surface" src={assets.surface} alt="" />
+      <img className="reference-card__layer reference-card__texture" src={assets.texture} alt="" />
+      <img className="reference-card__layer reference-card__border" src={assets.border} alt="" />
+      <img className="reference-card__layer reference-card__icon-well" src={assets.well} alt="" />
+      <img className="reference-card__layer reference-card__icon-glyph" src={assets.glyph} alt="" />
     </span>
   );
+}
+
+function trendClass(trend: string) {
+  return trend.length >= 12 ? " is-long-trend" : "";
+}
+
+function valueClass(value: string) {
+  return value.length >= 3 ? " is-long-value" : "";
 }
 
 export function ReferenceDerivedStatCard({
@@ -44,14 +64,31 @@ export function ReferenceDerivedStatCard({
       aria-label={`${label}: ${value}`}
       data-reference-layer-card="stat"
       data-source-ratio="210/340"
+      data-registration-version="v2.1"
     >
-      <ReferenceLayers border={assets.border} texture={assets.texture} />
-      <img className="reference-card__icon-cluster" src={assets.icon} alt="" />
+      <FullCanvasReferenceLayers assets={assets} />
       <span className="reference-card__live reference-stat__label">{label}</span>
-      <strong className="reference-card__live reference-stat__value">{value}</strong>
-      <span className="reference-card__live reference-stat__trend">{trend}</span>
+      <strong className={`reference-card__live reference-stat__value${valueClass(value)}`}>
+        {value}
+      </strong>
+      <span className={`reference-card__live reference-stat__trend${trendClass(trend)}`}>
+        {trend}
+      </span>
     </button>
   );
+}
+
+function actionLabelClass(firstLine: string, secondLine: string) {
+  const combinedLength = `${firstLine}${secondLine}`.length;
+
+  return [
+    "reference-card__live",
+    "reference-action__label",
+    secondLine.trim() ? "is-two-line" : "is-single-line",
+    combinedLength >= 12 ? "is-long-label" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export function ReferenceDerivedActionCard({
@@ -71,17 +108,20 @@ export function ReferenceDerivedActionCard({
     <button
       type="button"
       className={`reference-card reference-card--action reference-tone-${tone} is-${state}`}
-      aria-label={`${firstLine} ${secondLine}`}
+      aria-label={`${firstLine} ${secondLine}`.trim()}
       data-reference-layer-card="action"
       data-source-ratio="283/167"
+      data-registration-version="v2.1"
     >
-      <ReferenceLayers border={assets.border} texture={assets.texture} />
-      <img className="reference-card__icon-cluster" src={assets.icon} alt="" />
-      <span className="reference-card__live reference-action__label">
+      <FullCanvasReferenceLayers assets={assets} />
+      <span className={actionLabelClass(firstLine, secondLine)}>
         <span>{firstLine}</span>
-        <span>{secondLine}</span>
+        {secondLine.trim() ? <span>{secondLine}</span> : null}
       </span>
-      <ArrowRight className="reference-card__live reference-action__arrow" aria-hidden="true" />
+      <ArrowRight
+        className="reference-card__live reference-action__arrow"
+        aria-hidden="true"
+      />
     </button>
   );
 }

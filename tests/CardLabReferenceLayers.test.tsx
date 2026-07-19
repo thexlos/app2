@@ -18,7 +18,8 @@ describe("ArmaDesk reference-derived layer Card Lab", () => {
 
     expect(container.querySelector(".reference-card__border")).toBeTruthy();
     expect(container.querySelector(".reference-card__texture")).toBeTruthy();
-    expect(container.querySelector(".reference-card__icon-cluster")).toBeTruthy();
+    expect(container.querySelector(".reference-card__icon-well")).toBeTruthy();
+    expect(container.querySelector(".reference-card__icon-glyph")).toBeTruthy();
     expect(container.querySelector(".reference-stat__value")).toBeTruthy();
     expect(container.querySelector(".reference-action__arrow")).toBeTruthy();
   });

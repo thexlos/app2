@@ -8,22 +8,22 @@ import "./card-lab-reference.css";
 
 export function CardLabReferenceLayersScreen() {
   return (
-    <main className="reference-lab-screen" data-reference-layer-lab="v2">
+    <main className="reference-lab-screen" data-reference-layer-lab="v2.1">
       <header className="reference-lab-header">
-        <span>ArmaDesk • Reference-Derived Layer Lab</span>
-        <h1>Actual Mockup Layers, Not Recreated SVG Artwork</h1>
+        <span>ArmaDesk • Reference Layer Lab v2.1</span>
+        <h1>Registration and Matte Cleanup</h1>
         <p>
-          Borders, highlights, textures, and icon/glow clusters are extracted
-          directly from the approved mockup. Only the center surface and live
-          text/values/arrows are code-built.
+          Every visual layer now uses the full source-card canvas. Icon wells and
+          glyphs have clean transparency, no dark crop rectangles, no original
+          label fragments, and no percentage-positioning guesses.
         </p>
         <code>#/card-lab-reference</code>
       </header>
 
       <section className="reference-lab-section">
         <div className="reference-lab-heading">
-          <h2>Stat Card — Exact Reference Ratio</h2>
-          <span>210 × 340 source • 0.617647 ratio</span>
+          <h2>Stat Card — Full-Canvas Registration</h2>
+          <span>210 × 340 • every layer inset: 0</span>
         </div>
 
         <div className="reference-lab-approved">
@@ -50,7 +50,7 @@ export function CardLabReferenceLayersScreen() {
           </article>
         </div>
 
-        <h3>Tone layers extracted from all four approved stat cards</h3>
+        <h3>Registered full-canvas stat layers</h3>
         <div className="reference-lab-stat-tones">
           <ReferenceDerivedStatCard tone="cyan" />
           <ReferenceDerivedStatCard tone="green" label="Invoices" value="8" trend="↑ 2 paid" />
@@ -61,8 +61,8 @@ export function CardLabReferenceLayersScreen() {
 
       <section className="reference-lab-section">
         <div className="reference-lab-heading">
-          <h2>Quick Action — Exact Reference Ratio</h2>
-          <span>283 × 167 source • 1.694611 ratio</span>
+          <h2>Quick Action — Full-Canvas Registration</h2>
+          <span>283 × 167 • every layer inset: 0</span>
         </div>
 
         <div className="reference-lab-approved">
@@ -89,7 +89,7 @@ export function CardLabReferenceLayersScreen() {
           </article>
         </div>
 
-        <h3>Exact icon and border layers extracted from the approved action cards</h3>
+        <h3>Clean registered action layers with live labels and arrows</h3>
         <div className="reference-lab-action-tones">
           <ReferenceDerivedActionCard tone="cyan" />
           <ReferenceDerivedActionCard tone="green" firstLine="Create" secondLine="Invoice" />
@@ -129,8 +129,8 @@ export function CardLabReferenceLayersScreen() {
       <footer className="reference-lab-footer">
         <strong>Approval gate</strong>
         <p>
-          This is the first lab using the approved mockup’s actual border,
-          texture, and icon pixels as independent layers.
+          v2.1 fixes layer registration, transparency mattes, long-label fitting,
+          focus treatment, preview containment, and page overflow.
         </p>
       </footer>
     </main>

@@ -1,31 +1,32 @@
-# ArmaDesk Reference-Derived Card Layer Lab Report
+# ArmaDesk Reference Layer Lab v2.1 Report
 
 ## Isolated route
 
-The reference-derived layer lab is available locally at:
+The cleaned reference-layer lab remains available locally at:
 
 `http://127.0.0.1:<port>/#/card-lab-reference`
 
-The route returns before `AppShell`. It is not added to the application `Screen` state and is not integrated into Home.
+The route returns before `AppShell`. It is not part of the application `Screen` state and is not integrated into Home.
 
-## Source-derived architecture
+## Full-canvas layer registration
 
-Each working card remains separated into five layers:
+The v2.1 patch replaces the previous cropped icon treatment with six independently rendered elements per card:
 
-1. A stretchable, code-built center surface.
-2. A transparent reference-derived texture PNG.
-3. A transparent reference-derived border/highlight PNG.
-4. A transparent reference-derived icon-and-glow PNG.
-5. Live DOM text, values, trends, labels, arrows, accessibility, and button interactions.
+1. Clean source-derived surface PNG.
+2. Transparent texture PNG.
+3. Transparent border/highlight PNG.
+4. Transparent icon-well/glow PNG.
+5. Transparent icon-glyph PNG.
+6. Live DOM content for labels, values, trends, and arrows.
 
-The border, texture, and icon/glow files remain independent assets. They are not flattened into a single card image. The approved full-card crops are retained only as reference assets and are not used as the working-card background.
+All five image layers are positioned with `position: absolute` and `inset: 0`; icon layers no longer use separate `left`, `top`, `width`, or `height` registration values.
 
-## Exact source geometry
+- Stat canvas: `210 × 340` (`210 / 340`).
+- Quick Action canvas: `283 × 167` (`283 / 167`).
 
-- Stat working ratio: `210 / 340` (`0.617647`).
-- Quick Action working ratio: `283 / 167` (`1.694611`).
+## Source coordinates
 
-### Stat crop coordinates
+### Stat cards
 
 | Tone | Source coordinates |
 | --- | --- |
@@ -34,42 +35,50 @@ The border, texture, and icon/glow files remain independent assets. They are not
 | Purple | `473, 78, 684, 418` |
 | Orange | `695, 78, 906, 418` |
 
-### Quick Action crop coordinates
+### Quick Actions
 
 | Tone | Source coordinates |
 | --- | --- |
 | Cyan | `30, 520, 313, 687` |
 | Green | `327, 520, 610, 687` |
 | Purple | `625, 520, 908, 687` |
-| Orange | `30, 702, 313, 866` |
-| Pink | `327, 702, 610, 866` |
-| Blue | `625, 702, 908, 866` |
+| Orange | `30, 700, 313, 867` |
+| Pink | `327, 700, 610, 867` |
+| Blue | `625, 700, 908, 867` |
 
-## Generated layer files
+## Cleanup and content fitting
 
-The repository contains four stat tone sets under `src/assets/card-reference-layers/stat/` and six action tone sets under `src/assets/card-reference-layers/action/`. Every tone directory preserves:
+- Replaced the old dark icon crops with registered transparent icon-well and icon-glyph layers.
+- Removed old label fragments from the icon assets; Add Customer and Business Kit contain only their two live label spans.
+- Kept Calendar centered as one live line.
+- Added compact fitting rules for long stat values and trends.
+- Kept one shared percentage inset for every live action arrow.
+- Contained pressed and focus examples inside their preview columns.
+- Prevented page-level and responsive-preview horizontal overflow.
 
-- `reference-card.png`
-- `border-overlay.png`
-- `texture-overlay.png`
-- `icon-cluster.png`
-- `surface-tokens.json`
+## Changed implementation
 
-Representative border, texture, and icon assets report a 32-bit ARGB pixel format. All 55 supplied asset, source, and test files were verified byte-for-byte after copying.
+- Replaced `src/assets/card-reference-layers/` with the v2.1 registered asset set.
+- Replaced `src/components/card-lab-reference/referenceLayerAssets.ts`.
+- Replaced `src/components/card-lab-reference/ReferenceDerivedCards.tsx`.
+- Replaced `src/screens/CardLabReferenceLayersScreen.tsx`.
+- Replaced `src/screens/card-lab-reference.css`.
+- Added `tests/CardLabReferenceLayers.v21.test.tsx`.
+- Updated the earlier isolated-lab test to recognize the separate icon-well and icon-glyph layers.
 
 ## Validation
 
+- Packet SHA256: `DD0F1EDF363A75CA2531B46CD8720017A61F544C0067EB664C124606529D1447` (verified; different from v2).
+- Packet Python layer verifier: passed; every asset has its expected canonical canvas and RGBA mode.
 - `npm run build`: passed.
-- `npm test`: passed — 22 test files and 116 tests.
-- Browser route: `#/card-lab-reference` rendered successfully with no console errors.
-- All four stat tone sets and all six action tone sets rendered.
-- Every rendered working card contained independent surface, texture, border, icon/glow, and live-content elements.
-- Approved stat and Quick Action references loaded successfully.
-- Live labels, values, trends, two-line action labels, arrows, accessible names, and interaction states remained DOM content.
-- The 390px, 402px, and 430px preview frames reported zero horizontal overflow.
-- Measured preview ratios matched approximately `210/340` and `283/167`.
-- The route rendered without `AppShell`, Home, Hero, or standard navigation.
+- `npm test -- --run`: passed — 23 test files and 120 tests.
+- Browser validation: 39 rendered examples; every card had five loaded image layers at `inset: 0` with the correct natural canvas.
+- All four stat tones and all six Quick Action tones rendered.
+- The 390px, 402px, and 430px preview frames each reported zero horizontal overflow.
+- Page and body horizontal overflow were both zero.
+- State examples remained contained, Calendar stayed on one line, and no broken images were found.
+- The isolated route rendered without `AppShell`, Home, Hero, or standard navigation.
 
 ## Scope confirmation
 
-Home, Home CSS, Hero components and CSS, navigation, `AppState`, business logic, persistence, and the existing `#/card-lab` implementation were not modified. The reference-derived cards were not integrated into Home. No deployment was performed.
+`App.tsx`, Home, Home CSS, Hero components and CSS, navigation, `AppState`, persistence, business logic, and the existing `#/card-lab` files were not modified. The reference-layer cards were not integrated into Home. No deployment was performed.
