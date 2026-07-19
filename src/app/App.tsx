@@ -32,6 +32,7 @@ import { QRCodeDetailScreen } from "../screens/QRCodeDetailScreen";
 import { TrashScreen } from "../screens/TrashScreen";
 import { CardLabScreen } from "../screens/CardLabScreen";
 import { CardLabReferenceLayersScreen } from "../screens/CardLabReferenceLayersScreen";
+import { CardLabCleanArtworkScreen } from "../screens/CardLabCleanArtworkScreen";
 import {
   HelpGuideScreen,
   HelpRequestDetailScreen,
@@ -134,6 +135,9 @@ export function App() {
   if (hash === "#/card-lab") return <CardLabScreen />;
   if (hash === "#/card-lab-reference") {
     return <CardLabReferenceLayersScreen />;
+  }
+  if (hash === "#/card-lab-artwork") {
+    return <CardLabCleanArtworkScreen />;
   }
   const ScreenComponent = screens[currentScreen];
   return (
