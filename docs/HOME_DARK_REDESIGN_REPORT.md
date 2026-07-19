@@ -1502,6 +1502,84 @@ Phase 3A is complete: the uploaded `armadesk_phase3a_premium_card_system_v1.zip`
   - hero remained `hero-composition-v2.3` with the `43-57` split
   - console error count was zero
 
+## Phase 3B premium proportion patch integrated
+
+Phase 3B is complete: the uploaded `armadesk_phase3b_premium_proportion_patch_v1.zip` packet was integrated as a supplied dimensional patch. This preserved the Phase 3A premium material and expanded the card/nav proportions to the approved measurement ranges.
+
+## Phase 3B source files used
+
+- Read and followed:
+  - `00_READ_ME_FIRST.md`
+  - `INTEGRATION_README.md`
+  - `CODEX_IMPLEMENTATION_PROMPT.txt`
+  - `docs/INTERACTION_RULES.md`
+  - `docs/PHASE_3B_ACCEPTANCE_CHECKLIST.md`
+  - `geometry/premium_proportion_geometry.json`
+- Inspected the supplied references:
+  - `reference/approved_premium_proportions.png`
+  - `reference/approved_target_at_430px.png`
+  - `reference/current_live_premium_cards.png`
+  - `reference/current_live_cards_crop.png`
+  - `reference/live_vs_approved_proportions.png`
+  - `geometry/premium_proportion_measurement_board.png`
+- Integrated the supplied implementation files:
+  - `implementation/home_premium_proportions.css`
+  - `implementation/navigation_premium_proportions.css`
+  - `tests/homePremiumProportions.test.tsx`
+
+## Phase 3B changes
+
+- Appended the supplied Home proportion CSS after the Phase 3A premium card CSS.
+- Appended the supplied bottom-nav proportion CSS after the Phase 3A premium nav CSS.
+- Increased stat card height, radius, icon well size, internal padding, and vertical breathing room.
+- Increased Quick Action card height, radius, icon well size, and icon/label/arrow spacing.
+- Increased Upcoming Schedule card height, radius, date well, and location well.
+- Increased Smart Suggestion card height, radius, and icon well size.
+- Increased bottom-nav height/radius and raised Create button size.
+- Added one scoped 390–400px measurement guard so the smaller fallback wells stay inside the packet measurement-board ranges:
+  - Quick Action wells remain at least 40px.
+  - Smart Suggestion wells remain at least 44px.
+
+## Phase 3B intentionally not changed
+
+- Phase 3A premium card material, glow, tone families, and interaction behavior were preserved.
+- Home header was not changed.
+- Business control row was not changed.
+- Setup chip behavior was not changed.
+- Approved Phase 2F hero composition, data, clipping, and animation were not changed.
+- Home JSX structure, Home order, routes, state, and business logic were not changed.
+- QR, estimate, invoice, customer, File Vault, recovery draft, persistence, and business-profile logic were not changed.
+- No screenshots or static visual references were pasted into the live UI.
+- No deployment was performed.
+- No Phase 4 work was started.
+
+## Phase 3B validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Test suite result: 16 test files passed, 98 tests passed.
+- In-app browser responsive checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - page scrolls normally with the larger cards
+  - stat cards remained four across
+  - Quick Actions remained three columns by two rows
+  - schedule stayed readable
+  - Smart Suggestions stayed two across
+  - no internal word breaks
+  - Smart Suggestions remained the final Home content section
+  - bottom nav did not cover Smart Suggestions at the bottom scroll position
+  - Create button remained raised
+  - hero remained `hero-composition-v2.3` with `43-57` split
+  - console error count was zero
+
+## Phase 3B measured dimensions
+
+| Viewport | Stat height | Quick height | Schedule height | Suggestion height | Nav height | Create button |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 390px | 134.16px | 70.58px | 97.5px | 83.45px | 76px | 72px |
+| 402px | 138.28px | 72.75px | 100.5px | 86.02px | 78.38px | 75.17px |
+| 430px | 147.91px | 77.83px | 107.5px | 92px | 83.84px | 80px |
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

@@ -6395,3 +6395,290 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ArmaDesk Phase 3B — Premium Proportion Patch v1
+   Append this AFTER the Phase 3A Premium Card System CSS in src/screens/home.css.
+
+   This does not redesign the premium card material. It expands the existing
+   premium cards to the approved proportions.
+*/
+
+.screen.home-screen {
+  --home-ref-stat-h: clamp(132px, 34.4vw, 148px);
+  --home-ref-quick-card-h: clamp(70px, 18.1vw, 78px);
+  --home-ref-schedule-h: clamp(96px, 25vw, 108px);
+  --home-ref-suggestion-h: clamp(82px, 21.4vw, 92px);
+  --home-ref-bottom-nav-h: clamp(76px, 19.5vw, 84px);
+  --home-ref-gap-hero-stats: clamp(12px, 3vw, 14px);
+  --home-ref-gap-stats-quick: clamp(17px, 4.3vw, 19px);
+  --home-ref-gap-quick-schedule: clamp(16px, 4vw, 18px);
+  --home-ref-gap-schedule-suggestions: clamp(17px, 4.4vw, 20px);
+  padding-bottom:
+    calc(
+      var(--home-ref-bottom-nav-h) +
+      44px +
+      env(safe-area-inset-bottom, 0px)
+    );
+}
+
+/* Stat cards */
+.home-stat-grid {
+  gap: clamp(8px, 2.3vw, 10px);
+}
+
+.home-stat-card {
+  min-height: var(--home-ref-stat-h);
+  align-content: center;
+  gap: clamp(4px, 1.1vw, 6px);
+  padding:
+    clamp(11px, 2.8vw, 13px)
+    clamp(5px, 1.4vw, 7px)
+    clamp(10px, 2.6vw, 12px);
+  border-radius: clamp(24px, 6.7vw, 29px);
+}
+
+.home-stat-card__icon {
+  width: clamp(48px, 12.6vw, 54px);
+  height: clamp(48px, 12.6vw, 54px);
+  margin-bottom: clamp(2px, 0.8vw, 4px);
+  border-radius: clamp(16px, 4.6vw, 20px);
+  box-shadow:
+    0 0 22px
+      color-mix(in srgb, var(--tone-color, #38bdf8) 58%, transparent),
+    0 0 35px
+      color-mix(in srgb, var(--tone-color, #38bdf8) 24%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -10px 17px rgba(0, 0, 0, 0.22);
+}
+
+.home-stat-card__icon svg {
+  width: clamp(24px, 6.4vw, 28px);
+  height: clamp(24px, 6.4vw, 28px);
+}
+
+.home-stat-card__label {
+  font-size: clamp(0.64rem, 2.75vw, 0.76rem);
+}
+
+.home-stat-card strong {
+  font-size: clamp(1.65rem, 7vw, 2.05rem);
+}
+
+.home-stat-card__trend {
+  font-size: clamp(0.56rem, 2.35vw, 0.67rem);
+}
+
+/* Quick Actions */
+.home-quick-actions-panel {
+  margin-top: var(--home-ref-gap-stats-quick);
+}
+
+.home-quick-grid {
+  gap: clamp(8px, 2.3vw, 10px);
+}
+
+.home-action-card {
+  min-height: var(--home-ref-quick-card-h);
+  grid-template-columns:
+    clamp(40px, 10.6vw, 46px)
+    minmax(0, 1fr)
+    clamp(11px, 3vw, 14px);
+  gap: clamp(7px, 1.9vw, 9px);
+  padding:
+    clamp(9px, 2.4vw, 11px)
+    clamp(8px, 2.2vw, 10px);
+  border-radius: clamp(22px, 6vw, 27px);
+}
+
+.home-action-card .home-chip {
+  width: clamp(40px, 10.6vw, 46px);
+  height: clamp(40px, 10.6vw, 46px);
+  border-radius: clamp(14px, 4vw, 18px);
+  box-shadow:
+    0 0 20px
+      color-mix(in srgb, var(--tone-color, #38bdf8) 48%, transparent),
+    0 0 30px
+      color-mix(in srgb, var(--tone-color, #38bdf8) 20%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20);
+}
+
+.home-action-card .home-chip svg {
+  width: clamp(21px, 5.6vw, 25px);
+  height: clamp(21px, 5.6vw, 25px);
+}
+
+.home-action-card strong {
+  font-size: clamp(0.64rem, 2.7vw, 0.75rem);
+  line-height: 1.12;
+}
+
+/* Upcoming Schedule */
+.home-schedule-panel {
+  margin-top: var(--home-ref-gap-quick-schedule);
+}
+
+.home-schedule-card {
+  min-height: var(--home-ref-schedule-h);
+  grid-template-columns:
+    clamp(54px, 14.2vw, 62px)
+    1px
+    minmax(0, 1fr)
+    auto;
+  gap: clamp(9px, 2.4vw, 12px);
+  padding: clamp(10px, 2.7vw, 12px);
+  border-radius: clamp(24px, 6.7vw, 29px);
+}
+
+.home-schedule-date {
+  width: clamp(54px, 14.2vw, 62px);
+  min-height: clamp(72px, 18.8vw, 81px);
+  border-radius: clamp(17px, 4.8vw, 21px);
+}
+
+.home-schedule-date strong {
+  font-size: clamp(1.45rem, 6.2vw, 1.78rem);
+}
+
+.home-schedule-main {
+  gap: clamp(3px, 0.9vw, 5px);
+}
+
+.home-schedule-main strong {
+  font-size: clamp(0.84rem, 3.5vw, 0.98rem);
+}
+
+.home-schedule-main span {
+  font-size: clamp(0.64rem, 2.65vw, 0.75rem);
+}
+
+.home-schedule-main small {
+  padding: 4px 9px;
+  font-size: clamp(0.56rem, 2.25vw, 0.65rem);
+}
+
+.home-schedule-side {
+  grid-template-columns:
+    clamp(48px, 12.5vw, 56px)
+    minmax(0, auto);
+  gap: clamp(7px, 1.8vw, 9px);
+  font-size: clamp(0.58rem, 2.35vw, 0.68rem);
+}
+
+.home-schedule-side .home-chip {
+  width: clamp(48px, 12.5vw, 56px);
+  height: clamp(48px, 12.5vw, 56px);
+}
+
+/* Smart Suggestions */
+.home-suggestions-panel {
+  margin-top: var(--home-ref-gap-schedule-suggestions);
+}
+
+.home-suggestion-card {
+  min-height: var(--home-ref-suggestion-h);
+  border-radius: clamp(22px, 6.1vw, 27px);
+}
+
+.home-suggestion-card__main {
+  grid-template-columns:
+    clamp(44px, 11.5vw, 50px)
+    minmax(0, 1fr)
+    clamp(12px, 3.1vw, 15px);
+  gap: clamp(8px, 2.1vw, 10px);
+  padding:
+    clamp(9px, 2.5vw, 11px)
+    clamp(9px, 2.4vw, 11px);
+}
+
+.home-suggestion-card .home-chip {
+  width: clamp(44px, 11.5vw, 50px);
+  height: clamp(44px, 11.5vw, 50px);
+  border-radius: clamp(15px, 4.3vw, 19px);
+  box-shadow:
+    0 0 21px
+      color-mix(in srgb, var(--tone-color, #38bdf8) 48%, transparent),
+    0 0 31px
+      color-mix(in srgb, var(--tone-color, #38bdf8) 18%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20);
+}
+
+.home-suggestion-card .home-chip svg {
+  width: clamp(24px, 6.3vw, 28px);
+  height: clamp(24px, 6.3vw, 28px);
+}
+
+.home-suggestion-card strong {
+  font-size: clamp(0.69rem, 2.9vw, 0.80rem);
+}
+
+.home-suggestion-card small {
+  font-size: clamp(0.59rem, 2.45vw, 0.69rem);
+}
+
+/* Section headers get slightly more breathing room. */
+.home-section-header {
+  margin-bottom: clamp(9px, 2.4vw, 11px);
+}
+
+.home-section-header h2 {
+  font-size: clamp(1rem, 4.15vw, 1.13rem);
+}
+
+@media (max-width: 400px) {
+  .home-action-card {
+    grid-template-columns: 38px minmax(0, 1fr) 11px;
+    padding-inline: 7px;
+  }
+
+  .home-action-card .home-chip {
+    width: 38px;
+    height: 38px;
+  }
+
+  .home-action-card strong {
+    font-size: 0.61rem;
+  }
+
+  .home-schedule-main span {
+    max-width: 8.4rem;
+  }
+
+  .home-suggestion-card__main {
+    grid-template-columns: 42px minmax(0, 1fr) 11px;
+    gap: 7px;
+    padding-inline: 8px;
+  }
+
+  .home-suggestion-card .home-chip {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* Phase 3B measurement-board guard: keep the supplied larger icon wells inside
+   the documented responsive ranges even at 390px. */
+@media (max-width: 400px) {
+  .home-action-card {
+    grid-template-columns:
+      clamp(40px, 10.6vw, 46px)
+      minmax(0, 1fr)
+      clamp(11px, 3vw, 14px);
+  }
+
+  .home-action-card .home-chip {
+    width: 40px;
+    height: 40px;
+  }
+
+  .home-suggestion-card__main {
+    grid-template-columns:
+      44px
+      minmax(0, 1fr)
+      11px;
+  }
+
+  .home-suggestion-card .home-chip {
+    width: 44px;
+    height: 44px;
+  }
+}

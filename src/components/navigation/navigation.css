@@ -380,3 +380,64 @@
     height: 58px;
   }
 }
+
+/* ArmaDesk Phase 3B — Premium Bottom Nav Proportion Patch v1
+   Append this AFTER the Phase 3A Premium Bottom Navigation CSS in
+   src/components/navigation/navigation.css.
+*/
+
+.bottom-nav {
+  width: min(calc(100% - clamp(13px, 3.3vw, 14px)), 416px);
+  height: clamp(76px, 19.5vw, 84px);
+  padding:
+    clamp(8px, 2.1vw, 10px)
+    clamp(10px, 2.8vw, 12px)
+    clamp(8px, 2.1vw, 10px);
+  border-radius: clamp(29px, 8vw, 34px);
+  box-shadow:
+    0 22px 52px rgba(0, 0, 0, 0.52),
+    0 0 36px rgba(37, 99, 235, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.bottom-nav__item {
+  gap: clamp(3px, 0.9vw, 4px);
+  font-size: clamp(0.64rem, 3.15vw, 0.79rem);
+}
+
+.bottom-nav__icon-wrap {
+  width: clamp(27px, 7.2vw, 31px);
+  height: clamp(27px, 7.2vw, 31px);
+}
+
+.bottom-nav__item--create {
+  transform: translateY(clamp(-36px, -8.8vw, -32px));
+}
+
+.bottom-nav__item--create .bottom-nav__icon-wrap {
+  width: clamp(72px, 18.7vw, 80px);
+  height: clamp(72px, 18.7vw, 80px);
+  box-shadow:
+    0 18px 44px rgba(37, 99, 235, 0.60),
+    0 0 42px rgba(14, 165, 233, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.44),
+    inset 0 -10px 20px rgba(30, 27, 75, 0.30);
+}
+
+.bottom-nav__item--create > span:last-child {
+  margin-top: 1px;
+  font-size: clamp(0.68rem, 3.2vw, 0.82rem);
+}
+
+@media (max-width: 390px) {
+  .bottom-nav {
+    width: min(calc(100% - 13px), 377px);
+    height: 76px;
+  }
+
+  .bottom-nav__item--create .bottom-nav__icon-wrap {
+    width: 72px;
+    height: 72px;
+  }
+}
