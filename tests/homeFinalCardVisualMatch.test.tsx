@@ -11,10 +11,10 @@ describe("ArmaDesk final premium card visual match", () => {
       </AppStateProvider>,
     );
 
-    expect(container.querySelectorAll(".home-stat-card")).toHaveLength(4);
-    expect(container.querySelectorAll(".home-action-card")).toHaveLength(6);
-    expect(container.querySelectorAll(".home-schedule-card")).toHaveLength(1);
-    expect(container.querySelectorAll(".home-suggestion-card")).toHaveLength(2);
+    expect(container.querySelectorAll(".premium-card--stat")).toHaveLength(4);
+    expect(container.querySelectorAll(".premium-card--action")).toHaveLength(6);
+    expect(container.querySelectorAll(".premium-card--schedule")).toHaveLength(1);
+    expect(container.querySelectorAll(".premium-card--suggestion")).toHaveLength(2);
   });
 
   it("keeps Smart Suggestions as final Home content", () => {
@@ -26,7 +26,7 @@ describe("ArmaDesk final premium card visual match", () => {
 
     const homeContent = container.querySelector(".home-content");
     expect(
-      homeContent?.lastElementChild?.classList.contains("home-suggestions-panel"),
+      homeContent?.lastElementChild?.classList.contains("premium-suggestions-section"),
     ).toBe(true);
   });
 });

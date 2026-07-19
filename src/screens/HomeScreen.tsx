@@ -3,22 +3,25 @@ import {
   Bell,
   Briefcase,
   CalendarDays,
-  CalendarClock,
   ClipboardCheck,
   FilePlus2,
-  MapPin,
   QrCode,
   ReceiptText,
   Star,
   UserRound,
   UserRoundPlus,
 } from "lucide-react";
-import { Button } from "../components/common/Button";
 import { BusinessSwitcher } from "../components/common/BusinessSwitcher";
 import {
   HomeHeroAnalyticsVisual,
   type HeroAnalyticsMetric,
 } from "../components/home/HomeHeroAnalyticsVisual";
+import {
+  PremiumHomeCardSections,
+  type PremiumActionItem,
+  type PremiumStatItem,
+  type PremiumSuggestionItem,
+} from "../components/home/premium";
 import { appBrand } from "../config/brandAssets";
 import { useAppState } from "../state/AppState";
 import type { SmartSuggestion } from "../types/models";
@@ -201,6 +204,44 @@ export function HomeScreen() {
     label: "current work",
   };
 
+  const premiumStats: PremiumStatItem[] = stats.map(
+    ({ label, value, trend, icon, tone, action }) => ({
+      label,
+      value,
+      trend,
+      icon,
+      tone:
+        tone === "blue"
+          ? "cyan"
+          : tone === "green"
+            ? "green"
+            : tone === "purple"
+              ? "purple"
+              : "orange",
+      onClick: action,
+    }),
+  );
+
+  const premiumActions: PremiumActionItem[] = quickActions.map(
+    ({ label, icon, tone, action }) => ({
+      label,
+      icon,
+      tone:
+        tone === "blue"
+          ? "cyan"
+          : tone === "green"
+            ? "green"
+            : tone === "purple"
+              ? "purple"
+              : tone === "orange"
+                ? "orange"
+                : tone === "pink"
+                  ? "pink"
+                  : "blue",
+      onClick: action,
+    }),
+  );
+
   const openSuggestion = (suggestion?: SmartSuggestion) => {
     if (!suggestion) {
       setCurrentScreen("create");
@@ -240,6 +281,17 @@ export function HomeScreen() {
           : "create",
       );
   };
+
+  const premiumSuggestions: PremiumSuggestionItem[] = suggestionCards.map(
+    ({ id, title, subtitle, icon, tone, suggestion }) => ({
+      id,
+      title,
+      subtitle,
+      icon,
+      tone: tone === "purple" ? "purple" : "cyan",
+      onClick: () => openSuggestion(suggestion),
+    }),
+  );
 
   return (
     <section className="screen home-screen home-shell">
@@ -311,141 +363,28 @@ export function HomeScreen() {
           <HomeHeroAnalyticsVisual metrics={heroMetrics} badge={heroBadge} />
         </section>
 
-        <section className="home-stats-section" aria-label="Business dashboard stats">
-          <div className="home-stat-grid" aria-label="Business dashboard stats">
-            {stats.map(({ label, value, trend, icon: Icon, tone, action }) => (
-              <button
-                key={label}
-                className={`home-stat-card home-tone-${tone}`}
-                onClick={action}
-                aria-label={`${label}: ${value}`}
-              >
-                <span className="home-stat-card__icon">
-                  <Icon size={23} />
-                </span>
-                <span className="home-stat-card__label">{label}</span>
-                <strong>{value}</strong>
-                <span className="home-stat-card__trend">{trend}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="home-quick-actions-panel">
-        <div className="home-section-header">
-          <div>
-            <h2>Quick Actions</h2>
-          </div>
-          <Button variant="ghost" onClick={() => setCurrentScreen("create")}>
-            See All
-          </Button>
-        </div>
-        <div className="home-quick-grid">
-          {quickActions.map(({ label, icon: Icon, tone, action }) => (
-            <button
-              key={label}
-              className={`home-action-card home-tone-${tone}`}
-              onClick={action}
-              aria-label={label}
-            >
-              <span className="home-chip">
-                <Icon size={18} />
-              </span>
-              <span className="home-action-card__copy">
-                <strong>{label}</strong>
-              </span>
-              <ArrowRight className="home-action-card__arrow" size={15} />
-            </button>
-          ))}
-        </div>
-        </section>
-
-        <section className="home-schedule-panel" aria-labelledby="home-schedule-title">
-          <div className="home-section-header">
-            <div>
-              <h2 id="home-schedule-title">Upcoming Schedule</h2>
-            </div>
-            <Button variant="ghost" onClick={() => openSchedule()}>
-              View Calendar
-            </Button>
-          </div>
-          {nextScheduleEvent ? (
-            <button
-              className="home-schedule-card"
-              onClick={() => openSchedule()}
-              aria-label="Open calendar for Site Visit"
-            >
-              <span className="home-schedule-date">
-                <span>JUL</span>
-                <strong>13</strong>
-                <span>MON</span>
-              </span>
-              <span className="home-schedule-divider" aria-hidden="true" />
-              <span className="home-schedule-main">
-                <strong>Site Visit</strong>
-                <span>10:00 AM • 123 Main St</span>
-                <small>Upcoming</small>
-              </span>
-              <span className="home-schedule-side">
-                <span className="home-chip home-chip--info">
-                  <MapPin size={19} />
-                </span>
-                {scheduledEvents.length > 1 && (
-                  <span>{scheduledEvents.length - 1} more event</span>
-                )}
-              </span>
-            </button>
-          ) : (
-            <button className="home-schedule-card home-schedule-card--empty" onClick={() => openSchedule()}>
-              <span className="home-chip home-chip--info">
-                <CalendarClock size={18} />
-              </span>
-              <span className="home-schedule-main">
-                <strong>No appointments today</strong>
-                <span>Your schedule is clear.</span>
-              </span>
-              <span className="home-link-inline">
-                View Calendar <ArrowRight size={15} />
-              </span>
-            </button>
-          )}
-        </section>
-
-        <section className="home-suggestions-panel" aria-labelledby="home-suggestions-title">
-          <div className="home-section-header">
-            <div>
-              <h2 id="home-suggestions-title">Smart Suggestions</h2>
-            </div>
-            <Button variant="ghost" type="button">
-              See All
-            </Button>
-          </div>
-          <div className="home-suggestion-grid">
-            {suggestionCards.map(({ id, title, subtitle, icon: SuggestionIcon, tone, suggestion }) => {
-              return (
-                <article
-                  key={id}
-                  className={`home-suggestion-card home-tone-${tone}`}
-                >
-                  <button
-                    className="home-suggestion-card__main"
-                    onClick={() => openSuggestion(suggestion)}
-                    aria-label={title}
-                  >
-                    <span className="home-chip">
-                      <SuggestionIcon size={21} />
-                    </span>
-                    <span className="home-suggestion-card__copy">
-                      <strong>{title}</strong>
-                      <small>{subtitle}</small>
-                    </span>
-                    <ArrowRight className="home-action-card__arrow" size={15} />
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-        </section>
+        <PremiumHomeCardSections
+          stats={premiumStats}
+          actions={premiumActions}
+          schedule={{
+            month: "JUL",
+            day: "13",
+            weekday: "MON",
+            title: nextScheduleEvent ? "Site Visit" : "No appointments today",
+            detail: nextScheduleEvent
+              ? "10:00 AM • 123 Main St"
+              : "Your schedule is clear.",
+            status: nextScheduleEvent ? "Upcoming" : "Available",
+            extra:
+              scheduledEvents.length > 1
+                ? `${scheduledEvents.length - 1} more event`
+                : undefined,
+            onClick: () => openSchedule(),
+          }}
+          suggestions={premiumSuggestions}
+          onSeeAllActions={() => setCurrentScreen("create")}
+          onViewCalendar={() => openSchedule()}
+        />
       </div>
     </section>
   );
