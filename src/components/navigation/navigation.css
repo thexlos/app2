@@ -245,3 +245,138 @@
     height: 58px;
   }
 }
+
+/* ArmaDesk Premium Bottom Navigation v1
+   Append this block near the end of:
+   src/components/navigation/navigation.css
+*/
+
+.bottom-nav {
+  width: min(calc(100% - clamp(13px, 3.3vw, 14px)), 416px);
+  height: var(--home-ref-bottom-nav-h, clamp(57px, 14.6vw, 63px));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  padding:
+    clamp(5px, 1.4vw, 6px)
+    clamp(9px, 2.6vw, 11px)
+    clamp(5px, 1.5vw, 7px);
+  border: 1px solid rgba(96, 165, 250, 0.34);
+  border-radius: clamp(25px, 7.2vw, 31px);
+  background:
+    radial-gradient(circle at 50% -24%,
+      rgba(37, 99, 235, 0.42),
+      transparent 38%),
+    linear-gradient(
+      180deg,
+      rgba(18, 37, 66, 0.97),
+      rgba(5, 16, 34, 0.96) 62%,
+      rgba(2, 9, 22, 0.97)
+    );
+  box-shadow:
+    0 19px 46px rgba(0, 0, 0, 0.48),
+    0 0 30px rgba(37, 99, 235, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(22px) saturate(1.14);
+}
+
+.bottom-nav::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.12),
+      transparent 24%,
+      transparent 72%,
+      rgba(59, 130, 246, 0.08)
+    );
+}
+
+.bottom-nav__item {
+  position: relative;
+  z-index: 2;
+  color: rgba(203, 213, 225, 0.86);
+  font-size: clamp(0.61rem, 3vw, 0.76rem);
+  font-weight: 700;
+}
+
+.bottom-nav__item--active:not(.bottom-nav__item--create) {
+  color: #22d3ee;
+}
+
+.bottom-nav__item--active:not(.bottom-nav__item--create)::before {
+  width: clamp(28px, 7.7vw, 34px);
+  height: 3px;
+  bottom: -1px;
+  background: linear-gradient(90deg, #2563eb, #22d3ee);
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.92),
+    0 0 18px rgba(37, 99, 235, 0.48);
+}
+
+.bottom-nav__item--active:not(.bottom-nav__item--create) .bottom-nav__icon-wrap {
+  color: #22d3ee;
+  filter:
+    drop-shadow(0 0 8px rgba(34, 211, 238, 0.86))
+    drop-shadow(0 0 15px rgba(37, 99, 235, 0.44));
+}
+
+.bottom-nav__item--create {
+  transform: translateY(clamp(-29px, -7vw, -25px));
+  color: #f8fafc;
+  font-weight: 800;
+}
+
+.bottom-nav__item--create .bottom-nav__icon-wrap {
+  width: clamp(59px, 15.2vw, 66px);
+  height: clamp(59px, 15.2vw, 66px);
+  border: 1px solid rgba(103, 232, 249, 0.74);
+  background:
+    radial-gradient(circle at 48% 18%,
+      rgba(125, 211, 252, 0.58),
+      transparent 34%),
+    linear-gradient(145deg, #0ea5e9 0%, #2563eb 48%, #6d28d9 100%);
+  box-shadow:
+    0 16px 38px rgba(37, 99, 235, 0.54),
+    0 0 35px rgba(14, 165, 233, 0.56),
+    inset 0 1px 0 rgba(255, 255, 255, 0.40),
+    inset 0 -8px 16px rgba(30, 27, 75, 0.28);
+}
+
+.bottom-nav__item--create .bottom-nav__icon-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.bottom-nav__item:last-child .bottom-nav__icon-wrap {
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 20%, rgba(255, 255, 255, 0.07), transparent 40%),
+    rgba(30, 41, 59, 0.78);
+  box-shadow:
+    inset 0 0 0 1px rgba(148, 163, 184, 0.10),
+    0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.bottom-nav__item:focus-visible {
+  outline: 2px solid rgba(34, 211, 238, 0.88);
+  outline-offset: 2px;
+}
+
+.bottom-nav__item:active:not(.bottom-nav__item--create) {
+  transform: translateY(1px);
+}
+
+@media (max-width: 390px) {
+  .bottom-nav__item--create .bottom-nav__icon-wrap {
+    width: 58px;
+    height: 58px;
+  }
+}

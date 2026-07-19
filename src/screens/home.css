@@ -5801,3 +5801,597 @@
 .home-hero-analytics--composition-v23 .home-hero-analytics__line-point {
   filter: none;
 }
+
+:root {
+  --arma-premium-surface-top: rgba(17, 35, 62, 0.98);
+  --arma-premium-surface-bottom: rgba(3, 12, 27, 0.98);
+  --arma-premium-surface-mid: rgba(8, 23, 43, 0.96);
+  --arma-premium-ink: #f8fafc;
+  --arma-premium-muted: #94a3b8;
+  --arma-premium-soft: #cbd5e1;
+  --arma-premium-cyan: #22d3ee;
+  --arma-premium-blue: #3b82f6;
+  --arma-premium-green: #22c55e;
+  --arma-premium-purple: #a855f7;
+  --arma-premium-orange: #f59e0b;
+  --arma-premium-pink: #fb7185;
+  --arma-premium-violet: #c084fc;
+  --arma-premium-card-shadow:
+    0 15px 34px rgba(0, 0, 0, 0.34),
+    0 0 23px color-mix(in srgb, var(--tone-color, #38bdf8) 18%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.17),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+  --arma-premium-card-border:
+    color-mix(in srgb, var(--tone-color, #38bdf8) 48%, rgba(148, 163, 184, 0.24));
+}
+
+/* ArmaDesk Premium Home Card System v1
+   Built for the existing HomeScreen markup at commit:
+   007bc4e10dbeaf6dc4ae06b986f82c55adbdae6f
+
+   Append this block near the end of src/screens/home.css.
+   It restyles existing markup; no product logic changes are required.
+*/
+
+.screen.home-screen {
+  --premium-card-radius: clamp(20px, 5.6vw, 24px);
+  --premium-card-bg:
+    radial-gradient(circle at 18% -4%,
+      color-mix(in srgb, var(--tone-color, #38bdf8) 18%, transparent),
+      transparent 42%),
+    radial-gradient(circle at 92% 108%,
+      color-mix(in srgb, var(--tone-color, #38bdf8) 12%, transparent),
+      transparent 38%),
+    linear-gradient(155deg,
+      rgba(18, 37, 66, 0.98) 0%,
+      rgba(7, 22, 42, 0.97) 48%,
+      rgba(2, 10, 24, 0.98) 100%);
+  --premium-card-border:
+    color-mix(in srgb, var(--tone-color, #38bdf8) 50%, rgba(148, 163, 184, 0.22));
+  --premium-card-glow:
+    0 14px 32px rgba(0, 0, 0, 0.34),
+    0 0 23px color-mix(in srgb, var(--tone-color, #38bdf8) 19%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.17),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+}
+
+/* Shared glossy surface layer. */
+.home-stat-card,
+.home-action-card,
+.home-schedule-card,
+.home-suggestion-card {
+  -webkit-tap-highlight-color: transparent;
+  border-color: var(--premium-card-border);
+  background: var(--premium-card-bg);
+  box-shadow: var(--premium-card-glow);
+  backdrop-filter: blur(20px) saturate(1.13);
+  transition:
+    transform 150ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
+}
+
+.home-stat-card::before,
+.home-action-card::before,
+.home-schedule-card::after,
+.home-suggestion-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      138deg,
+      rgba(255, 255, 255, 0.14),
+      transparent 21%,
+      transparent 72%,
+      color-mix(in srgb, var(--tone-color, #38bdf8) 12%, transparent)
+    ),
+    radial-gradient(
+      circle at 12% 4%,
+      color-mix(in srgb, var(--tone-color, #38bdf8) 16%, transparent),
+      transparent 34%
+    );
+  opacity: 0.82;
+}
+
+.home-stat-card::after,
+.home-action-card::after,
+.home-schedule-card::before,
+.home-suggestion-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  width: auto;
+  height: auto;
+  z-index: 0;
+  border: 1px solid transparent;
+  border-top-color:
+    color-mix(in srgb, var(--tone-color, #38bdf8) 78%, white 22%);
+  border-left-color:
+    color-mix(in srgb, var(--tone-color, #38bdf8) 44%, transparent);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.92;
+  filter:
+    drop-shadow(
+      0 0 8px
+      color-mix(in srgb, var(--tone-color, #38bdf8) 46%, transparent)
+    );
+}
+
+.home-stat-card:active,
+.home-action-card:active,
+.home-schedule-card:active,
+.home-suggestion-card__main:active {
+  transform: translateY(1px) scale(0.985);
+  filter: brightness(1.06);
+}
+
+.home-stat-card:focus-visible,
+.home-action-card:focus-visible,
+.home-schedule-card:focus-visible,
+.home-suggestion-card__main:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--tone-color, #38bdf8) 82%, white 18%);
+  outline-offset: 3px;
+}
+
+/* ---------------------------------------------------
+   STAT CARDS
+--------------------------------------------------- */
+.home-stat-grid {
+  gap: clamp(7px, 2.1vw, 9px);
+}
+
+.home-stat-card {
+  min-height: var(--home-ref-stat-h, clamp(114px, 29.16vw, 125px));
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(2px, 0.65vw, 3px);
+  padding: clamp(8px, 2.1vw, 10px) clamp(4px, 1.3vw, 6px)
+    clamp(7px, 1.9vw, 9px);
+  border-width: 1px;
+  border-radius: clamp(20px, 5.6vw, 24px);
+  text-align: center;
+  overflow: hidden;
+}
+
+.home-stat-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.home-stat-card__icon {
+  width: clamp(38px, 10.2vw, 44px);
+  height: clamp(38px, 10.2vw, 44px);
+  display: grid;
+  place-items: center;
+  margin-bottom: 2px;
+  border: 1px solid
+    color-mix(in srgb, var(--tone-color, #38bdf8) 62%, white 10%);
+  border-radius: clamp(13px, 3.8vw, 17px);
+  color: var(--tone-color, #38bdf8);
+  background:
+    radial-gradient(
+      circle at 35% 15%,
+      rgba(255, 255, 255, 0.20),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 50% 60%,
+      color-mix(in srgb, var(--tone-color, #38bdf8) 28%, transparent),
+      transparent 70%
+    ),
+    rgba(4, 18, 40, 0.88);
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--tone-color, #38bdf8) 52%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    inset 0 -8px 14px rgba(0, 0, 0, 0.20);
+}
+
+.home-stat-card__icon svg {
+  width: clamp(20px, 5.7vw, 25px);
+  height: clamp(20px, 5.7vw, 25px);
+  stroke-width: 2.05;
+  filter:
+    drop-shadow(
+      0 0 7px
+      color-mix(in srgb, var(--tone-color, #38bdf8) 75%, transparent)
+    );
+}
+
+.home-stat-card__label {
+  margin-top: 1px;
+  color: var(--home-secondary-text);
+  font-size: clamp(0.61rem, 2.65vw, 0.72rem);
+  font-weight: 760;
+  line-height: 1.04;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.home-stat-card strong {
+  color: #f8fafc;
+  font-size: clamp(1.45rem, 6vw, 1.82rem);
+  font-weight: 860;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+  text-align: center;
+}
+
+.home-stat-card__trend {
+  color: var(--tone-color, #38bdf8);
+  font-size: clamp(0.54rem, 2.25vw, 0.64rem);
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow:
+    0 0 10px
+    color-mix(in srgb, var(--tone-color, #38bdf8) 42%, transparent);
+}
+
+/* ---------------------------------------------------
+   QUICK ACTION CARDS
+--------------------------------------------------- */
+.home-quick-grid {
+  gap: clamp(7px, 2.1vw, 9px);
+}
+
+.home-action-card {
+  min-height: var(--home-ref-quick-card-h, clamp(54px, 13.74vw, 59px));
+  grid-template-columns:
+    clamp(31px, 8.3vw, 36px)
+    minmax(0, 1fr)
+    clamp(10px, 2.7vw, 13px);
+  gap: clamp(5px, 1.45vw, 7px);
+  padding: clamp(7px, 1.9vw, 9px) clamp(7px, 1.9vw, 9px);
+  border-radius: clamp(18px, 5vw, 22px);
+  overflow: hidden;
+}
+
+.home-action-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.home-action-card .home-chip {
+  width: clamp(31px, 8.3vw, 36px);
+  height: clamp(31px, 8.3vw, 36px);
+  border: 1px solid
+    color-mix(in srgb, var(--tone-color, #38bdf8) 55%, white 8%);
+  border-radius: clamp(11px, 3.3vw, 14px);
+  color: var(--tone-color, #38bdf8);
+  background:
+    radial-gradient(
+      circle at 30% 12%,
+      rgba(255, 255, 255, 0.17),
+      transparent 33%
+    ),
+    color-mix(in srgb, var(--tone-color, #38bdf8) 15%, rgba(3, 15, 34, 0.94));
+  box-shadow:
+    0 0 15px color-mix(in srgb, var(--tone-color, #38bdf8) 42%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.home-action-card .home-chip svg {
+  width: clamp(17px, 4.8vw, 21px);
+  height: clamp(17px, 4.8vw, 21px);
+  stroke-width: 2.05;
+  filter:
+    drop-shadow(
+      0 0 6px
+      color-mix(in srgb, var(--tone-color, #38bdf8) 70%, transparent)
+    );
+}
+
+.home-action-card strong {
+  color: #f8fafc;
+  font-size: clamp(0.60rem, 2.55vw, 0.70rem);
+  font-weight: 770;
+  line-height: 1.08;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.home-action-card > .home-action-card__arrow {
+  display: block;
+  justify-self: end;
+  color: #cbd5e1;
+  opacity: 0.86;
+  filter: drop-shadow(0 0 5px rgba(96, 165, 250, 0.34));
+}
+
+/* ---------------------------------------------------
+   UPCOMING SCHEDULE CARD
+--------------------------------------------------- */
+.home-schedule-panel {
+  margin-top: var(--home-ref-gap-quick-schedule, clamp(10px, 2.6vw, 11px));
+}
+
+.home-schedule-card {
+  min-height: var(--home-ref-schedule-h, clamp(69px, 17.6vw, 76px));
+  grid-template-columns:
+    clamp(48px, 12.8vw, 55px)
+    1px
+    minmax(0, 1fr)
+    auto;
+  gap: clamp(7px, 1.8vw, 9px);
+  padding: clamp(7px, 1.9vw, 9px);
+  border-radius: clamp(20px, 5.7vw, 24px);
+  --tone-color: #38bdf8;
+  overflow: hidden;
+}
+
+.home-schedule-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.home-schedule-date {
+  width: clamp(48px, 12.8vw, 55px);
+  min-height: clamp(55px, 14.5vw, 62px);
+  padding: 4px;
+  border: 0;
+  border-radius: clamp(14px, 4vw, 17px);
+  background:
+    radial-gradient(circle at 30% 12%, rgba(56, 189, 248, 0.22), transparent 42%),
+    rgba(4, 17, 37, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.14),
+    0 0 17px rgba(37, 99, 235, 0.14);
+}
+
+.home-schedule-date span {
+  font-size: clamp(0.53rem, 2.1vw, 0.62rem);
+}
+
+.home-schedule-date strong {
+  font-size: clamp(1.25rem, 5.4vw, 1.5rem);
+}
+
+.home-schedule-divider {
+  width: 1px;
+  height: 72%;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(34, 211, 238, 0.95),
+    transparent
+  );
+}
+
+.home-schedule-main {
+  gap: 2px;
+}
+
+.home-schedule-main strong {
+  font-size: clamp(0.76rem, 3.1vw, 0.88rem);
+}
+
+.home-schedule-main span {
+  font-size: clamp(0.59rem, 2.45vw, 0.69rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-schedule-main small {
+  padding: 3px 7px;
+  font-size: clamp(0.52rem, 2.1vw, 0.60rem);
+  color: #38bdf8;
+  background: rgba(37, 99, 235, 0.21);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.14);
+}
+
+.home-schedule-side {
+  grid-template-columns:
+    clamp(40px, 10.8vw, 48px)
+    minmax(0, auto);
+  grid-auto-flow: column;
+  align-items: center;
+  gap: clamp(5px, 1.4vw, 7px);
+  font-size: clamp(0.54rem, 2.2vw, 0.64rem);
+}
+
+.home-schedule-side .home-chip {
+  position: relative;
+  width: clamp(40px, 10.8vw, 48px);
+  height: clamp(40px, 10.8vw, 48px);
+  border-radius: 999px;
+  color: #38bdf8;
+  background:
+    radial-gradient(circle, rgba(37, 99, 235, 0.24), rgba(4, 18, 40, 0.84) 65%);
+  box-shadow:
+    0 0 16px rgba(37, 99, 235, 0.35),
+    inset 0 0 0 1px rgba(96, 165, 250, 0.24);
+}
+
+.home-schedule-side .home-chip::before,
+.home-schedule-side .home-chip::after {
+  content: "";
+  position: absolute;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.home-schedule-side .home-chip::before {
+  inset: -5px;
+}
+
+.home-schedule-side .home-chip::after {
+  inset: -10px;
+  opacity: 0.45;
+}
+
+.home-schedule-side .home-chip svg {
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.78));
+}
+
+/* ---------------------------------------------------
+   SMART SUGGESTION CARDS
+--------------------------------------------------- */
+.home-suggestions-panel {
+  margin-top:
+    var(--home-ref-gap-schedule-suggestions, clamp(13px, 3.44vw, 15px));
+}
+
+.home-suggestion-grid {
+  gap: clamp(8px, 2.5vw, 10px);
+}
+
+.home-suggestion-card {
+  min-height: var(--home-ref-suggestion-h, clamp(61px, 15.53vw, 67px));
+  display: block;
+  padding: 0;
+  border-radius: clamp(19px, 5.3vw, 23px);
+  overflow: hidden;
+}
+
+.home-suggestion-card__main {
+  width: 100%;
+  min-height: inherit;
+  grid-template-columns:
+    clamp(35px, 9.3vw, 41px)
+    minmax(0, 1fr)
+    clamp(11px, 3vw, 14px);
+  align-items: center;
+  gap: clamp(6px, 1.65vw, 8px);
+  padding: clamp(7px, 1.9vw, 9px);
+}
+
+.home-suggestion-card .home-chip {
+  width: clamp(35px, 9.3vw, 41px);
+  height: clamp(35px, 9.3vw, 41px);
+  border: 1px solid
+    color-mix(in srgb, var(--tone-color, #38bdf8) 62%, white 8%);
+  border-radius: clamp(12px, 3.7vw, 16px);
+  color: var(--tone-color, #38bdf8);
+  background:
+    radial-gradient(circle at 35% 20%, rgba(255, 255, 255, 0.16), transparent 34%),
+    color-mix(in srgb, var(--tone-color, #38bdf8) 14%, rgba(3, 15, 34, 0.92));
+  box-shadow:
+    0 0 17px color-mix(in srgb, var(--tone-color, #38bdf8) 40%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.home-suggestion-card .home-chip svg {
+  width: clamp(20px, 5.3vw, 23px);
+  height: clamp(20px, 5.3vw, 23px);
+  stroke-width: 2.05;
+  filter:
+    drop-shadow(
+      0 0 7px
+      color-mix(in srgb, var(--tone-color, #38bdf8) 72%, transparent)
+    );
+}
+
+.home-suggestion-card__copy {
+  gap: 2px;
+}
+
+.home-suggestion-card strong {
+  color: #f8fafc;
+  font-size: clamp(0.64rem, 2.7vw, 0.75rem);
+  font-weight: 770;
+  line-height: 1.08;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.home-suggestion-card small {
+  color: color-mix(in srgb, var(--tone-color, #38bdf8) 78%, #cbd5e1 22%);
+  font-size: clamp(0.55rem, 2.25vw, 0.64rem);
+  font-weight: 700;
+  line-height: 1.06;
+}
+
+.home-suggestion-card .home-action-card__arrow {
+  color: #cbd5e1;
+  opacity: 0.86;
+}
+
+/* ---------------------------------------------------
+   SECTION HEADERS
+--------------------------------------------------- */
+.home-section-header {
+  margin-bottom: clamp(7px, 2vw, 9px);
+}
+
+.home-section-header h2 {
+  font-size: clamp(0.95rem, 4vw, 1.08rem);
+  font-weight: 850;
+  letter-spacing: -0.025em;
+}
+
+.home-screen .btn--ghost {
+  min-height: 28px;
+  padding-inline: 4px;
+  color: #38bdf8;
+  font-size: clamp(0.67rem, 2.7vw, 0.77rem);
+  font-weight: 800;
+}
+
+/* ---------------------------------------------------
+   RESPONSIVE SAFETY
+--------------------------------------------------- */
+@media (max-width: 400px) {
+  .home-stat-card__label {
+    font-size: 0.58rem;
+  }
+
+  .home-stat-card__trend {
+    font-size: 0.50rem;
+  }
+
+  .home-action-card {
+    grid-template-columns: 30px minmax(0, 1fr) 10px;
+    gap: 4px;
+    padding-inline: 6px;
+  }
+
+  .home-action-card .home-chip {
+    width: 30px;
+    height: 30px;
+  }
+
+  .home-action-card strong {
+    font-size: 0.57rem;
+  }
+
+  .home-schedule-main span {
+    max-width: 8.2rem;
+  }
+
+  .home-schedule-side {
+    gap: 4px;
+  }
+
+  .home-suggestion-card__main {
+    grid-template-columns: 33px minmax(0, 1fr) 10px;
+    gap: 5px;
+    padding-inline: 7px;
+  }
+
+  .home-suggestion-card .home-chip {
+    width: 33px;
+    height: 33px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-stat-card,
+  .home-action-card,
+  .home-schedule-card,
+  .home-suggestion-card,
+  .home-suggestion-card__main {
+    transition-duration: 0.001ms !important;
+  }
+}
