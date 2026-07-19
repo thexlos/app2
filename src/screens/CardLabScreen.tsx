@@ -8,13 +8,14 @@ import "./card-lab.css";
 
 export function CardLabScreen() {
   return (
-    <main className="card-lab-screen">
+    <main className="card-lab-screen" data-card-lab-version="v1.1">
       <header className="card-lab-header">
-        <span>ArmaDesk</span>
-        <h1>Isolated Premium Card Lab</h1>
+        <span>ArmaDesk • Card Lab v1.1</span>
+        <h1>Premium Card Visual Match Tuning</h1>
         <p>
-          Review these components before any Home-screen integration. Home and
-          the Hero are untouched.
+          Taller stat geometry, deeper icon wells, richer surface texture,
+          localized rim light, true two-line action labels, and improved states.
+          Home and the Hero remain untouched.
         </p>
         <code>#/card-lab</code>
       </header>
@@ -23,9 +24,9 @@ export function CardLabScreen() {
         <div className="card-lab-section__heading">
           <div>
             <span>01</span>
-            <h2>Stat Card — Working Prototype</h2>
+            <h2>Stat Card — v1.1 Working Prototype</h2>
           </div>
-          <p>Inline SVG frame • non-scaling strokes • live content</p>
+          <p>128×226 SVG • taller ratio • live content</p>
         </div>
 
         <div className="card-lab-reference">
@@ -65,9 +66,9 @@ export function CardLabScreen() {
         <div className="card-lab-section__heading">
           <div>
             <span>02</span>
-            <h2>Quick Action — Working Prototype</h2>
+            <h2>Quick Action — v1.1 Working Prototype</h2>
           </div>
-          <p>Live icon • live label • live arrow</p>
+          <p>260×132 SVG • two-line label • fixed arrow inset</p>
         </div>
 
         <div className="card-lab-reference">
@@ -110,7 +111,7 @@ export function CardLabScreen() {
         <div className="card-lab-section__heading">
           <div>
             <span>03</span>
-            <h2>Responsive Preview Frames</h2>
+            <h2>Responsive Preview Frames — v1.1</h2>
           </div>
           <p>390px • 402px • 430px</p>
         </div>
@@ -136,10 +137,10 @@ export function CardLabScreen() {
       </section>
 
       <footer className="card-lab-footer">
-        <strong>Approval gate</strong>
+        <strong>Approval gate remains active</strong>
         <p>
-          Do not integrate these into Home until the shape, rim lighting, icon
-          well, typography, spacing and states are approved.
+          Do not integrate into Home until this v1.1 stat card and Quick Action
+          match the approved shape, depth, spacing and interaction treatment.
         </p>
       </footer>
     </main>

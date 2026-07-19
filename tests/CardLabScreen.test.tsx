@@ -6,7 +6,7 @@ describe("ArmaDesk isolated Card Lab", () => {
   it("renders working stat and Quick Action prototypes", () => {
     const { container } = render(<CardLabScreen />);
 
-    expect(screen.getByText("Isolated Premium Card Lab")).toBeTruthy();
+    expect(screen.getByText("Premium Card Visual Match Tuning")).toBeTruthy();
     expect(container.querySelectorAll(".card-lab-stat").length).toBeGreaterThan(3);
     expect(container.querySelectorAll(".card-lab-action").length).toBeGreaterThan(3);
   });
@@ -18,6 +18,8 @@ describe("ArmaDesk isolated Card Lab", () => {
       container.querySelector('[vector-effect="non-scaling-stroke"]'),
     ).toBeTruthy();
     expect(screen.getAllByText("Estimates").length).toBeGreaterThan(1);
-    expect(screen.getAllByText("Create Estimate").length).toBeGreaterThan(1);
+    expect(screen.getAllByLabelText("Create Estimate").length).toBeGreaterThan(
+      1,
+    );
   });
 });

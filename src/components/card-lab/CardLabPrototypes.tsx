@@ -21,6 +21,7 @@ export function CardLabStatCard({
         compact ? " is-compact" : ""
       }`}
       aria-label="Estimates: 12"
+      data-card-version="v1.1"
     >
       <InlineGlassFrame tone={tone} variant="stat" />
       <span className="card-lab-card__content card-lab-stat__content">
@@ -48,6 +49,7 @@ export function CardLabActionCard({
       type="button"
       className={`card-lab-card card-lab-action card-lab-tone-${tone} is-${state}`}
       aria-label="Create Estimate"
+      data-card-version="v1.1"
     >
       <InlineGlassFrame tone={tone} variant="action" />
       <span className="card-lab-card__content card-lab-action__content">
@@ -55,7 +57,10 @@ export function CardLabActionCard({
           <InlineIconWell tone={tone} />
           <FilePlus2 aria-hidden="true" />
         </span>
-        <span className="card-lab-action__label">Create Estimate</span>
+        <span className="card-lab-action__label" aria-hidden="true">
+          <span>Create</span>
+          <span>Estimate</span>
+        </span>
         <ArrowRight className="card-lab-action__arrow" aria-hidden="true" />
       </span>
     </button>
