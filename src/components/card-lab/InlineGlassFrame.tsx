@@ -6,10 +6,10 @@ const toneColors: Record<
   CardLabTone,
   { main: string; light: string; dark: string }
 > = {
-  cyan: { main: "#00E5FF", light: "#C7FAFF", dark: "#064B73" },
-  green: { main: "#22D88A", light: "#C7FFE7", dark: "#08603D" },
-  purple: { main: "#B26CFF", light: "#F0DCFF", dark: "#57238E" },
-  orange: { main: "#FFB020", light: "#FFF0BF", dark: "#8A4B04" },
+  cyan: { main: "#00E5FF", light: "#D0FBFF", dark: "#064B73" },
+  green: { main: "#22D88A", light: "#D8FFEF", dark: "#08603D" },
+  purple: { main: "#B26CFF", light: "#F3E4FF", dark: "#57238E" },
+  orange: { main: "#FFB020", light: "#FFF2C9", dark: "#8A4B04" },
 };
 
 export function InlineGlassFrame({
@@ -21,21 +21,21 @@ export function InlineGlassFrame({
 }) {
   const rawId = useId().replaceAll(":", "");
   const ids = {
-    surface: `surface-v11-${rawId}`,
-    tone: `tone-v11-${rawId}`,
-    sheen: `sheen-v11-${rawId}`,
-    texture: `texture-v11-${rawId}`,
-    glow: `glow-v11-${rawId}`,
-    bottom: `bottom-v11-${rawId}`,
+    surface: `surface-v12-${rawId}`,
+    tone: `tone-v12-${rawId}`,
+    topSheen: `top-sheen-v12-${rawId}`,
+    bottomRim: `bottom-rim-v12-${rawId}`,
+    circuit: `circuit-v12-${rawId}`,
+    glow: `glow-v12-${rawId}`,
   };
 
   const color = toneColors[tone];
   const isStat = variant === "stat";
-  const width = isStat ? 128 : 260;
-  const height = isStat ? 226 : 132;
-  const radius = isStat ? 25 : 27;
+  const width = isStat ? 132 : 280;
+  const height = isStat ? 220 : 132;
+  const radius = isStat ? 25 : 28;
   const innerRadius = radius - 5;
-  const corner = isStat ? 30 : 32;
+  const corner = isStat ? 30 : 34;
   const right = width - 3;
   const bottom = height - 3;
 
@@ -45,72 +45,74 @@ export function InlineGlassFrame({
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
       aria-hidden="true"
-      data-frame-version="v1.1"
+      data-frame-version="v1.2"
       data-frame-variant={variant}
     >
       <defs>
         <linearGradient id={ids.surface} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#183957" stopOpacity=".995" />
-          <stop offset="32%" stopColor="#0A203A" stopOpacity=".995" />
-          <stop offset="72%" stopColor="#061426" stopOpacity=".998" />
-          <stop offset="100%" stopColor="#010712" />
+          <stop offset="0%" stopColor="#14334E" />
+          <stop offset="31%" stopColor="#091D34" />
+          <stop offset="72%" stopColor="#04111F" />
+          <stop offset="100%" stopColor="#01060F" />
         </linearGradient>
 
-        <radialGradient id={ids.tone} cx=".18" cy=".06" r=".92">
-          <stop offset="0%" stopColor={color.main} stopOpacity=".20" />
-          <stop offset="43%" stopColor={color.main} stopOpacity=".055" />
+        <radialGradient id={ids.tone} cx=".12" cy=".04" r=".82">
+          <stop offset="0%" stopColor={color.main} stopOpacity=".12" />
+          <stop offset="42%" stopColor={color.main} stopOpacity=".025" />
           <stop offset="100%" stopColor={color.dark} stopOpacity="0" />
         </radialGradient>
 
-        <linearGradient id={ids.sheen} x1="0" y1="0" x2="1" y2=".8">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity=".28" />
-          <stop offset="25%" stopColor="#FFFFFF" stopOpacity=".07" />
-          <stop offset="58%" stopColor="#FFFFFF" stopOpacity="0" />
+        <linearGradient id={ids.topSheen} x1="0" y1="0" x2="1" y2=".75">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity=".24" />
+          <stop offset="24%" stopColor="#FFFFFF" stopOpacity=".055" />
+          <stop offset="62%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
 
-        <linearGradient id={ids.bottom} x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={ids.bottomRim} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor={color.main} stopOpacity="0" />
-          <stop offset="22%" stopColor={color.main} stopOpacity=".68" />
-          <stop offset="82%" stopColor={color.main} stopOpacity=".82" />
+          <stop offset="18%" stopColor={color.main} stopOpacity=".58" />
+          <stop offset="84%" stopColor={color.main} stopOpacity=".78" />
           <stop offset="100%" stopColor={color.main} stopOpacity="0" />
         </linearGradient>
 
         <pattern
-          id={ids.texture}
-          width="18"
-          height="18"
+          id={ids.circuit}
+          width="28"
+          height="28"
           patternUnits="userSpaceOnUse"
         >
           <path
-            d="M -4 18 L 18 -4 M 4 22 L 22 4"
+            d="M -6 28 L 28 -6 M 4 32 L 32 4"
             stroke={color.main}
-            strokeOpacity=".055"
+            strokeOpacity=".035"
             strokeWidth=".55"
             vectorEffect="non-scaling-stroke"
           />
-          <circle
-            cx="15"
-            cy="15"
-            r=".7"
-            fill={color.main}
-            fillOpacity=".10"
+          <path
+            d="M 4 20 H 11 V 14 H 20"
+            fill="none"
+            stroke={color.main}
+            strokeOpacity=".05"
+            strokeWidth=".55"
+            vectorEffect="non-scaling-stroke"
           />
+          <circle cx="20" cy="14" r=".8" fill={color.main} fillOpacity=".10" />
         </pattern>
 
-        <filter id={ids.glow} x="-35%" y="-30%" width="170%" height="175%">
+        <filter id={ids.glow} x="-30%" y="-30%" width="160%" height="170%">
           <feDropShadow
             dx="0"
             dy="0"
-            stdDeviation={isStat ? "2.7" : "2.5"}
+            stdDeviation={isStat ? "2.2" : "2.1"}
             floodColor={color.main}
-            floodOpacity=".42"
+            floodOpacity=".34"
           />
           <feDropShadow
             dx="0"
-            dy="10"
+            dy="9"
             stdDeviation="9"
             floodColor="#000000"
-            floodOpacity=".52"
+            floodOpacity=".55"
           />
         </filter>
       </defs>
@@ -125,8 +127,8 @@ export function InlineGlassFrame({
           rx={radius}
           fill={`url(#${ids.surface})`}
           stroke={color.main}
-          strokeOpacity=".30"
-          strokeWidth=".9"
+          strokeOpacity=".25"
+          strokeWidth=".8"
           vectorEffect="non-scaling-stroke"
         />
 
@@ -140,92 +142,87 @@ export function InlineGlassFrame({
         />
 
         <rect
-          className="card-lab-frame__texture"
-          x="8"
-          y="8"
-          width={width - 16}
-          height={height - 16}
+          className="card-lab-frame__inner-rim"
+          x="7"
+          y="7"
+          width={width - 14}
+          height={height - 14}
           rx={innerRadius}
-          fill={`url(#${ids.texture})`}
+          fill={`url(#${ids.circuit})`}
+          stroke={color.main}
+          strokeOpacity=".13"
+          strokeWidth=".65"
+          vectorEffect="non-scaling-stroke"
         />
 
         <path
-          d={`M 9 ${radius + 6} V ${height - radius - 14}`}
+          className="card-lab-frame__highlight card-lab-frame__highlight--primary"
+          d={`M 4 ${corner + 3} C 4 11, 11 4, ${corner + 4} 4`}
+          fill="none"
+          stroke={color.light}
+          strokeOpacity=".98"
+          strokeWidth="2.15"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+
+        <path
+          className="card-lab-frame__top-sheen"
+          d={`M ${corner + 10} 4 H ${width - corner - 22}`}
+          stroke={`url(#${ids.topSheen})`}
+          strokeWidth="1.85"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+
+        <path
+          className="card-lab-frame__highlight"
+          d={`M ${width - corner - 8} 4 C ${width - 11} 4, ${right} 11, ${right} ${corner - 5}`}
+          fill="none"
+          stroke={color.light}
+          strokeOpacity=".50"
+          strokeWidth="1.25"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+
+        <path
+          className="card-lab-frame__highlight"
+          d={`M ${right} ${height - corner - 5} C ${right} ${height - 11}, ${width - 11} ${bottom}, ${width - corner - 5} ${bottom}`}
+          fill="none"
           stroke={color.main}
-          strokeOpacity=".17"
-          strokeWidth=".8"
+          strokeOpacity=".72"
+          strokeWidth="1.55"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
         />
 
         <path
           className="card-lab-frame__highlight card-lab-frame__highlight--primary"
-          d={`M 4 ${corner + 2} C 4 11, 11 4, ${corner + 4} 4`}
-          fill="none"
-          stroke={color.light}
-          strokeOpacity=".96"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-
-        <path
-          className="card-lab-frame__highlight"
-          d={`M ${corner + 8} 4 H ${width - corner - 18}`}
-          stroke={`url(#${ids.sheen})`}
-          strokeWidth="2.05"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-
-        <path
-          className="card-lab-frame__highlight"
-          d={`M ${width - corner - 8} 4 C ${width - 11} 4, ${right} 11, ${right} ${corner - 2}`}
-          fill="none"
-          stroke={color.light}
-          strokeOpacity=".58"
-          strokeWidth="1.45"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-
-        <path
-          className="card-lab-frame__highlight"
-          d={`M ${right} ${height - corner - 5} C ${right} ${height - 11}, ${width - 11} ${bottom}, ${width - corner - 4} ${bottom}`}
+          d={`M ${corner + 3} ${bottom} C 11 ${bottom}, 4 ${height - 11}, 4 ${height - corner - 3}`}
           fill="none"
           stroke={color.main}
-          strokeOpacity=".78"
-          strokeWidth="1.75"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-
-        <path
-          className="card-lab-frame__highlight card-lab-frame__highlight--primary"
-          d={`M ${corner + 2} ${bottom} C 11 ${bottom}, 4 ${height - 11}, 4 ${height - corner - 2}`}
-          fill="none"
-          stroke={color.main}
-          strokeOpacity=".84"
-          strokeWidth="2"
+          strokeOpacity=".82"
+          strokeWidth="1.85"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
         />
 
         <path
           className="card-lab-frame__bottom-rim"
-          d={`M ${corner + 9} ${height - 4} H ${width - corner - 7}`}
-          stroke={`url(#${ids.bottom})`}
-          strokeWidth="1.8"
+          d={`M ${corner + 10} ${height - 4} H ${width - corner - 8}`}
+          stroke={`url(#${ids.bottomRim})`}
+          strokeWidth="1.6"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
         />
 
         <path
-          d={`M 11 13 C ${width * 0.30} 5, ${width * 0.55} 7, ${width - 18} 25`}
+          d={`M 12 15 C ${width * 0.32} 7, ${width * 0.56} 8, ${width - 22} 25`}
           fill="none"
           stroke="#FFFFFF"
-          strokeOpacity=".06"
-          strokeWidth={isStat ? "15" : "19"}
+          strokeOpacity=".045"
+          strokeWidth={isStat ? "12" : "15"}
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
         />
@@ -241,77 +238,69 @@ export function InlineIconWell({
 }) {
   const rawId = useId().replaceAll(":", "");
   const ids = {
-    fill: `well-fill-v11-${rawId}`,
-    side: `well-side-v11-${rawId}`,
-    glow: `well-glow-v11-${rawId}`,
+    fill: `well-fill-v12-${rawId}`,
+    inner: `well-inner-v12-${rawId}`,
+    glow: `well-glow-v12-${rawId}`,
   };
   const color = toneColors[tone];
 
   return (
     <svg
       className="card-lab-icon-well__frame"
-      viewBox="0 0 72 72"
+      viewBox="0 0 76 76"
       preserveAspectRatio="none"
       aria-hidden="true"
-      data-icon-well-version="v1.1"
+      data-icon-well-version="v1.2"
     >
       <defs>
-        <radialGradient id={ids.fill} cx=".30" cy=".10" r=".96">
+        <radialGradient id={ids.fill} cx=".28" cy=".08" r=".96">
           <stop offset="0%" stopColor="#FFFFFF" stopOpacity=".30" />
-          <stop offset="24%" stopColor={color.main} stopOpacity=".28" />
-          <stop offset="100%" stopColor="#020A18" stopOpacity=".98" />
+          <stop offset="25%" stopColor={color.main} stopOpacity=".24" />
+          <stop offset="100%" stopColor="#010816" stopOpacity=".98" />
         </radialGradient>
-        <linearGradient id={ids.side} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={color.light} stopOpacity=".50" />
-          <stop offset="100%" stopColor={color.dark} stopOpacity=".18" />
+        <linearGradient id={ids.inner} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={color.light} stopOpacity=".48" />
+          <stop offset="100%" stopColor={color.dark} stopOpacity=".14" />
         </linearGradient>
         <filter id={ids.glow} x="-60%" y="-60%" width="220%" height="220%">
           <feDropShadow
             dx="0"
             dy="0"
-            stdDeviation="4.2"
+            stdDeviation="3.8"
             floodColor={color.main}
-            floodOpacity=".75"
+            floodOpacity=".70"
           />
           <feDropShadow
             dx="0"
-            dy="5"
+            dy="4"
             stdDeviation="4"
             floodColor="#000000"
-            floodOpacity=".42"
+            floodOpacity=".44"
           />
         </filter>
       </defs>
 
       <g filter={`url(#${ids.glow})`}>
         <path
-          d="M 20 4 H 52 L 68 20 V 52 L 52 68 H 20 L 4 52 V 20 Z"
+          d="M 21 4 H 55 L 72 21 V 55 L 55 72 H 21 L 4 55 V 21 Z"
           fill={`url(#${ids.fill})`}
           stroke={color.main}
-          strokeOpacity=".86"
-          strokeWidth="1.2"
+          strokeOpacity=".84"
+          strokeWidth="1.15"
           vectorEffect="non-scaling-stroke"
         />
         <path
-          d="M 23 10 H 49 L 62 23 V 49 L 49 62 H 23 L 10 49 V 23 Z"
+          d="M 24 11 H 52 L 65 24 V 52 L 52 65 H 24 L 11 52 V 24 Z"
           fill="none"
-          stroke={`url(#${ids.side})`}
-          strokeWidth=".9"
+          stroke={`url(#${ids.inner})`}
+          strokeWidth=".85"
           vectorEffect="non-scaling-stroke"
         />
         <path
-          d="M 20 5 H 46"
+          d="M 22 5 H 50"
           stroke="#FFFFFF"
-          strokeOpacity=".24"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-        <path
-          d="M 67 26 V 47"
-          stroke={color.main}
-          strokeOpacity=".42"
-          strokeWidth="1.2"
+          strokeOpacity=".20"
+          strokeWidth="1.5"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
         />

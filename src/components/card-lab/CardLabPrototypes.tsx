@@ -1,4 +1,8 @@
-import { ArrowRight, FilePlus2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import {
+  PremiumCreateEstimateIcon,
+  PremiumEstimateDocumentIcon,
+} from "./PremiumCardIcons";
 import {
   InlineGlassFrame,
   InlineIconWell,
@@ -21,13 +25,14 @@ export function CardLabStatCard({
         compact ? " is-compact" : ""
       }`}
       aria-label="Estimates: 12"
-      data-card-version="v1.1"
+      data-card-version="v1.2"
+      data-scale-mode="container"
     >
       <InlineGlassFrame tone={tone} variant="stat" />
       <span className="card-lab-card__content card-lab-stat__content">
         <span className="card-lab-icon-well card-lab-stat__icon">
           <InlineIconWell tone={tone} />
-          <FilePlus2 aria-hidden="true" />
+          <PremiumEstimateDocumentIcon tone={tone} />
         </span>
         <span className="card-lab-stat__label">Estimates</span>
         <strong className="card-lab-stat__value">12</strong>
@@ -49,13 +54,14 @@ export function CardLabActionCard({
       type="button"
       className={`card-lab-card card-lab-action card-lab-tone-${tone} is-${state}`}
       aria-label="Create Estimate"
-      data-card-version="v1.1"
+      data-card-version="v1.2"
+      data-scale-mode="container"
     >
       <InlineGlassFrame tone={tone} variant="action" />
       <span className="card-lab-card__content card-lab-action__content">
         <span className="card-lab-icon-well card-lab-action__icon">
           <InlineIconWell tone={tone} />
-          <FilePlus2 aria-hidden="true" />
+          <PremiumCreateEstimateIcon tone={tone} />
         </span>
         <span className="card-lab-action__label" aria-hidden="true">
           <span>Create</span>

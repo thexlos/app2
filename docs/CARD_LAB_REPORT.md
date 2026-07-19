@@ -50,6 +50,27 @@ It returns before `AppShell`, so it does not render the standard app header or b
 - `tests/CardLabScreen.v11.test.tsx`
 - `tests/CardLabScreen.test.tsx` (updated stale v1.0 text assertions for the v1.1 title and accessible two-line action label)
 
+## Card Lab v1.2 visual-match tuning
+
+- The stat frame now uses the supplied `0 0 132 220` inline SVG geometry, and the Quick Action frame uses `0 0 280 132`.
+- Card content scales from each card's own inline size through CSS container query units, keeping the live icon, label, value, trend, and arrow proportional in large, compact, and responsive previews.
+- The estimate and create-estimate artwork is rendered by the supplied live inline SVG components in `PremiumCardIcons.tsx`; it is not a pasted screenshot or background shell.
+- The supplied v1.2 glass treatment darkens the center surface, sharpens the inner rim, retains non-scaling strokes, and adds restrained inline SVG circuit detail without masks or stretched card images.
+- Pressed cards use the supplied lowered `scale(0.992)` treatment with reduced brightness and saturation. Focus cards strengthen the existing frame lighting without a separate outline or broad aura.
+- The 390px, 402px, and 430px responsive preview frames retain their exact widths and report zero internal horizontal overflow.
+
+### v1.2 files changed
+
+- `src/components/card-lab/InlineGlassFrame.tsx`
+- `src/components/card-lab/CardLabPrototypes.tsx`
+- `src/components/card-lab/PremiumCardIcons.tsx`
+- `src/screens/CardLabScreen.tsx`
+- `src/screens/card-lab.css`
+- `tests/CardLabScreen.v12.test.tsx`
+- `tests/CardLabScreen.test.tsx` (updated the stale v1.1 heading assertion)
+- `tests/CardLabScreen.v11.test.tsx` (updated the legacy compatibility assertions to the current v1.2 geometry)
+- `docs/CARD_LAB_REPORT.md`
+
 ## Scope confirmation
 
 The Home screen, Home CSS, Hero component, Hero CSS, Hero data and animation, navigation component and CSS, `AppState`, business logic, routing state, and persistence were not modified. The prototypes were not integrated into Home. Phase 4 was not started, and no deployment was performed.
@@ -57,14 +78,16 @@ The Home screen, Home CSS, Hero component, Hero CSS, Hero data and animation, na
 ## Validation results
 
 - `npm run build`: passed.
-- `npm test`: passed — 19 test files and 105 tests.
+- `npm test`: passed — 20 test files and 109 tests.
 - Browser check: passed at 390px, 402px, and 430px viewport widths.
 - All stat cards, Quick Action cards, state examples, tone variants, approved references, and responsive preview frames rendered.
 - The 390px, 402px, and 430px preview-frame contents reported no horizontal overflow.
 - The Card Lab page reported no viewport-level horizontal overflow at the three tested widths.
 - Reference images loaded successfully.
-- Runtime geometry reported `0 0 128 226` for stat SVGs and `0 0 260 132` for Quick Action SVGs.
+- Runtime geometry reported `0 0 132 220` for stat SVGs and `0 0 280 132` for Quick Action SVGs.
 - Pressed and focus states reported distinct computed transforms, filters, opacity, and rim treatments.
 - All Quick Action labels rendered as two live text lines with no arrow collisions.
+- The supplied custom estimate and create-estimate SVG icons rendered as live DOM content.
+- No SVG masks or stretched card-shell background images were present.
 - Browser console errors: none.
 - Standard navigation, Home, and Hero elements were absent from the Card Lab route.
