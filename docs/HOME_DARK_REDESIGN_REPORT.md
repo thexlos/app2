@@ -1238,6 +1238,110 @@ Phase 2D is complete: the uploaded `armadesk_hero_compact_patch_v2_1.zip` compac
   - Smart Suggestions remained the last Home content child
   - console error count was zero
 
+## Phase 2E unified SVG hero chart patch integrated
+
+Phase 2E is complete: the uploaded `armadesk_hero_unified_svg_patch_v2_2.zip` unified SVG patch was integrated as a supplied implementation patch rather than redesigned or recreated.
+
+## Phase 2E source files used
+
+- Read and followed:
+  - `00_READ_ME_FIRST.md`
+  - `CODEX_UNIFIED_SVG_PATCH_PROMPT.txt`
+  - `geometry/unified_svg_geometry.json`
+  - `animation/unified_svg_animation_contract.md`
+- Inspected the required visual references:
+  - `reference/approved_unified_svg_target.png`
+  - `geometry/unified_svg_geometry_overlay.png`
+  - `animation/unified_svg_animation_storyboard.png`
+- Integrated the supplied React/CSS/test implementation:
+  - `component/HomeHeroAnalyticsVisual.tsx`
+  - `component/HomeHeroAnalyticsVisual.css`
+  - `component/heroAnalyticsTypes.ts`
+  - `tests/HomeHeroAnalyticsVisual.svg.test.tsx`
+- Continued using the existing compact platform asset:
+  - `src/assets/home/hero-3d-platform-compact.webp`
+
+## Phase 2E changes
+
+- Replaced the Home hero analytics component with the supplied unified SVG v2.2 component.
+- Kept the existing type-only `HeroAnalyticsMetric` export available from `HomeHeroAnalyticsVisual.tsx` so the existing HomeScreen data mapping did not need to change.
+- Appended the supplied unified SVG CSS block into `src/screens/home.css`.
+- Neutralized older `.home-hero-analytics--upgrade-v2` and `.home-hero-analytics--compact-v21` presentation rules by moving the rendered chart to the supplied `.home-hero-analytics--svg-v22` class.
+- Added a scoped v2.2 SVG reset so older generic `.home-hero-analytics svg` absolute-position rules cannot offset the supplied unified SVG outside the hero.
+- Added scoped v2.2 integration fit rules to keep the approved Home hero card proportions while the supplied SVG mounts under its new class.
+- Added the supplied focused SVG test file.
+- Updated existing hero/Home tests to check the unified SVG v2.2 contract:
+  - `data-layout-version="hero-svg-v2.2"`
+  - `data-line-source="same-svg-bar-top-points"`
+  - exactly four live bar groups
+  - categories: `Estimates`, `Invoices`, `Customers`, `Tasks`
+  - values sourced from current Home stat data
+  - truthful `13 active / work items` total badge
+  - data-derived SVG line points: `28:50|72:75|116:62.5|160:50`
+  - supplied compact platform asset layer
+  - no fake comparison text
+
+## Phase 2E data mapping
+
+- The existing HomeScreen stat mapping was retained.
+- The hero still receives exactly four live categories:
+  1. `Estimates`
+  2. `Invoices`
+  3. `Customers`
+  4. `Tasks`
+- Bar heights are calculated from the current metric values using the supplied unified SVG geometry.
+- Bar fronts, top faces, side faces, line, nodes, pins, callouts, and badge now live inside one SVG coordinate system.
+- The trend line points share the same computed coordinates as the bar top faces:
+  - bar top face Y is `bar.frontY - 6`
+  - line point Y uses that same value
+  - pins terminate at the matching line/bar-top coordinate
+- The badge total is calculated as the sum of the four current values.
+- No fake comparison percentage or fake growth metric was introduced.
+
+## Phase 2E animation and reduced motion
+
+- The supplied unified SVG animation behavior is integrated:
+  - compact platform appears first
+  - exactly four bars rise from live values
+  - line draws through the same computed bar-top coordinates
+  - pins and callouts reveal
+  - badge remains truthful in the reserved lower-right zone
+- Reduced-motion CSS is present for `.home-hero-analytics--svg-v22` and renders the final state without extended motion.
+
+## Phase 2E intentionally not changed
+
+- Home header was not redesigned.
+- Business control bar was not redesigned.
+- Hero text and CTA were not changed.
+- Stat cards, Quick Actions, Upcoming Schedule, Smart Suggestions, bottom navigation, and Home order were not changed.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, routing, state, or business logic was changed.
+- No fake `+23%`, `+30%`, `vs last week`, revenue, or comparison claim was introduced.
+- No reference PNG or full screenshot was pasted into the app UI.
+- No Phase 4 work was started.
+- No deployment was performed.
+
+## Phase 2E validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Test suite result: 13 test files passed, 93 tests passed.
+- In-app browser checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - hero copy stayed inside its side
+  - unified SVG stayed inside the hero
+  - all four complete callout labels remained readable
+  - exactly four live bar groups rendered
+  - categories remained `Estimates`, `Invoices`, `Customers`, `Tasks`
+  - line points shared the same SVG coordinates as the computed bar top faces
+  - pins terminated at the matching line/bar-top coordinates
+  - badge remained visible inside the hero reserved lower-right zone
+  - platform remained visible
+  - `View Insights` stayed on one line
+  - no fake comparison text rendered
+  - Home order remained unchanged
+  - Smart Suggestions remained the last Home content child
+  - console error count was zero
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

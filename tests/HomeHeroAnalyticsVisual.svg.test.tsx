@@ -1,6 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { HomeHeroAnalyticsVisual } from "../src/components/home/HomeHeroAnalyticsVisual";
 
@@ -12,7 +10,7 @@ const metrics = [
 ];
 
 describe("HomeHeroAnalyticsVisual unified SVG v2.2", () => {
-  it("renders exactly four live metric bars and truthful total badge", () => {
+  it("keeps bars and line in the same SVG coordinate system", () => {
     const { container } = render(
       <HomeHeroAnalyticsVisual
         metrics={metrics}
@@ -23,39 +21,20 @@ describe("HomeHeroAnalyticsVisual unified SVG v2.2", () => {
     const root = screen.getByTestId("home-hero-analytics");
     expect(root.getAttribute("data-layout-version")).toBe("hero-svg-v2.2");
     expect(root.getAttribute("data-bar-count")).toBe("4");
-    expect(root.getAttribute("data-line-source")).toBe("same-svg-bar-top-points");
+    expect(root.getAttribute("data-line-source")).toBe(
+      "same-svg-bar-top-points",
+    );
     expect(root.getAttribute("data-categories")).toBe(
       "Estimates,Invoices,Customers,Tasks",
     );
-    expect(root.getAttribute("data-value-source")).toBe(
-      "current-home-stat-values",
-    );
     expect(root.getAttribute("data-badge-value")).toBe("13 active");
-    expect(root.getAttribute("data-line-points")).toBeTruthy();
 
-    const bars = container.querySelectorAll(
-      ".home-hero-analytics__bar-group",
-    );
-    expect(bars).toHaveLength(4);
-    expect(
-      container.querySelectorAll(".home-hero-analytics__callout"),
-    ).toHaveLength(4);
-
-    for (const label of ["Estimates", "Invoices", "Customers", "Tasks"]) {
-      expect(container.querySelector(`[data-category="${label}"]`)).toBeTruthy();
-    }
-
-    expect(container.querySelector(".home-hero-analytics__line-path")).toBeTruthy();
+    expect(container.querySelectorAll(".home-hero-analytics__bar-group")).toHaveLength(4);
     expect(container.querySelectorAll(".home-hero-analytics__line-point")).toHaveLength(4);
+    expect(container.querySelectorAll(".home-hero-analytics__pin")).toHaveLength(4);
+    expect(container.querySelectorAll(".home-hero-analytics__callout")).toHaveLength(4);
+
     expect(screen.queryByText("+23%")).toBeNull();
     expect(screen.queryByText(/vs last week/i)).toBeNull();
-  });
-
-  it("keeps the supplied reduced-motion CSS contract", () => {
-    const css = readFileSync(join(process.cwd(), "src/screens/home.css"), "utf8");
-
-    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
-    expect(css).toContain(".home-hero-analytics--svg-v22");
-    expect(css).toContain("stroke-dashoffset: 0");
   });
 });

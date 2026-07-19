@@ -5301,3 +5301,217 @@
   left: auto;
   height: auto;
 }
+
+/* Phase 2E: supplied ArmaDesk unified SVG hero chart patch v2.2.
+   The rendered component now uses .home-hero-analytics--svg-v22, leaving the
+   older .home-hero-analytics--upgrade-v2 and .home-hero-analytics--compact-v21
+   presentation rules inactive for the current hero chart. */
+
+/* ArmaDesk unified SVG hero chart patch v2.2
+   All live chart elements share one SVG coordinate system. */
+
+.home-hero-analytics--svg-v22 {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 100%;
+  overflow: visible;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__platform {
+  opacity: 0;
+  animation:
+    heroSvgPlatformIn 480ms ease-out 60ms forwards,
+    heroSvgPlatformPulse 3600ms ease-in-out 1100ms infinite;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__bar-group {
+  filter: url(#heroBarGlow);
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: heroSvgBarRise 620ms cubic-bezier(.2,.8,.2,1) var(--bar-delay) both;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__bar-front,
+.home-hero-analytics--svg-v22 .home-hero-analytics__bar-side,
+.home-hero-analytics--svg-v22 .home-hero-analytics__bar-top {
+  vector-effect: non-scaling-stroke;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__line-glow,
+.home-hero-analytics--svg-v22 .home-hero-analytics__line-path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: heroSvgLineDraw 500ms ease-out 250ms forwards;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__line-glow {
+  stroke: rgba(34,211,238,.46);
+  stroke-width: 7;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__line-path {
+  stroke: url(#heroLineGradient);
+  stroke-width: 2.8;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__line-point {
+  fill: #F0FDFF;
+  stroke: #22D3EE;
+  stroke-width: 1.7;
+  opacity: 0;
+  animation: heroSvgPointIn 220ms ease-out 560ms forwards;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__pin,
+.home-hero-analytics--svg-v22 .home-hero-analytics__callout {
+  opacity: 0;
+  animation: heroSvgCalloutIn 340ms ease-out var(--callout-delay) forwards;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__callout-label {
+  font-size: 5.4px;
+  font-weight: 800;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__callout-value {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__badge-value {
+  font-size: 8.5px;
+  font-weight: 900;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__badge-label {
+  font-size: 6.2px;
+  font-weight: 700;
+}
+
+.home-hero__action {
+  white-space: nowrap;
+}
+
+@keyframes heroSvgPlatformIn {
+  from { opacity: 0; transform: translateY(5px) scale(.98); }
+  to { opacity: .96; transform: translateY(0) scale(1); }
+}
+
+@keyframes heroSvgPlatformPulse {
+  0%,100% { filter: saturate(1.12) drop-shadow(0 0 10px rgba(34,211,238,.18)); }
+  50% { filter: saturate(1.25) drop-shadow(0 0 18px rgba(34,211,238,.30)); }
+}
+
+@keyframes heroSvgBarRise {
+  from { transform: scaleY(0); opacity: .32; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes heroSvgLineDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes heroSvgPointIn {
+  from { opacity: 0; transform: scale(.4); transform-origin: center; }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes heroSvgCalloutIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-analytics--svg-v22 *,
+  .home-hero-analytics--svg-v22 *::before,
+  .home-hero-analytics--svg-v22 *::after {
+    animation-duration: .001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: .001ms !important;
+  }
+
+  .home-hero-analytics--svg-v22 .home-hero-analytics__platform,
+  .home-hero-analytics--svg-v22 .home-hero-analytics__line-point,
+  .home-hero-analytics--svg-v22 .home-hero-analytics__pin,
+  .home-hero-analytics--svg-v22 .home-hero-analytics__callout {
+    opacity: 1;
+  }
+
+  .home-hero-analytics--svg-v22 .home-hero-analytics__line-glow,
+  .home-hero-analytics--svg-v22 .home-hero-analytics__line-path {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Phase 2E integration fit: keep the approved Home hero card sizing while the
+   supplied v2.2 chart mounts under its new unified SVG class. */
+.home-hero:has(.home-hero-analytics--svg-v22) {
+  height: clamp(238px, 56vw, 252px);
+  grid-template-columns: minmax(120px, 0.62fr) minmax(0, 1.38fr);
+  gap: clamp(7px, 2.1vw, 9px);
+}
+
+.home-hero:has(.home-hero-analytics--svg-v22) .home-hero__copy {
+  min-width: 0;
+}
+
+.home-hero:has(.home-hero-analytics--svg-v22) .home-hero__copy h1 {
+  margin-bottom: clamp(5px, 1.7vw, 7px);
+}
+
+.home-hero:has(.home-hero-analytics--svg-v22) .home-hero__copy h1 span {
+  font-size: clamp(0.93rem, 4vw, 1.12rem);
+  line-height: 1.05;
+}
+
+.home-hero:has(.home-hero-analytics--svg-v22) .home-hero__copy h1 strong {
+  font-size: clamp(1.75rem, 7.2vw, 2.28rem);
+  line-height: 0.92;
+}
+
+.home-hero:has(.home-hero-analytics--svg-v22) .home-hero__copy p {
+  max-width: clamp(9.2rem, 38vw, 10.6rem);
+  font-size: clamp(0.68rem, 2.85vw, 0.78rem);
+  line-height: 1.28;
+}
+
+.home-hero:has(.home-hero-analytics--svg-v22) .home-hero__action {
+  min-height: clamp(27px, 7vw, 31px);
+  margin-top: clamp(6px, 2vw, 8px);
+  padding-inline: clamp(9px, 2.75vw, 12px);
+  font-size: clamp(0.68rem, 2.8vw, 0.78rem);
+}
+
+.home-hero-analytics.home-hero-analytics--svg-v22 {
+  align-self: stretch;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-hero-analytics.home-hero-analytics--svg-v22::before,
+.home-hero-analytics.home-hero-analytics--svg-v22::after {
+  content: none;
+}
+
+.home-hero-analytics--svg-v22 .home-hero-analytics__svg,
+.home-hero-analytics.home-hero-analytics--svg-v22 svg.home-hero-analytics__svg {
+  position: static;
+  inset: auto;
+  transform: none;
+}

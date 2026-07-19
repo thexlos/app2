@@ -9,8 +9,8 @@ const metrics = [
   { label: "Tasks" as const, value: 4, tone: "green" as const },
 ];
 
-describe("HomeHeroAnalyticsVisual compact v2.1", () => {
-  it("renders the compact geometry contract with four live bars", () => {
+describe("HomeHeroAnalyticsVisual unified SVG v2.2 compatibility", () => {
+  it("renders the unified SVG geometry contract with four live bars", () => {
     const { container } = render(
       <HomeHeroAnalyticsVisual
         metrics={metrics}
@@ -19,8 +19,11 @@ describe("HomeHeroAnalyticsVisual compact v2.1", () => {
     );
 
     const root = screen.getByTestId("home-hero-analytics");
-    expect(root.getAttribute("data-layout-version")).toBe("hero-compact-v2.1");
+    expect(root.getAttribute("data-layout-version")).toBe("hero-svg-v2.2");
     expect(root.getAttribute("data-bar-count")).toBe("4");
+    expect(root.getAttribute("data-line-source")).toBe(
+      "same-svg-bar-top-points",
+    );
     expect(root.getAttribute("data-categories")).toBe(
       "Estimates,Invoices,Customers,Tasks",
     );
@@ -33,7 +36,7 @@ describe("HomeHeroAnalyticsVisual compact v2.1", () => {
       container.querySelectorAll(".home-hero-analytics__callout"),
     ).toHaveLength(4);
     expect(
-      container.querySelectorAll(".home-hero-analytics__bar-stack"),
+      container.querySelectorAll(".home-hero-analytics__bar-group"),
     ).toHaveLength(4);
     expect(
       container.querySelectorAll(".home-hero-analytics__line-point"),
