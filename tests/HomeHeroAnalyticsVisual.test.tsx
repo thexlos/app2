@@ -11,7 +11,7 @@ const metrics = [
   { label: "Tasks" as const, value: 4, tone: "green" as const },
 ];
 
-describe("HomeHeroAnalyticsVisual exact visual shell v1", () => {
+describe("HomeHeroAnalyticsVisual composition v2.3", () => {
   it("renders exactly four live metric bars and truthful total badge", () => {
     const { container } = render(
       <HomeHeroAnalyticsVisual
@@ -21,11 +21,11 @@ describe("HomeHeroAnalyticsVisual exact visual shell v1", () => {
     );
 
     const root = screen.getByTestId("home-hero-analytics");
-    expect(root.getAttribute("data-layout-version")).toBe("hero-shell-v1");
+    expect(root.getAttribute("data-layout-version")).toBe("hero-composition-v2.3");
     expect(root.getAttribute("data-composition-split")).toBe("43-57");
     expect(root.getAttribute("data-chart-contained")).toBe("true");
     expect(root.getAttribute("data-bar-count")).toBe("4");
-    expect(root.getAttribute("data-line-source")).toBe("same-shell-bar-top-points");
+    expect(root.getAttribute("data-line-source")).toBe("same-svg-bar-top-points");
     expect(root.getAttribute("data-categories")).toBe(
       "Estimates,Invoices,Customers,Tasks",
     );
@@ -56,9 +56,9 @@ describe("HomeHeroAnalyticsVisual exact visual shell v1", () => {
     const css = readFileSync(join(process.cwd(), "src/screens/home.css"), "utf8");
 
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
-    expect(css).toContain(".home-hero-analytics--shell-v1");
-    expect(css).toContain("hero-outer-shell.svg");
-    expect(css).toContain("insights-button-shell.svg");
+    expect(css).toContain(".home-hero-analytics--composition-v23");
+    expect(css).toContain("grid-template-columns: minmax(0, 43fr) minmax(0, 57fr);");
+    expect(css).toContain("clip-path: inset(0 round 12px)");
     expect(css).toContain("stroke-dashoffset: 0");
   });
 });
