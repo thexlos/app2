@@ -6,9 +6,7 @@ describe("ArmaDesk isolated Card Lab", () => {
   it("renders working stat and Quick Action prototypes", () => {
     const { container } = render(<CardLabScreen />);
 
-    expect(
-      screen.getByText("Premium Content Scale + Custom Icon Match"),
-    ).toBeTruthy();
+    expect(screen.getByText("Exact Detail Pass")).toBeTruthy();
     expect(container.querySelectorAll(".card-lab-stat").length).toBeGreaterThan(3);
     expect(container.querySelectorAll(".card-lab-action").length).toBeGreaterThan(3);
   });

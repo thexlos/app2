@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { CardLabScreen } from "../src/screens/CardLabScreen";
 
-describe("ArmaDesk Card Lab visual-match compatibility", () => {
-  it("renders the current stat and action geometry", () => {
+describe("ArmaDesk Card Lab v1.3", () => {
+  it("renders final frame geometry", () => {
     const { container } = render(<CardLabScreen />);
 
     expect(
@@ -23,20 +23,37 @@ describe("ArmaDesk Card Lab visual-match compatibility", () => {
     expect(actionFrame?.getAttribute("viewBox")).toBe("0 0 286 126");
   });
 
-  it("uses live two-line action content without masks or shell images", () => {
+  it("renders detailed custom icons with visible document lines", () => {
     const { container } = render(<CardLabScreen />);
 
-    expect(screen.getAllByLabelText("Create Estimate").length).toBeGreaterThan(1);
     expect(
-      container.querySelectorAll(".card-lab-action__label > span"),
-    ).not.toHaveLength(0);
-    expect(container.querySelector("mask")).toBeNull();
+      container.querySelector('[data-premium-icon="estimate-document-v1.3"]'),
+    ).toBeTruthy();
+    expect(
+      container.querySelector('[data-premium-icon="create-estimate-v1.3"]'),
+    ).toBeTruthy();
+
+    const estimateIcon = container.querySelector(
+      '[data-premium-icon="estimate-document-v1.3"]',
+    );
+    expect(estimateIcon?.querySelectorAll("path").length).toBeGreaterThanOrEqual(5);
+
+    expect(screen.getAllByLabelText("Create Estimate").length).toBeGreaterThan(1);
+  });
+
+  it("uses second inner rim and non-scaling strokes without masks", () => {
+    const { container } = render(<CardLabScreen />);
+
+    expect(
+      container.querySelector(".card-lab-frame__inner-rim-secondary"),
+    ).toBeTruthy();
     expect(
       container.querySelector('[vector-effect="non-scaling-stroke"]'),
     ).toBeTruthy();
+    expect(container.querySelector("mask")).toBeNull();
   });
 
-  it("keeps distinct pressed and focus presentation classes", () => {
+  it("keeps tight pressed and focus states", () => {
     const { container } = render(<CardLabScreen />);
 
     expect(container.querySelector(".card-lab-card.is-pressed")).toBeTruthy();

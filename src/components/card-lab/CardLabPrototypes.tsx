@@ -25,7 +25,7 @@ export function CardLabStatCard({
         compact ? " is-compact" : ""
       }`}
       aria-label="Estimates: 12"
-      data-card-version="v1.2"
+      data-card-version="v1.3"
       data-scale-mode="container"
     >
       <InlineGlassFrame tone={tone} variant="stat" />
@@ -54,7 +54,7 @@ export function CardLabActionCard({
       type="button"
       className={`card-lab-card card-lab-action card-lab-tone-${tone} is-${state}`}
       aria-label="Create Estimate"
-      data-card-version="v1.2"
+      data-card-version="v1.3"
       data-scale-mode="container"
     >
       <InlineGlassFrame tone={tone} variant="action" />

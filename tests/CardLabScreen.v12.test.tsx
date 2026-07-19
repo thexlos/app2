@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { CardLabScreen } from "../src/screens/CardLabScreen";
 
-describe("ArmaDesk Card Lab v1.2", () => {
+describe("ArmaDesk Card Lab container-scaling compatibility", () => {
   it("renders corrected frame geometry and container scaling", () => {
     const { container } = render(<CardLabScreen />);
 
@@ -10,7 +10,7 @@ describe("ArmaDesk Card Lab v1.2", () => {
       container
         .querySelector(".card-lab-screen")
         ?.getAttribute("data-card-lab-version"),
-    ).toBe("v1.2");
+    ).toBe("v1.3");
 
     const statFrame = container.querySelector(
       '.card-lab-stat .card-lab-frame[data-frame-variant="stat"]',
@@ -19,8 +19,8 @@ describe("ArmaDesk Card Lab v1.2", () => {
       '.card-lab-action .card-lab-frame[data-frame-variant="action"]',
     );
 
-    expect(statFrame?.getAttribute("viewBox")).toBe("0 0 132 220");
-    expect(actionFrame?.getAttribute("viewBox")).toBe("0 0 280 132");
+    expect(statFrame?.getAttribute("viewBox")).toBe("0 0 136 226");
+    expect(actionFrame?.getAttribute("viewBox")).toBe("0 0 286 126");
 
     expect(
       container.querySelector('[data-scale-mode="container"]'),
@@ -31,10 +31,14 @@ describe("ArmaDesk Card Lab v1.2", () => {
     const { container } = render(<CardLabScreen />);
 
     expect(
-      container.querySelector('[data-premium-icon="estimate-document"]'),
+      container.querySelector(
+        '[data-premium-icon="estimate-document-v1.3"]',
+      ),
     ).toBeTruthy();
     expect(
-      container.querySelector('[data-premium-icon="create-estimate"]'),
+      container.querySelector(
+        '[data-premium-icon="create-estimate-v1.3"]',
+      ),
     ).toBeTruthy();
 
     expect(screen.getAllByLabelText("Create Estimate").length).toBeGreaterThan(1);
@@ -48,7 +52,7 @@ describe("ArmaDesk Card Lab v1.2", () => {
       container.querySelector('[vector-effect="non-scaling-stroke"]'),
     ).toBeTruthy();
     expect(
-      container.querySelector('[data-frame-version="v1.2"]'),
+      container.querySelector('[data-frame-version="v1.3"]'),
     ).toBeTruthy();
   });
 
