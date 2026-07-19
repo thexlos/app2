@@ -30,6 +30,7 @@ import { EstimateBuilderScreen } from "../screens/EstimateBuilderScreen";
 import { MyBusinessKitScreen } from "../screens/MyBusinessKitScreen";
 import { QRCodeDetailScreen } from "../screens/QRCodeDetailScreen";
 import { TrashScreen } from "../screens/TrashScreen";
+import { CardLabScreen } from "../screens/CardLabScreen";
 import {
   HelpGuideScreen,
   HelpRequestDetailScreen,
@@ -129,6 +130,7 @@ export function App() {
     return (
       <PublicOfficialDocumentPage token={hash.replace("#/document/", "")} />
     );
+  if (hash === "#/card-lab") return <CardLabScreen />;
   const ScreenComponent = screens[currentScreen];
   return (
     <AppShell screen={currentScreen}>
