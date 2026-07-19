@@ -520,3 +520,18 @@
 .bottom-nav__item > span:last-child {
   line-height: 1.05;
 }
+
+.bottom-nav {
+  border: 0 !important;
+  background: url("../../assets/home/shells/navigation/bottom-nav-shell.svg") center / 100% 100% no-repeat !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.bottom-nav::before { content: none !important; }
+.bottom-nav__item--create .bottom-nav__icon-wrap {
+  border: 0 !important;
+  background: url("../../assets/home/shells/navigation/create-button-shell.svg") center / 100% 100% no-repeat !important;
+  box-shadow: none !important;
+}
+.bottom-nav__item--create .bottom-nav__icon-wrap::before,
+.bottom-nav__item--create .bottom-nav__icon-wrap::after { content: none !important; }

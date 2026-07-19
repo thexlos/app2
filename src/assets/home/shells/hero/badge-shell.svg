@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="82" viewBox="0 0 140 82" fill="none">
+      <defs>
+        <linearGradient id="surface" x1="0" y1="0" x2="140" y2="82">
+          <stop offset="0" stop-color="#18304F" stop-opacity=".98"/>
+          <stop offset=".42" stop-color="#081A31" stop-opacity=".98"/>
+          <stop offset="1" stop-color="#020914" stop-opacity=".99"/>
+        </linearGradient>
+        <linearGradient id="rim" x1="0" y1="0" x2="140" y2="82">
+          <stop offset="0" stop-color="#FFFFFF" stop-opacity=".78"/>
+          <stop offset=".16" stop-color="#B26CFF" stop-opacity=".88"/>
+          <stop offset=".58" stop-color="#B26CFF" stop-opacity=".24"/>
+          <stop offset="1" stop-color="#B26CFF" stop-opacity=".95"/>
+        </linearGradient>
+        <radialGradient id="toneGlow" cx=".18" cy=".04" r=".88">
+          <stop offset="0" stop-color="#B26CFF" stop-opacity=".27"/>
+          <stop offset=".52" stop-color="#B26CFF" stop-opacity=".07"/>
+          <stop offset="1" stop-color="#B26CFF" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="wellFill" cx=".30" cy=".10" r=".95">
+          <stop offset="0" stop-color="#FFFFFF" stop-opacity=".20"/>
+          <stop offset=".30" stop-color="#B26CFF" stop-opacity=".19"/>
+          <stop offset="1" stop-color="#020A19" stop-opacity=".94"/>
+        </radialGradient>
+        <filter id="softShadow" x="-30%" y="-30%" width="160%" height="170%">
+          <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000000" flood-opacity=".46"/>
+          <feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#B26CFF" flood-opacity=".42"/>
+        </filter>
+      </defs>
+      <g filter="url(#softShadow)">
+        <rect x="8" y="8" width="124" height="66" rx="20"
+              fill="url(#surface)" stroke="url(#rim)" stroke-width="2.2"/>
+        <rect x="13" y="13" width="114" height="56" rx="15"
+              fill="url(#toneGlow)" stroke="#FFFFFF" stroke-opacity=".09" stroke-width="1"/>
+        <path d="M 25 12 H 102"
+              stroke="#FFFFFF" stroke-opacity=".32" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M 122 38 V 42"
+              stroke="#B26CFF" stroke-opacity=".34" stroke-width="2" stroke-linecap="round"/>
+        <path d="M 38 67 H 110"
+              stroke="#B26CFF" stroke-opacity=".50" stroke-width="2.2" stroke-linecap="round"/>
+        
+        
+        
+      </g>
+    </svg>

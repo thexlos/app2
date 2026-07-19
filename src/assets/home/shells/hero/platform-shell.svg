@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="180" viewBox="0 0 520 180" fill="none">
+<defs>
+<linearGradient id="r" x1="60" y1="90" x2="460" y2="110">
+<stop stop-color="#2563EB"/><stop offset=".5" stop-color="#22D3EE"/><stop offset="1" stop-color="#A855F7"/>
+</linearGradient>
+<filter id="glow" x="-30%" y="-80%" width="160%" height="260%">
+<feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#22D3EE" flood-opacity=".65"/>
+<feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#A855F7" flood-opacity=".38"/>
+</filter>
+</defs>
+<g filter="url(#glow)">
+<ellipse cx="260" cy="108" rx="224" ry="57" fill="#06152B" fill-opacity=".38" stroke="url(#r)" stroke-width="4"/>
+<ellipse cx="260" cy="108" rx="184" ry="45" fill="none" stroke="url(#r)" stroke-width="3"/>
+<ellipse cx="260" cy="108" rx="142" ry="34" fill="none" stroke="url(#r)" stroke-width="2"/>
+<ellipse cx="260" cy="108" rx="96" ry="22" fill="none" stroke="#22D3EE" stroke-opacity=".62"/>
+</g>
+</svg>

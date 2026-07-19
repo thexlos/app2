@@ -9,7 +9,7 @@ const metrics = [
   { label: "Tasks" as const, value: 4, tone: "green" as const },
 ];
 
-describe("HomeHeroAnalyticsVisual composition v2.3 compatibility", () => {
+describe("HomeHeroAnalyticsVisual exact visual shell v1 compatibility", () => {
   it("renders the locked 43/57 composition contract with four live bars", () => {
     const { container } = render(
       <HomeHeroAnalyticsVisual
@@ -19,12 +19,12 @@ describe("HomeHeroAnalyticsVisual composition v2.3 compatibility", () => {
     );
 
     const root = screen.getByTestId("home-hero-analytics");
-    expect(root.getAttribute("data-layout-version")).toBe("hero-composition-v2.3");
+    expect(root.getAttribute("data-layout-version")).toBe("hero-shell-v1");
     expect(root.getAttribute("data-composition-split")).toBe("43-57");
     expect(root.getAttribute("data-chart-contained")).toBe("true");
     expect(root.getAttribute("data-bar-count")).toBe("4");
     expect(root.getAttribute("data-line-source")).toBe(
-      "same-svg-bar-top-points",
+      "same-shell-bar-top-points",
     );
     expect(root.getAttribute("data-categories")).toBe(
       "Estimates,Invoices,Customers,Tasks",

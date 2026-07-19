@@ -124,7 +124,7 @@ describe("Home redesign", () => {
     expect(screen.getByText("work items")).toBeTruthy();
     const analytics = container.querySelector("[data-testid='home-hero-analytics']");
     expect(analytics).toBeTruthy();
-    expect(analytics?.getAttribute("data-layout-version")).toBe("hero-composition-v2.3");
+    expect(analytics?.getAttribute("data-layout-version")).toBe("hero-shell-v1");
     expect(analytics?.getAttribute("data-composition-split")).toBe("43-57");
     expect(analytics?.getAttribute("data-chart-contained")).toBe("true");
     expect(analytics?.getAttribute("data-bar-count")).toBe("4");
@@ -132,7 +132,7 @@ describe("Home redesign", () => {
       "Estimates,Invoices,Customers,Tasks",
     );
     expect(analytics?.getAttribute("data-line-source")).toBe(
-      "same-svg-bar-top-points",
+      "same-shell-bar-top-points",
     );
     expect(analytics?.getAttribute("data-value-source")).toBe(
       "current-home-stat-values",
@@ -144,8 +144,10 @@ describe("Home redesign", () => {
       ".home-hero-analytics__platform",
     );
     expect(platformBase).toBeTruthy();
-    expect(platformBase?.getAttribute("href")).toContain("hero-3d-platform-compact");
-    expect(container.querySelectorAll(".home-hero-analytics__bar-front")).toHaveLength(4);
+    expect(platformBase?.getAttribute("data-shell-asset")).toBe(
+      "hero/platform-shell.svg",
+    );
+    expect(container.querySelectorAll('image[data-shell-asset^="hero/bars/"]')).toHaveLength(4);
     expect(container.querySelectorAll(".home-hero-analytics__bar-group")).toHaveLength(
       4,
     );
@@ -190,10 +192,10 @@ describe("Home redesign", () => {
       "160",
     ]);
     expect(linePoints.map((point) => point.getAttribute("cy"))).toEqual([
-      "50",
-      "75",
-      "62.5",
-      "50",
+      "54",
+      "79",
+      "66.5",
+      "54",
     ]);
     const callouts = Array.from(
       container.querySelectorAll(".home-hero-analytics__callout"),
