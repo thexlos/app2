@@ -4822,3 +4822,482 @@
   width: auto;
   height: auto;
 }
+
+/* Phase 2D: supplied compact ArmaDesk Home Hero Analytics Geometry Patch v2.1.
+   The rendered component now uses .home-hero-analytics--compact-v21, leaving the
+   previous .home-hero-analytics--upgrade-v2 presentation rules inactive. */
+
+/* ArmaDesk compact hero geometry patch v2.1
+   This block replaces the earlier upgrade-v2 presentation block.
+   The existing Home hero card, data mapping and Home order stay unchanged. */
+
+.home-hero-analytics--compact-v21 {
+  --hero-cyan: #22d3ee;
+  --hero-blue: #2563eb;
+  --hero-purple: #a855f7;
+  --hero-teal: #14b8a6;
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 100%;
+  overflow: visible;
+  container-type: inline-size;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__platform-base {
+  position: absolute;
+  z-index: 0;
+  right: -7%;
+  bottom: -7%;
+  width: 112%;
+  height: 80%;
+  object-fit: contain;
+  object-position: center bottom;
+  pointer-events: none;
+  opacity: 0;
+  filter:
+    saturate(1.2)
+    contrast(1.08)
+    drop-shadow(0 0 14px rgba(34,211,238,.24))
+    drop-shadow(0 0 20px rgba(168,85,247,.13));
+  animation:
+    compactPlatformAppear 480ms ease-out 60ms forwards,
+    compactPlatformPulse 3600ms ease-in-out 1100ms infinite;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callouts,
+.home-hero-analytics--compact-v21 .home-hero-analytics__bars {
+  position: absolute;
+  inset: 0;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callouts {
+  z-index: 8;
+  pointer-events: none;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout {
+  --tone: #22d3ee;
+  position: absolute;
+  top: 1%;
+  left: var(--callout-left);
+  width: 20%;
+  height: 20%;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: clamp(10px, 4.3cqw, 15px) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(2px, 1cqw, 4px);
+  padding: clamp(3px, 1.4cqw, 5px);
+  border: 1px solid color-mix(in srgb, var(--tone) 78%, #475569 22%);
+  border-radius: clamp(7px, 3.8cqw, 10px);
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 28% 0%, color-mix(in srgb, var(--tone) 18%, transparent), transparent 56%),
+    rgba(2,10,27,.94);
+  box-shadow:
+    0 7px 18px rgba(0,0,0,.26),
+    0 0 11px color-mix(in srgb, var(--tone) 28%, transparent),
+    inset 0 1px 0 rgba(255,255,255,.07);
+  opacity: 0;
+  transform: translateY(6px);
+  animation: compactCalloutReveal 340ms ease-out var(--callout-delay) forwards;
+}
+
+.home-hero-analytics--compact-v21 .home-tone-blue {
+  --tone: #22d3ee;
+}
+.home-hero-analytics--compact-v21 .home-tone-purple {
+  --tone: #a855f7;
+}
+.home-hero-analytics--compact-v21 .home-tone-green {
+  --tone: #14b8a6;
+}
+.home-hero-analytics--compact-v21 .home-tone-orange {
+  --tone: #f59e0b;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout-icon {
+  width: clamp(10px, 4.3cqw, 15px);
+  height: clamp(10px, 4.3cqw, 15px);
+  color: var(--tone);
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--tone) 62%, transparent));
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout > span {
+  min-width: 0;
+  display: grid;
+  line-height: 1;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout em {
+  color: var(--tone);
+  font-size: clamp(.34rem, 2.6cqw, .46rem);
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout strong {
+  margin-top: 2px;
+  font-size: clamp(.68rem, 5.2cqw, .92rem);
+  line-height: 1;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout small {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: clamp(.27rem, 2cqw, .38rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__pin {
+  position: absolute;
+  z-index: -1;
+  top: 100%;
+  left: 50%;
+  width: 1px;
+  height: calc(var(--bar-top-percent) - 22%);
+  min-height: 8px;
+  background: linear-gradient(180deg, var(--tone), rgba(255,255,255,.14));
+  box-shadow: 0 0 6px var(--tone);
+  transform: translateX(-50%);
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__bars {
+  z-index: 4;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__bar-stack {
+  --tone: #22d3ee;
+  position: absolute;
+  left: var(--stack-left);
+  bottom: 12.22%;
+  width: 10%;
+  height: 62%;
+  transform: translateX(-50%);
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--bar-height-percent);
+  min-height: 28%;
+  border: 1px solid color-mix(in srgb, var(--tone) 90%, white 10%);
+  border-radius: 6px 6px 2px 2px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.20), transparent 26%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--tone) 74%, white 26%) 0%,
+      color-mix(in srgb, var(--tone) 63%, transparent) 44%,
+      color-mix(in srgb, var(--tone) 82%, #08112a 18%) 100%);
+  box-shadow:
+    0 0 9px color-mix(in srgb, var(--tone) 88%, transparent),
+    0 0 19px color-mix(in srgb, var(--tone) 54%, transparent),
+    inset 4px 0 8px rgba(255,255,255,.14),
+    inset -4px 0 8px rgba(0,0,0,.20);
+  transform-origin: center bottom;
+  animation: compactBarRise 620ms cubic-bezier(.2,.8,.2,1) var(--bar-delay) both;
+  transition:
+    height 620ms cubic-bezier(.2,.8,.2,1),
+    filter 240ms ease,
+    box-shadow 240ms ease;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__bar-top {
+  position: absolute;
+  right: -1px;
+  left: -1px;
+  top: -5px;
+  height: 10px;
+  border: 1px solid color-mix(in srgb, var(--tone) 90%, white 10%);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tone) 62%, white 18%);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--tone) 82%, transparent);
+  transform: perspective(34px) rotateX(58deg);
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__bar-front {
+  position: absolute;
+  inset: 4px 5px 4px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(255,255,255,.24), transparent 38%);
+  opacity: .62;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__bar-side {
+  position: absolute;
+  top: 4px;
+  right: -5px;
+  bottom: 2px;
+  width: 6px;
+  border-radius: 0 4px 2px 0;
+  background: color-mix(in srgb, var(--tone) 58%, #020817 42%);
+  filter: brightness(.72);
+  transform: skewY(-34deg);
+  transform-origin: left top;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__line {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__line-glow,
+.home-hero-analytics--compact-v21 .home-hero-analytics__line-path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: compactLineDraw 500ms ease-out 250ms forwards;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__line-glow {
+  stroke: rgba(34,211,238,.42);
+  stroke-width: 8;
+  filter: blur(4px);
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__line-path {
+  stroke: url(#heroCompactLineGradient);
+  stroke-width: 3;
+  filter:
+    drop-shadow(0 0 5px rgba(34,211,238,.92))
+    drop-shadow(0 0 10px rgba(37,99,235,.44));
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__line-point {
+  fill: #effcff;
+  stroke: #22d3ee;
+  stroke-width: 2;
+  opacity: 0;
+  filter: drop-shadow(0 0 5px rgba(34,211,238,.92));
+  animation: compactPointReveal 230ms ease-out 560ms forwards;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__badge {
+  position: absolute;
+  z-index: 10;
+  right: 1%;
+  bottom: 4%;
+  width: 24%;
+  min-width: 50px;
+  min-height: 23%;
+  display: grid;
+  align-content: center;
+  padding: clamp(5px, 1.8cqw, 7px);
+  border: 1px solid rgba(56,189,248,.38);
+  border-radius: clamp(8px, 3.5cqw, 11px);
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(34,211,238,.14), transparent 55%),
+    rgba(2,10,27,.94);
+  box-shadow:
+    0 7px 18px rgba(0,0,0,.26),
+    0 0 13px rgba(34,211,238,.14),
+    inset 0 1px 0 rgba(255,255,255,.07);
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__badge strong {
+  font-size: clamp(.63rem, 4.3cqw, .82rem);
+  line-height: 1.05;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__badge small,
+.home-hero-analytics--compact-v21 .home-hero-analytics__badge em {
+  color: #cbd5e1;
+  font-size: clamp(.34rem, 2.2cqw, .45rem);
+  font-style: normal;
+  font-weight: 700;
+}
+
+@keyframes compactPlatformAppear {
+  from { opacity: 0; transform: translateY(6px) scale(.98); }
+  to { opacity: .96; transform: translateY(0) scale(1); }
+}
+
+@keyframes compactPlatformPulse {
+  0%,100% { filter: saturate(1.15) drop-shadow(0 0 13px rgba(34,211,238,.18)); }
+  50% { filter: saturate(1.28) drop-shadow(0 0 21px rgba(34,211,238,.30)); }
+}
+
+@keyframes compactBarRise {
+  from { transform: scaleY(0); opacity: .35; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes compactLineDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes compactPointReveal {
+  from { opacity: 0; transform: scale(.4); transform-origin: center; }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes compactCalloutReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 400px) {
+  .home-hero-analytics--compact-v21 .home-hero-analytics__callout {
+    width: 20.5%;
+    padding: 3px;
+  }
+
+  .home-hero-analytics--compact-v21 .home-hero-analytics__callout em {
+    font-size: .32rem;
+  }
+
+  .home-hero-analytics--compact-v21 .home-hero-analytics__callout strong {
+    font-size: .64rem;
+  }
+
+  .home-hero-analytics--compact-v21 .home-hero-analytics__callout small {
+    font-size: .25rem;
+  }
+
+  .home-hero-analytics--compact-v21 .home-hero-analytics__badge {
+    width: 24.5%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-analytics--compact-v21 *,
+  .home-hero-analytics--compact-v21 *::before,
+  .home-hero-analytics--compact-v21 *::after {
+    animation-duration: .001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: .001ms !important;
+  }
+
+  .home-hero-analytics--compact-v21 .home-hero-analytics__platform-base,
+  .home-hero-analytics--compact-v21 .home-hero-analytics__callout,
+  .home-hero-analytics--compact-v21 .home-hero-analytics__line-point {
+    opacity: 1;
+  }
+
+  .home-hero-analytics--compact-v21 .home-hero-analytics__line-glow,
+  .home-hero-analytics--compact-v21 .home-hero-analytics__line-path {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Phase 2D integration fit: keep the already-approved Home hero card proportions
+   while mounting the supplied compact v2.1 chart class. */
+.home-hero:has(.home-hero-analytics--compact-v21) {
+  height: clamp(238px, 56vw, 252px);
+  grid-template-columns: minmax(120px, 0.62fr) minmax(0, 1.38fr);
+  gap: clamp(7px, 2.1vw, 9px);
+}
+
+.home-hero:has(.home-hero-analytics--compact-v21) .home-hero__copy {
+  min-width: 0;
+}
+
+.home-hero:has(.home-hero-analytics--compact-v21) .home-hero__copy h1 {
+  margin-bottom: clamp(5px, 1.7vw, 7px);
+}
+
+.home-hero:has(.home-hero-analytics--compact-v21) .home-hero__copy h1 span {
+  font-size: clamp(0.93rem, 4vw, 1.12rem);
+  line-height: 1.05;
+}
+
+.home-hero:has(.home-hero-analytics--compact-v21) .home-hero__copy h1 strong {
+  font-size: clamp(1.75rem, 7.2vw, 2.28rem);
+  line-height: 0.92;
+}
+
+.home-hero:has(.home-hero-analytics--compact-v21) .home-hero__copy p {
+  max-width: clamp(9.2rem, 38vw, 10.6rem);
+  font-size: clamp(0.68rem, 2.85vw, 0.78rem);
+  line-height: 1.28;
+}
+
+.home-hero:has(.home-hero-analytics--compact-v21) .home-hero__action {
+  min-height: clamp(27px, 7vw, 31px);
+  margin-top: clamp(6px, 2vw, 8px);
+  padding-inline: clamp(9px, 2.75vw, 12px);
+  font-size: clamp(0.68rem, 2.8vw, 0.78rem);
+}
+
+.home-hero-analytics.home-hero-analytics--compact-v21 {
+  align-self: stretch;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-hero-analytics.home-hero-analytics--compact-v21::before,
+.home-hero-analytics.home-hero-analytics--compact-v21::after {
+  content: none;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__bars {
+  display: block;
+  height: auto;
+  gap: 0;
+  align-items: normal;
+  justify-content: normal;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1px;
+  overflow: visible;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout::after {
+  content: none;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: clamp(6px, 2.2cqw, 8px);
+  height: clamp(6px, 2.2cqw, 8px);
+  opacity: 0.5;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout em,
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout strong,
+.home-hero-analytics--compact-v21 .home-hero-analytics__callout small {
+  display: block;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__bar-stack {
+  top: auto;
+  right: auto;
+  display: block;
+  align-items: normal;
+  justify-content: normal;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__bar {
+  top: auto;
+}
+
+.home-hero-analytics--compact-v21 .home-hero-analytics__badge {
+  top: auto;
+  left: auto;
+  height: auto;
+}

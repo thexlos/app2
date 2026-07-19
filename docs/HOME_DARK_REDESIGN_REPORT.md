@@ -1133,6 +1133,111 @@ Phase 2C is complete: the uploaded `armadesk_hero_upgrade_kit_v2.zip` was integr
   - Smart Suggestions remained the last Home content child
   - console error count was zero
 
+## Phase 2D compact hero geometry patch integrated
+
+Phase 2D is complete: the uploaded `armadesk_hero_compact_patch_v2_1.zip` compact geometry patch was integrated as a supplied implementation patch rather than redesigned or recreated.
+
+## Phase 2D source files used
+
+- Read and followed:
+  - `00_READ_ME_FIRST.md`
+  - `INTEGRATION_README.md`
+  - `CODEX_COMPACT_PATCH_PROMPT.txt`
+  - `geometry/compact_geometry.json`
+  - `animation/compact_animation_contract.md`
+  - `styling/compact_layer_contract.md`
+- Inspected the required visual references:
+  - `reference/current_live_hero.png`
+  - `reference/approved_compact_hero_target.png`
+  - `reference/current_vs_compact_target.png`
+  - `geometry/compact_geometry_overlay.png`
+  - `animation/compact_animation_storyboard.png`
+  - `demo/approved_compact_demo.png`
+- Integrated the supplied compact platform asset:
+  - `assets/hero-3d-platform-compact.webp`
+- Integrated the supplied React/CSS/test implementation:
+  - `component/HomeHeroAnalyticsVisual.tsx`
+  - `component/HomeHeroAnalyticsVisual.css`
+  - `component/heroAnalyticsTypes.ts`
+  - `tests/HomeHeroAnalyticsVisual.compact.test.tsx`
+
+## Phase 2D changes
+
+- Copied the supplied compact decorative platform asset to:
+  - `src/assets/home/hero-3d-platform-compact.webp`
+- Replaced the previous v2 Home hero analytics component with the supplied compact v2.1 component.
+- Kept the existing type-only `HeroAnalyticsMetric` export available from `HomeHeroAnalyticsVisual.tsx` so the existing HomeScreen data mapping did not need to change.
+- Appended the supplied compact `HomeHeroAnalyticsVisual.css` block into `src/screens/home.css`.
+- Neutralized the older `.home-hero-analytics--upgrade-v2` presentation rules by moving the rendered component to the supplied `.home-hero-analytics--compact-v21` class and adding scoped compact-v2.1 overrides after the older CSS.
+- Added a small scoped compact-fit override for the existing Home card proportions so the supplied fixed top-row callout labels remain fully readable at 390px, 402px, and 430px.
+- Added the supplied focused compact test file.
+- Updated existing hero/Home tests to check the compact v2.1 contract:
+  - `data-layout-version="hero-compact-v2.1"`
+  - exactly four live bars
+  - categories: `Estimates`, `Invoices`, `Customers`, `Tasks`
+  - values sourced from current Home stat data
+  - truthful `13 active / work items` total badge
+  - data-derived SVG line points: `28:52|72:77|116:64.5|160:52`
+  - supplied compact platform asset layer
+  - no fake comparison text
+
+## Phase 2D data mapping
+
+- The existing HomeScreen stat mapping was retained.
+- The hero still receives exactly four live categories:
+  1. `Estimates`
+  2. `Invoices`
+  3. `Customers`
+  4. `Tasks`
+- Bar heights are calculated from the current metric values using the supplied compact geometry.
+- The SVG line is generated from the same compact bar-top coordinates.
+- Fixed top-row callouts display the current value for their matching category.
+- The badge total is calculated as the sum of the four current values.
+- No fake comparison percentage or fake growth metric was introduced.
+
+## Phase 2D animation and reduced motion
+
+- The supplied compact animation behavior is integrated:
+  - compact platform appears first
+  - exactly four bars rise with 85ms stagger
+  - line draws through data-derived bar-top coordinates
+  - fixed top-row callouts reveal
+  - badge remains truthful in the reserved lower-right zone
+- Reduced-motion CSS is present for `.home-hero-analytics--compact-v21` and renders the final state without extended motion.
+
+## Phase 2D intentionally not changed
+
+- Home header was not redesigned.
+- Business control bar was not redesigned.
+- Hero text and CTA were not changed.
+- Stat cards, Quick Actions, Upcoming Schedule, Smart Suggestions, bottom navigation, and Home order were not changed.
+- No QR, estimate, invoice, customer, File Vault, recovery draft, persistence, routing, state, or business logic was changed.
+- No fake `+23%`, `+30%`, `vs last week`, revenue, or comparison claim was introduced.
+- No reference PNG or full screenshot was pasted into the app UI.
+- No Phase 4 work was started.
+- No deployment was performed.
+
+## Phase 2D validation
+
+- `npm run build` — passed.
+- `npm test` — passed.
+- Test suite result: 12 test files passed, 92 tests passed.
+- In-app browser checks passed at 390px, 402px, and 430px:
+  - no horizontal overflow
+  - hero copy stayed inside its side
+  - compact chart stayed inside the chart side
+  - all four complete callout labels remained readable
+  - callout cards stayed inside the chart
+  - exactly four live bars rendered
+  - categories remained `Estimates`, `Invoices`, `Customers`, `Tasks`
+  - line stayed inside the chart
+  - line points stayed data-derived from the compact geometry
+  - badge remained visible inside the reserved lower-right chart zone
+  - no fake comparison text rendered
+  - Home order remained unchanged
+  - Smart Suggestions remained the last Home content child
+  - console error count was zero
+
 ## Known follow-up steps
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.

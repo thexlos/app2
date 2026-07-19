@@ -124,20 +124,20 @@ describe("Home redesign", () => {
     expect(screen.getByText("work items")).toBeTruthy();
     const analytics = container.querySelector("[data-testid='home-hero-analytics']");
     expect(analytics).toBeTruthy();
-    expect(analytics?.getAttribute("data-layout-version")).toBe("hero-upgrade-v2");
+    expect(analytics?.getAttribute("data-layout-version")).toBe("hero-compact-v2.1");
     expect(analytics?.getAttribute("data-metric-count")).toBe("4");
     expect(analytics?.getAttribute("data-bar-count")).toBe("4");
     expect(analytics?.getAttribute("data-categories")).toBe(
       "Estimates,Invoices,Customers,Tasks",
     );
     expect(analytics?.getAttribute("data-line-source")).toBe(
-      "normalized-bar-top-points",
+      "compact-normalized-bar-top-points",
     );
     expect(analytics?.getAttribute("data-value-source")).toBe(
       "current-home-stat-values",
     );
     expect(analytics?.getAttribute("data-animation")).toBe(
-      "platform-bars-line-callouts",
+      "compact-platform-bars-line-callouts",
     );
     expect(analytics?.getAttribute("data-reduced-motion-safe")).toBe("true");
     expect(analytics?.getAttribute("data-badge-value")).toBe("13 active");
@@ -146,7 +146,7 @@ describe("Home redesign", () => {
       ".home-hero-analytics__platform-base",
     );
     expect(platformBase).toBeTruthy();
-    expect(platformBase?.getAttribute("src")).toContain("hero-3d-platform-base");
+    expect(platformBase?.getAttribute("src")).toContain("hero-3d-platform-compact");
     expect(container.querySelectorAll(".home-hero-analytics__bar")).toHaveLength(4);
     expect(container.querySelectorAll(".home-hero-analytics__bar-stack")).toHaveLength(
       4,
@@ -174,8 +174,8 @@ describe("Home redesign", () => {
       "3",
       "4",
     ]);
-    expect(stacks.map((stack) => stack.getAttribute("data-height-px"))).toEqual(
-      ["122", "85", "103.5", "122"],
+    expect(stacks.map((stack) => stack.getAttribute("data-height-percent"))).toEqual(
+      ["56.667", "42.778", "49.722", "56.667"],
     );
     expect(
       container
@@ -186,17 +186,20 @@ describe("Home redesign", () => {
       container.querySelectorAll(".home-hero-analytics__line-point"),
     );
     expect(linePoints.map((point) => point.getAttribute("cx"))).toEqual([
-      "70",
-      "158",
-      "246",
-      "334",
+      "28",
+      "72",
+      "116",
+      "160",
     ]);
     expect(linePoints.map((point) => point.getAttribute("cy"))).toEqual([
-      "44",
-      "81",
-      "62.5",
-      "44",
+      "52",
+      "77",
+      "64.5",
+      "52",
     ]);
+    expect(analytics?.getAttribute("data-line-points")).toBe(
+      "28:52|72:77|116:64.5|160:52",
+    );
     const callouts = Array.from(
       container.querySelectorAll(".home-hero-analytics__callout"),
     );

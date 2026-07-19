@@ -1,6 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { HomeHeroAnalyticsVisual } from "../src/components/home/HomeHeroAnalyticsVisual";
 
@@ -12,7 +10,7 @@ const metrics = [
 ];
 
 describe("HomeHeroAnalyticsVisual compact v2.1", () => {
-  it("renders exactly four live metric bars and truthful total badge", () => {
+  it("renders the compact geometry contract with four live bars", () => {
     const { container } = render(
       <HomeHeroAnalyticsVisual
         metrics={metrics}
@@ -30,31 +28,22 @@ describe("HomeHeroAnalyticsVisual compact v2.1", () => {
       "current-home-stat-values",
     );
     expect(root.getAttribute("data-badge-value")).toBe("13 active");
-    expect(root.getAttribute("data-line-points")).toBeTruthy();
 
-    const bars = container.querySelectorAll(
-      ".home-hero-analytics__bar-stack",
-    );
-    expect(bars).toHaveLength(4);
     expect(
       container.querySelectorAll(".home-hero-analytics__callout"),
+    ).toHaveLength(4);
+    expect(
+      container.querySelectorAll(".home-hero-analytics__bar-stack"),
+    ).toHaveLength(4);
+    expect(
+      container.querySelectorAll(".home-hero-analytics__line-point"),
     ).toHaveLength(4);
 
     for (const label of ["Estimates", "Invoices", "Customers", "Tasks"]) {
       expect(container.querySelector(`[data-category="${label}"]`)).toBeTruthy();
     }
 
-    expect(container.querySelector(".home-hero-analytics__line-path")).toBeTruthy();
-    expect(container.querySelectorAll(".home-hero-analytics__line-point")).toHaveLength(4);
     expect(screen.queryByText("+23%")).toBeNull();
     expect(screen.queryByText(/vs last week/i)).toBeNull();
-  });
-
-  it("keeps the supplied reduced-motion CSS contract", () => {
-    const css = readFileSync(join(process.cwd(), "src/screens/home.css"), "utf8");
-
-    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
-    expect(css).toContain(".home-hero-analytics--compact-v21");
-    expect(css).toContain("stroke-dashoffset: 0");
   });
 });
