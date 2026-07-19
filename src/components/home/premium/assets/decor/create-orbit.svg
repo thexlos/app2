@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none">
-<defs><linearGradient id="g" x1="22" y1="18" x2="136" y2="142"><stop stop-color="#22D3EE"/><stop offset=".52" stop-color="#2563EB"/><stop offset="1" stop-color="#A855F7"/></linearGradient></defs>
-<circle cx="80" cy="80" r="69" stroke="url(#g)" stroke-width="3"/>
-<circle cx="80" cy="80" r="59" stroke="#FFFFFF" stroke-opacity=".19"/>
-<circle cx="80" cy="80" r="47" stroke="#67E8F9" stroke-opacity=".24"/>
-</svg>

@@ -229,7 +229,7 @@ describe("Home redesign", () => {
   it("renders the stats with state-derived values directly under the hero", () => {
     const { container } = renderHome();
     const hero = container.querySelector(".home-hero");
-    const statsSection = container.querySelector(".premium-stats-section");
+    const statsSection = container.querySelector(".home-stats-section");
     expect(hero).toBeTruthy();
     expect(statsSection).toBeTruthy();
     expect(
@@ -293,7 +293,7 @@ describe("Home redesign", () => {
 
   it("limits the primary quick action grid to the six reference actions", () => {
     const { container } = renderHome();
-    const quickGrid = container.querySelector(".premium-action-grid");
+    const quickGrid = container.querySelector(".home-quick-grid");
     expect(quickGrid?.textContent).toContain("Create Estimate");
     expect(quickGrid?.textContent).toContain("Create Invoice");
     expect(quickGrid?.textContent).toContain("Add Customer");
@@ -358,10 +358,10 @@ describe("Home redesign", () => {
     const header = container.querySelector(".home-app-header");
     const businessRow = container.querySelector(".home-top-utility-row");
     const hero = container.querySelector(".home-hero");
-    const stats = container.querySelector(".premium-stats-section");
-    const quickActions = container.querySelector(".premium-quick-section");
-    const schedule = container.querySelector(".premium-schedule-section");
-    const suggestions = container.querySelector(".premium-suggestions-section");
+    const stats = container.querySelector(".home-stats-section");
+    const quickActions = container.querySelector(".home-quick-actions-panel");
+    const schedule = container.querySelector(".home-schedule-panel");
+    const suggestions = container.querySelector(".home-suggestions-panel");
     expect(header).toBeTruthy();
     expect(businessRow).toBeTruthy();
     expect(hero).toBeTruthy();

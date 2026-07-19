@@ -11,10 +11,10 @@ describe("ArmaDesk premium proportion patch", () => {
       </AppStateProvider>,
     );
 
-    expect(container.querySelectorAll(".premium-card--stat")).toHaveLength(4);
-    expect(container.querySelectorAll(".premium-card--action")).toHaveLength(6);
-    expect(container.querySelectorAll(".premium-card--schedule")).toHaveLength(1);
-    expect(container.querySelectorAll(".premium-card--suggestion")).toHaveLength(2);
+    expect(container.querySelectorAll(".home-stat-card")).toHaveLength(4);
+    expect(container.querySelectorAll(".home-action-card")).toHaveLength(6);
+    expect(container.querySelectorAll(".home-schedule-card")).toHaveLength(1);
+    expect(container.querySelectorAll(".home-suggestion-card")).toHaveLength(2);
   });
 
   it("keeps Smart Suggestions as the final Home content section", () => {
@@ -25,7 +25,7 @@ describe("ArmaDesk premium proportion patch", () => {
     );
 
     const content = container.querySelector(".home-content");
-    expect(content?.lastElementChild?.classList.contains("premium-suggestions-section"))
+    expect(content?.lastElementChild?.classList.contains("home-suggestions-panel"))
       .toBe(true);
   });
 });

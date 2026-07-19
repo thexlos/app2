@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { BrandHeader } from "../components/common/ScreenHeader";
 import { Notice } from "../components/common/Notice";
-import { PremiumBottomNavigation } from "../components/navigation/PremiumBottomNavigation";
+import { BottomNavigation } from "../components/navigation/Navigation";
 import type { Screen } from "../state/AppState";
 
 const topLevelScreens: Screen[] = [
@@ -28,7 +28,7 @@ export function AppShell({
         </div>
       )}
       <main>{children}</main>
-      <PremiumBottomNavigation />
+      <BottomNavigation />
       <Notice />
     </div>
   );
