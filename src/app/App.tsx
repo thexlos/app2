@@ -34,6 +34,7 @@ import { CardLabScreen } from "../screens/CardLabScreen";
 import { CardLabReferenceLayersScreen } from "../screens/CardLabReferenceLayersScreen";
 import { CardLabCleanArtworkScreen } from "../screens/CardLabCleanArtworkScreen";
 import { CardLabCompleteBaseScreen } from "../screens/CardLabCompleteBaseScreen";
+import { CardLabHomeVisualScreen } from "../screens/CardLabHomeVisualScreen";
 import {
   HelpGuideScreen,
   HelpRequestDetailScreen,
@@ -142,6 +143,9 @@ export function App() {
   }
   if (hash === "#/card-lab-complete-base") {
     return <CardLabCompleteBaseScreen />;
+  }
+  if (hash === "#/card-lab-home-visual") {
+    return <CardLabHomeVisualScreen />;
   }
   const ScreenComponent = screens[currentScreen];
   return (
