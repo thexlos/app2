@@ -33,6 +33,7 @@ import { TrashScreen } from "../screens/TrashScreen";
 import { CardLabScreen } from "../screens/CardLabScreen";
 import { CardLabReferenceLayersScreen } from "../screens/CardLabReferenceLayersScreen";
 import { CardLabCleanArtworkScreen } from "../screens/CardLabCleanArtworkScreen";
+import { CardLabCompleteBaseScreen } from "../screens/CardLabCompleteBaseScreen";
 import {
   HelpGuideScreen,
   HelpRequestDetailScreen,
@@ -138,6 +139,9 @@ export function App() {
   }
   if (hash === "#/card-lab-artwork") {
     return <CardLabCleanArtworkScreen />;
+  }
+  if (hash === "#/card-lab-complete-base") {
+    return <CardLabCompleteBaseScreen />;
   }
   const ScreenComponent = screens[currentScreen];
   return (
