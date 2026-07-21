@@ -19,11 +19,6 @@ import {
   HomeHeroAnalyticsVisual,
   type HeroAnalyticsMetric,
 } from "../components/home/HomeHeroAnalyticsVisual";
-import {
-  HomeQuickActionArtworkCard,
-  HomeStatArtworkCard,
-  type HomeQuickActionArtworkLabel,
-} from "../components/home/HomeArtworkCards";
 import { appBrand } from "../config/brandAssets";
 import { useAppState } from "../state/AppState";
 import type { SmartSuggestion } from "../types/models";
@@ -154,12 +149,7 @@ export function HomeScreen() {
       tone: "violet",
       action: () => setCurrentScreen("my-business-kit"),
     },
-  ] satisfies Array<{
-    label: HomeQuickActionArtworkLabel;
-    icon: typeof FilePlus2;
-    tone: string;
-    action: () => void;
-  }>;
+  ];
 
   const stats: HomeStat[] = [
     {
@@ -323,15 +313,20 @@ export function HomeScreen() {
 
         <section className="home-stats-section" aria-label="Business dashboard stats">
           <div className="home-stat-grid" aria-label="Business dashboard stats">
-            {stats.map(({ label, value, trend, tone, action }) => (
-              <HomeStatArtworkCard
+            {stats.map(({ label, value, trend, icon: Icon, tone, action }) => (
+              <button
                 key={label}
-                label={label}
-                value={value}
-                trend={trend}
-                tone={tone}
+                className={`home-stat-card home-tone-${tone}`}
                 onClick={action}
-              />
+                aria-label={`${label}: ${value}`}
+              >
+                <span className="home-stat-card__icon">
+                  <Icon size={23} />
+                </span>
+                <span className="home-stat-card__label">{label}</span>
+                <strong>{value}</strong>
+                <span className="home-stat-card__trend">{trend}</span>
+              </button>
             ))}
           </div>
         </section>
@@ -346,13 +341,21 @@ export function HomeScreen() {
           </Button>
         </div>
         <div className="home-quick-grid">
-          {quickActions.map(({ label, tone, action }) => (
-            <HomeQuickActionArtworkCard
+          {quickActions.map(({ label, icon: Icon, tone, action }) => (
+            <button
               key={label}
-              label={label}
-              tone={tone}
+              className={`home-action-card home-tone-${tone}`}
               onClick={action}
-            />
+              aria-label={label}
+            >
+              <span className="home-chip">
+                <Icon size={18} />
+              </span>
+              <span className="home-action-card__copy">
+                <strong>{label}</strong>
+              </span>
+              <ArrowRight className="home-action-card__arrow" size={15} />
+            </button>
           ))}
         </div>
         </section>
