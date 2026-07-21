@@ -1647,3 +1647,80 @@ Phase 3C is complete: the uploaded `armadesk_phase3c_final_card_visual_match_v1.
 
 - Later Home pass: Recent Activity and Recent Creations visual treatment.
 - Step 7: final polish.
+
+## Home card visual assets v2 integrated
+
+The approved `armadesk_home_card_visual_assets_v2` packet is integrated as a
+visual-only Home card pass. The four existing stat buttons and six existing
+Quick Action buttons now render the packet's individual transparent PNG bases,
+while every label, value, trend, arrow, accessible name, click handler, and
+route remains live React/CSS content.
+
+### Supplied assets added intact
+
+- `src/assets/home/card-bases/v2/stat/`
+  - `estimates_card_base.png`
+  - `invoices_card_base.png`
+  - `customers_card_base.png`
+  - `tasks_card_base.png`
+- `src/assets/home/card-bases/v2/action/`
+  - `create_estimate_card_base.png`
+  - `create_invoice_card_base.png`
+  - `add_customer_card_base.png`
+  - `calendar_card_base.png`
+  - `qr_code_card_base.png`
+  - `business_kit_card_base.png`
+
+All ten repository asset hashes match `ASSET_MAP.json`. The images retain their
+full transparent source canvases and use the packet's exact `left_percent`,
+`top_percent`, `width_percent`, and `height_percent` registrations. No image was
+cropped, sliced, masked, redrawn, or converted into a background image.
+
+### Presentational files changed
+
+- Added `src/components/home/HomeArtworkCards.tsx` for the two presentation-only
+  card renderers and exact artwork mappings.
+- Updated `src/screens/HomeScreen.tsx` only where the existing stat and Quick
+  Action arrays are rendered. The original arrays, values, trends, callbacks,
+  and route handlers remain unchanged.
+- Added a final asset-locked override to `src/screens/home.css`. It preserves the
+  four-column stat row and 3 × 2 Quick Action grid, keeps artwork overflow
+  visible, and supplies the existing pressed/focus-visible behavior.
+- Added `tests/homeCardArtworkIntegration.test.tsx` to protect mappings, live
+  content, accessible buttons, routes, callbacks, Hero markup, and Home order.
+
+### Responsive browser validation
+
+Validated at 390px, 402px, and 430px:
+
+- four stat cards remain in one row
+- Quick Actions remain three columns by two rows
+- all ten PNGs load with one artwork image per card
+- all wrappers use `overflow: visible`
+- no duplicate visual Lucide icon is rendered on the ten artwork cards
+- Create Estimate, Create Invoice, Add Customer, QR Code, and Business Kit use
+  two live text lines; Calendar remains one live text line
+- all labels, values, trends, and arrows remain inside their buttons
+- no text/arrow collisions
+- no page-level or body-level horizontal overflow
+- Hero remains `home-hero-analytics--composition-v23`
+- Header, business selector/setup row, Upcoming Schedule, Smart Suggestions,
+  bottom navigation, and Home section order remain unchanged
+
+### Logic and scope protection
+
+- Existing stat calculations and displayed values were not changed.
+- Existing trend wording and calculations were not changed.
+- Existing callbacks and route destinations were not changed.
+- AppState, persistence, recovery drafts, business profiles, QR logic, estimate
+  logic, invoice logic, and customer logic were not changed.
+- Hero component, CSS, data, geometry, and animation were not changed.
+- No Phase 4 work was started.
+- No deployment was performed.
+
+### Validation result
+
+- `npm run build` — passed.
+- `npm test -- --run` — passed: 26 test files and 130 tests.
+- Packet SHA256 — verified:
+  `449A206CA015EF38C7CBD678B0BE15896E39AFCCD678D582DF33BA228BA101B2`.
